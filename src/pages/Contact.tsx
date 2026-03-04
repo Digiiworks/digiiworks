@@ -12,13 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-
-const serviceOptions = [
-  'Custom Dev',
-  'Rent-A-Website',
-  'SEO',
-  'AI Automation',
-];
+import { SERVICE_OPTIONS } from '@/lib/constants';
 
 const Contact = () => {
   const { toast } = useToast();
@@ -60,18 +54,18 @@ const Contact = () => {
   return (
     <div className="relative min-h-screen">
       <div className="absolute inset-0 grid-overlay opacity-20" />
-      <div className="relative mx-auto max-w-xl px-6 py-20">
-        <div className="mb-12 text-center">
-          <p className="font-mono-label mb-3 text-muted-foreground">// initiate_contact</p>
-          <h1 className="font-mono text-4xl font-bold">
+      <div className="relative mx-auto max-w-xl px-6 py-16 md:py-20">
+        <div className="mb-10 text-center md:mb-12">
+          <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// initiate_contact</p>
+          <h1 className="font-mono text-3xl font-bold md:text-4xl">
             <span className="text-gradient">Get in Touch</span>
           </h1>
         </div>
 
-        <div className="glass-card p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="glass-card p-6 md:p-8">
+          <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name" className="font-mono-label text-muted-foreground">Name</Label>
+              <Label htmlFor="name" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Name</Label>
               <Input
                 id="name"
                 required
@@ -82,7 +76,7 @@ const Contact = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="font-mono-label text-muted-foreground">Email</Label>
+              <Label htmlFor="email" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -94,7 +88,7 @@ const Contact = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="font-mono-label text-muted-foreground">Service Interest</Label>
+              <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Service Interest</Label>
               <Select
                 value={form.service_interest}
                 onValueChange={(val) => setForm({ ...form, service_interest: val })}
@@ -105,7 +99,7 @@ const Contact = () => {
                   <SelectValue placeholder="Select a service" />
                 </SelectTrigger>
                 <SelectContent className="border-border bg-card">
-                  {serviceOptions.map((opt) => (
+                  {SERVICE_OPTIONS.map((opt) => (
                     <SelectItem key={opt} value={opt} className="font-sans">
                       {opt}
                     </SelectItem>
@@ -115,7 +109,7 @@ const Contact = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message" className="font-mono-label text-muted-foreground">Message</Label>
+              <Label htmlFor="message" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Message</Label>
               <Textarea
                 id="message"
                 required

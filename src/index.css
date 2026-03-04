@@ -164,3 +164,21 @@
     100% { background-position: 0 60px; }
   }
 }
+
+/* Mobile performance: reduce heavy effects */
+@media (max-width: 640px) {
+  .glass-card {
+    backdrop-filter: blur(4px);
+  }
+
+  .glow-blue,
+  .glow-purple,
+  .glow-mint {
+    box-shadow: none;
+  }
+
+  .grid-overlay {
+    opacity: 0.02 !important;
+    animation: none !important;
+  }
+}

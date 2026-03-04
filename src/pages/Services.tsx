@@ -1,62 +1,5 @@
 import { useState } from 'react';
-
-type PillarType = 'architecture' | 'growth' | 'autonomous';
-
-interface Service {
-  name: string;
-  desc: string;
-}
-
-interface Pillar {
-  id: PillarType;
-  title: string;
-  label: string;
-  accentColor: string;
-  glowClass: string;
-  services: Service[];
-}
-
-const pillars: Pillar[] = [
-  {
-    id: 'architecture',
-    title: 'Digital Architecture',
-    label: 'Pillar 01',
-    accentColor: 'text-neon-blue',
-    glowClass: 'glow-blue',
-    services: [
-      { name: 'Custom Web Development', desc: 'Bespoke websites built from the ground up to match your vision.' },
-      { name: 'Responsive Design', desc: 'Pixel-perfect experiences across every device and screen size.' },
-      { name: 'UX/UI Design', desc: 'Intuitive interfaces designed around user behavior and business goals.' },
-      { name: 'CMS Integration', desc: 'Headless or traditional CMS setups for effortless content management.' },
-      { name: 'Rent-A-Website', desc: 'Professional site, zero upfront cost. Pay monthly, worry about nothing.' },
-    ],
-  },
-  {
-    id: 'growth',
-    title: 'Growth Engine',
-    label: 'Pillar 02',
-    accentColor: 'text-neon-blue',
-    glowClass: 'glow-blue',
-    services: [
-      { name: 'Data-Driven SEO', desc: 'Keyword strategy, technical audits, and content optimization for organic growth.' },
-      { name: 'Performance Optimization', desc: 'Speed, Core Web Vitals, and server-level tuning for peak performance.' },
-      { name: 'Google & Social Media Ads', desc: 'Targeted ad campaigns across Google, Meta, and beyond.' },
-      { name: 'Market & Competitor Research', desc: 'Deep-dive analysis to find gaps and opportunities in your market.' },
-    ],
-  },
-  {
-    id: 'autonomous',
-    title: 'Autonomous Agency',
-    label: 'Pillar 03',
-    accentColor: 'text-neon-purple',
-    glowClass: 'glow-purple',
-    services: [
-      { name: 'AI-Powered Social Media', desc: 'Content creation and scheduling driven by AI agents.' },
-      { name: 'n8n Workflow Automation', desc: 'Automate repetitive tasks across your entire tech stack.' },
-      { name: 'Content Strategy', desc: 'Our agents Vantage & Pixel handle research, copywriting, and visuals.' },
-    ],
-  },
-];
+import { PILLARS } from '@/lib/constants';
 
 const Services = () => {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
@@ -64,24 +7,24 @@ const Services = () => {
   return (
     <div className="relative min-h-screen">
       <div className="absolute inset-0 grid-overlay opacity-30" />
-      <div className="relative mx-auto max-w-6xl px-6 py-20">
-        <div className="mb-16 text-center">
-          <p className="font-mono-label mb-3 text-muted-foreground">// service_catalog</p>
-          <h1 className="font-mono text-4xl font-bold md:text-5xl">
+      <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-20">
+        <div className="mb-12 text-center md:mb-16">
+          <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// service_catalog</p>
+          <h1 className="font-mono text-3xl font-bold md:text-5xl">
             <span className="text-gradient">Our Services</span>
           </h1>
         </div>
 
-        <div className="space-y-20">
-          {pillars.map((pillar) => (
+        <div className="space-y-14 md:space-y-20">
+          {PILLARS.map((pillar) => (
             <section key={pillar.id}>
-              <div className="mb-8 flex items-center gap-3">
-                <span className={`font-mono-label ${pillar.accentColor}`}>{pillar.label}</span>
+              <div className="mb-6 flex items-center gap-3 md:mb-8">
+                <span className={`font-mono text-xs uppercase tracking-widest ${pillar.accentColor}`}>{pillar.label}</span>
                 <div className="h-px flex-1 bg-border" />
-                <h2 className="font-mono text-2xl font-semibold text-foreground">{pillar.title}</h2>
+                <h2 className="font-mono text-xl font-semibold text-foreground md:text-2xl">{pillar.title}</h2>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {pillar.services.map((svc) => {
                   const cardKey = `${pillar.id}-${svc.name}`;
                   const isHovered = hoveredCard === cardKey;
@@ -90,7 +33,7 @@ const Services = () => {
                   return (
                     <div
                       key={svc.name}
-                      className="glass-card group cursor-default p-6 transition-all duration-500"
+                      className="glass-card group cursor-default p-5 transition-all duration-500 md:p-6"
                       style={{
                         boxShadow: isHovered
                           ? isAi
