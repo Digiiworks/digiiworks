@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { PILLARS } from '@/lib/constants';
 
 const Services = () => {
@@ -25,14 +26,18 @@ const Services = () => {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {pillar.services.map((svc) => {
+                {pillar.services.map((svc, idx) => {
                   const cardKey = `${pillar.id}-${svc.name}`;
                   const isHovered = hoveredCard === cardKey;
                   const isAi = pillar.id === 'autonomous';
 
                   return (
-                    <div
+                    <motion.div
                       key={svc.name}
+                      initial={{ opacity: 0, y: 24 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: '-40px' }}
+                      transition={{ duration: 0.4, delay: idx * 0.1 }}
                       className="glass-card group cursor-default p-5 transition-all duration-500 md:p-6"
                       style={{
                         boxShadow: isHovered
@@ -52,7 +57,7 @@ const Services = () => {
                         {svc.name}
                       </h3>
                       <p className="text-sm leading-relaxed text-muted-foreground">{svc.desc}</p>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
