@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import AgencyPulse from '@/components/AgencyPulse';
+import ConstellationBg from '@/components/ConstellationBg';
 import { PILLARS } from '@/lib/constants';
 
 const Index = () => (
   <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
+    <ConstellationBg />
     <div className="absolute inset-0 grid-overlay" style={{ animation: 'data-stream 8s linear infinite' }} />
-    <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/50 to-background" />
+    <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/30 to-background" />
 
     <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-24">
       {/* Hero */}
