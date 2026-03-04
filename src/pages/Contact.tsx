@@ -30,20 +30,31 @@ const Contact = () => {
     message: '',
   });
 
+  const isAI = form.service_interest === 'AI Automation';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.from('leads').insert([form]);
+    try {
+      const { error } = await supabase.from('leads').insert([{
+        ...form,
+        priority: isAI,
+      }]);
 
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Sent!', description: 'We will be in touch soon.' });
+      if (error) throw error;
+
+      toast({
+        title: isAI ? 'Consultation Initialized' : 'Transmission Sent',
+        description: 'We will be in touch soon.',
+      });
       setForm({ name: '', email: '', service_interest: '', message: '' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Connection failed. Please try again.';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -88,7 +99,9 @@ const Contact = () => {
                 value={form.service_interest}
                 onValueChange={(val) => setForm({ ...form, service_interest: val })}
               >
-                <SelectTrigger className="border-border bg-background/50 font-sans focus:border-primary/50">
+                <SelectTrigger className={`border-border bg-background/50 font-sans transition-all duration-300 ${
+                  isAI ? 'border-neon-purple/50 glow-purple' : 'focus:border-primary/50'
+                }`}>
                   <SelectValue placeholder="Select a service" />
                 </SelectTrigger>
                 <SelectContent className="border-border bg-card">
@@ -115,10 +128,19 @@ const Contact = () => {
 
             <Button
               type="submit"
-              className="w-full glow-blue bg-primary text-primary-foreground font-mono hover:bg-primary/90"
+              className={`w-full font-mono transition-all duration-300 ${
+                isAI
+                  ? 'glow-purple bg-secondary text-secondary-foreground hover:bg-secondary/90'
+                  : 'glow-blue bg-primary text-primary-foreground hover:bg-primary/90'
+              }`}
               disabled={loading}
             >
-              {loading ? 'Transmitting...' : 'Send Transmission'}
+              {loading
+                ? 'Processing...'
+                : isAI
+                  ? 'Initialize Consultation'
+                  : 'Send Transmission'
+              }
             </Button>
           </form>
         </div>

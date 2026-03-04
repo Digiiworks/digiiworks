@@ -1,27 +1,28 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import AgencyPulse from '@/components/AgencyPulse';
 
 const pillars = [
   {
     title: 'Digital Architecture',
     description: 'Custom Web Development, Responsive Design, UX/UI, CMS Integration, and the Rent-A-Website model.',
-    accentClass: 'neon-blue',
-    glowClass: 'glow-blue',
+    glowStyle: { boxShadow: '0 0 25px hsl(184 100% 50% / 0.1)' } as React.CSSProperties,
     labelColor: 'text-neon-blue',
+    link: '/services',
   },
   {
     title: 'Growth Engine',
     description: 'Data-Driven SEO, Performance Optimization, Google & Social Media Ads, and Market Research.',
-    accentClass: 'neon-blue',
-    glowClass: 'glow-blue',
+    glowStyle: { boxShadow: '0 0 25px hsl(184 100% 50% / 0.1)' } as React.CSSProperties,
     labelColor: 'text-neon-blue',
+    link: '/services',
   },
   {
     title: 'Autonomous Agency',
     description: 'AI-Powered Social Media, n8n Workflow Automation, and Content Strategy by Vantage & Pixel.',
-    accentClass: 'neon-purple',
-    glowClass: 'glow-purple',
+    glowStyle: { boxShadow: '0 0 25px hsl(280 99% 53% / 0.1)' } as React.CSSProperties,
     labelColor: 'text-neon-purple',
+    link: '/ai',
   },
 ];
 
@@ -55,12 +56,13 @@ const Index = () => (
       </div>
 
       {/* Pillar Cards */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="mb-16 grid gap-6 md:grid-cols-3">
         {pillars.map((pillar, i) => (
-          <div
+          <Link
             key={pillar.title}
-            className={`glass-card group p-6 transition-all duration-500 hover:${pillar.glowClass}`}
-            style={{ animationDelay: `${i * 100}ms` }}
+            to={pillar.link}
+            className="glass-card group p-6 transition-all duration-500 hover:scale-[1.02]"
+            style={pillar.glowStyle}
           >
             <span className={`font-mono-label ${pillar.labelColor} mb-3 block`}>
               Pillar {String(i + 1).padStart(2, '0')}
@@ -71,8 +73,13 @@ const Index = () => (
             <p className="text-sm leading-relaxed text-muted-foreground">
               {pillar.description}
             </p>
-          </div>
+          </Link>
         ))}
+      </div>
+
+      {/* Live Pulse on Homepage */}
+      <div className="mx-auto max-w-2xl">
+        <AgencyPulse />
       </div>
     </div>
   </div>
