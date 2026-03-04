@@ -2,14 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { AgentLog } from '@/lib/types';
 import { useEffect, useRef, useState } from 'react';
-
-const MOCK_LOGS: AgentLog[] = [
-  { id: '1', agent: 'Dex', message: 'Analyzing new lead from digiiworks.co...', created_at: new Date().toISOString() },
-  { id: '2', agent: 'Vantage', message: "Scraping SEO trends for 'AI Automation 2026'...", created_at: new Date().toISOString() },
-  { id: '3', agent: 'Forge', message: 'Deploying system update to KVM 2 node...', created_at: new Date().toISOString() },
-  { id: '4', agent: 'Pixel', message: 'Generating social assets for Q1 campaign...', created_at: new Date().toISOString() },
-  { id: '5', agent: 'Dex', message: 'Scheduling follow-up for qualified lead #0847...', created_at: new Date().toISOString() },
-];
+import { MOCK_AGENT_LOGS } from '@/lib/constants';
 
 const agentColors: Record<string, string> = {
   Dex: 'text-neon-mint',
@@ -40,7 +33,10 @@ const AgencyPulse = () => {
     refetchInterval: 15000,
   });
 
-  const displayLogs = logs && logs.length > 0 ? logs : MOCK_LOGS;
+  const displayLogs: readonly { id: string; agent: string; message: string }[] =
+    logs && logs.length > 0
+      ? logs
+      : MOCK_AGENT_LOGS.map((l) => ({ ...l, created_at: new Date().toISOString() }));
 
   useEffect(() => {
     setVisibleCount(0);
