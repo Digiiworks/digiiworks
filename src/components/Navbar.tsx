@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { NAV_LINKS } from '@/lib/constants';
-import logo from '@/assets/logo.svg';
 
 const Navbar = () => {
   const { pathname } = useLocation();
@@ -11,7 +10,7 @@ const Navbar = () => {
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link to="/">
-          <img src={logo} alt="Digiiworks" style={{ width: 175 }} />
+          <img src="/logo.svg" alt="Digiiworks" style={{ width: 175 }} />
         </Link>
 
         <div className="flex items-center gap-8">

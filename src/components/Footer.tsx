@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import logo from '@/assets/logo.svg';
 import { NAV_LINKS, SITE_NAME } from '@/lib/constants';
 
 const socials = [
@@ -15,7 +14,7 @@ const Footer = () => (
         {/* Brand + Engine */}
         <div className="space-y-5">
           <Link to="/">
-            <img src={logo} alt={SITE_NAME} style={{ width: 140 }} />
+            <img src="/logo.svg" alt={SITE_NAME} style={{ width: 140 }} />
           </Link>
           <p className="text-sm leading-relaxed text-muted-foreground max-w-xs">
             Human Creativity. Autonomous Execution. Three pillars powering your brand 24/7.
