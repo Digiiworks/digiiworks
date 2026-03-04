@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import AgencyPulse from '@/components/AgencyPulse';
 import ConstellationBg from '@/components/ConstellationBg';
@@ -12,7 +13,12 @@ const Index = () => (
 
     <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-24">
       {/* Hero */}
-      <div className="mb-16 text-center md:mb-20">
+      <motion.div
+        className="mb-16 text-center md:mb-20"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
         <p className="font-mono text-xs uppercase tracking-widest mb-4 text-muted-foreground">// autonomous digital agency</p>
         <h1 className="mb-6 font-mono text-4xl font-bold leading-tight md:text-7xl">
           <span className="text-gradient">Build. Automate.</span>
@@ -31,27 +37,34 @@ const Index = () => (
             <Link to="/contact">Get in Touch</Link>
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Pillar Cards */}
       <div className="mb-12 grid gap-4 sm:grid-cols-2 md:mb-16 md:grid-cols-3 md:gap-6">
         {PILLARS.map((pillar, i) => (
-          <Link
+          <motion.div
             key={pillar.title}
-            to={pillar.link}
-            className="glass-card group p-5 transition-all duration-500 hover:scale-[1.02] md:p-6"
-            style={{ boxShadow: `0 0 25px hsl(${pillar.glowHsl} / 0.1)` }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.4, delay: i * 0.15 }}
           >
-            <span className={`font-mono text-xs uppercase tracking-widest ${pillar.accentColor} mb-3 block`}>
-              {pillar.label}
-            </span>
-            <h3 className="mb-3 font-mono text-lg font-semibold text-foreground md:text-xl">
-              {pillar.title}
-            </h3>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {pillar.description}
-            </p>
-          </Link>
+            <Link
+              to={pillar.link}
+              className="glass-card group block p-5 transition-all duration-500 hover:scale-[1.02] md:p-6"
+              style={{ boxShadow: `0 0 25px hsl(${pillar.glowHsl} / 0.1)` }}
+            >
+              <span className={`font-mono text-xs uppercase tracking-widest ${pillar.accentColor} mb-3 block`}>
+                {pillar.label}
+              </span>
+              <h3 className="mb-3 font-mono text-lg font-semibold text-foreground md:text-xl">
+                {pillar.title}
+              </h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {pillar.description}
+              </p>
+            </Link>
+          </motion.div>
         ))}
       </div>
 
