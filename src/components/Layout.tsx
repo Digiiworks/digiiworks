@@ -1,7 +1,7 @@
 import { useLocation, Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from './Navbar';
-
+import Footer from './Footer';
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
@@ -17,7 +17,7 @@ const Layout = () => {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Navbar />
       <AnimatePresence mode="wait">
         <motion.main
@@ -27,10 +27,12 @@ const Layout = () => {
           animate="animate"
           exit="exit"
           transition={pageTransition}
+          className="flex-1"
         >
           <Outlet />
         </motion.main>
       </AnimatePresence>
+      <Footer />
     </div>
   );
 };
