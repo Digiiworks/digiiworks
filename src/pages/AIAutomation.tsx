@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import AgencyPulse from '@/components/AgencyPulse';
 import { AGENTS, CONNECTOR_APPS } from '@/lib/constants';
 
@@ -61,9 +62,13 @@ const AIAutomation = () => (
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 md:gap-6">
-          {AGENTS.map((agent) => (
-            <div
+          {AGENTS.map((agent, i) => (
+            <motion.div
               key={agent.name}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.4, delay: i * 0.1 }}
               className="glass-card group p-5 transition-all duration-500 md:p-6"
               style={{ boxShadow: `0 0 25px hsl(${agent.glowHsl} / 0.15)` }}
             >
@@ -76,7 +81,7 @@ const AIAutomation = () => (
                 <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{agent.role}</span>
               </div>
               <p className="text-sm leading-relaxed text-muted-foreground">{agent.desc}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
