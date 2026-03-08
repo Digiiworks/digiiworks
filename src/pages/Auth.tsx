@@ -64,7 +64,7 @@ const Auth = () => {
           </Link>
           <h1 className="font-mono text-2xl font-bold">
             <span className="text-gradient">
-              {forgotPassword ? 'Reset Password' : isLogin ? 'Sign In' : 'Create Account'}
+              {forgotPassword ? 'Reset Password' : isLogin ? '' : 'Create Account'}
             </span>
           </h1>
         </div>
