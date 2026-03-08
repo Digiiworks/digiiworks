@@ -1,20 +1,28 @@
 
 
-## Custom 404 Page — Neon Dark Theme
+## Sitemap Status and Improvement Plan
 
-Replace the current plain 404 page with a styled version matching the site's neon-dark aesthetic.
+### Current State
+`public/sitemap.xml` exists with 5 static URLs: `/`, `/services`, `/ai`, `/blog`, `/contact`.
 
-### Changes
+### Missing Routes
+- `/get-started`
+- `/privacy`, `/terms`
+- Individual service pages (`/services/custom-web-development`, etc.)
+- Individual blog post pages (`/blog/:slug`)
+- `/contact` is included but `/get-started` is not
 
-**`src/pages/NotFound.tsx`** — Full redesign:
-- Dark background with `grid-overlay` pattern (matching ErrorBoundary style)
-- Glitchy "404" heading using `text-gradient` and `font-mono`
-- Pulsing status indicator (neon-mint dot with `animate-ping`) showing "Route Not Found"
-- Display the attempted path using `useLocation().pathname` in a mono-styled code block
-- Subtitle text in `text-muted-foreground`
-- "Return to Base" button styled with `glow-blue` and primary colors (matching ErrorBoundary's button pattern)
-- `glass-card` container for the content block
-- Wrap in the `Layout` component by moving the `*` route inside the Layout route group in `App.tsx`
+### Proposed Improvements
 
-**`src/App.tsx`** — Move the catch-all route inside the `<Route element={<Layout />}>` group so the 404 page gets the navbar and footer.
+1. **Update static `sitemap.xml`** to include all known static routes (`/get-started`, `/privacy`, `/terms`, and all service detail pages from `service-pages.ts`).
+
+2. **Create a backend function to generate a dynamic sitemap** that pulls published blog post slugs from the database, so new articles are automatically included without manual edits.
+
+3. **Add a `/sitemap.xml` route** or keep the static file updated via the edge function approach -- the edge function would regenerate and return XML on demand, covering all blog posts dynamically.
+
+### Technical Approach
+- **Edge function `generate-sitemap`**: Queries the `posts` table for published slugs, merges with hardcoded static routes, returns XML.
+- **Alternative (simpler)**: Just update the static file now with all known routes and manually add blog posts. Less maintenance but no automation.
+
+The dynamic approach is recommended since blog content changes frequently.
 
