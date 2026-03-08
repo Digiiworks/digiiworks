@@ -109,6 +109,20 @@ export const PILLARS = [
   },
 ] as const;
 
+// ─── Stats ───
+export const STATS = [
+  { label: 'Projects Delivered', value: 50, suffix: '+' },
+  { label: 'Uptime', value: 99.9, suffix: '%' },
+  { label: 'AI Agents', value: 4, suffix: '' },
+  { label: 'Automations Running', value: 120, suffix: '+' },
+] as const;
+
+// ─── Tech Stack ───
+export const TECH_STACK = [
+  'React', 'TypeScript', 'Next.js', 'Node.js', 'n8n', 'Supabase',
+  'Vercel', 'Docker', 'Tailwind CSS', 'Framer Motion', 'PostgreSQL', 'Stripe',
+] as const;
+
 // ─── Mock Agent Logs (fallback) ───
 export const MOCK_AGENT_LOGS = [
   { id: '1', agent: 'Dex', message: 'Analyzing new lead from digiiworks.co...' },
