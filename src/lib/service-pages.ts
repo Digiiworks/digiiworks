@@ -341,7 +341,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Stop Doing What Robots Should',
     ctaDescription: 'Let\'s automate your repetitive workflows and free your team to focus on what matters.',
     ctaButtonLabel: 'Automate Workflows',
-    contactPreset: 'AI Automation',
+    contactPreset: 'n8n Workflow Automation',
   },
   {
     slug: 'content-strategy',
