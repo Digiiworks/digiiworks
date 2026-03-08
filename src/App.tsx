@@ -101,6 +101,11 @@ const App = () => (
                       <InvoicesAdmin />
                     </ProtectedRoute>
                   } />
+                  <Route path="clients" element={
+                    <ProtectedRoute requiredRoles={['admin']}>
+                      <ClientsAdmin />
+                    </ProtectedRoute>
+                  } />
                 </Route>
 
                 <Route path="*" element={<Layout />}>
