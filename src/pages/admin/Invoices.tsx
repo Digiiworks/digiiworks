@@ -235,9 +235,11 @@ export default function Invoices() {
               {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button onClick={() => { resetForm(); setShowCreate(true); }} className="gap-1.5">
-            <Plus className="h-4 w-4" /> New Invoice
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => { resetForm(); setShowCreate(true); }} className="gap-1.5">
+              <Plus className="h-4 w-4" /> New Invoice
+            </Button>
+          )}
         </div>
       </div>
 
