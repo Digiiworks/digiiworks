@@ -96,6 +96,7 @@ const GetStarted = () => {
     if (!canNext()) return;
     setSubmitting(true);
     try {
+      const isPriority = selectedServices.some((s) => s.includes('AI') || s.includes('n8n') || s.includes('Automation'));
       const { error } = await supabase.from('leads').insert({
         name: name.trim(),
         email: email.trim(),
@@ -105,9 +106,25 @@ const GetStarted = () => {
         timeline,
         business_type: businessType,
         website_url: websiteUrl.trim() || null,
-        priority: selectedServices.some((s) => s.includes('AI') || s.includes('n8n') || s.includes('Automation')),
+        priority: isPriority,
       });
       if (error) throw error;
+
+      // Fire notification (non-blocking)
+      supabase.functions.invoke('notify-lead', {
+        body: {
+          name: name.trim(),
+          email: email.trim(),
+          services: selectedServices.join(', '),
+          businessType,
+          budget,
+          timeline,
+          message: message.trim() || undefined,
+          websiteUrl: websiteUrl.trim() || undefined,
+          priority: isPriority,
+        },
+      }).catch((err) => console.error('Notification failed:', err));
+
       setSubmitted(true);
     } catch {
       toast({ title: 'Something went wrong', description: 'Please try again or use the contact form.', variant: 'destructive' });
