@@ -223,7 +223,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Make Your Site Lightning Fast',
     ctaDescription: 'Speed is money. Let\'s optimise your site for peak performance and better conversions.',
     ctaButtonLabel: 'Boost Performance',
-    contactPreset: 'Custom Dev',
+    contactPreset: 'Performance Optimization',
   },
   {
     slug: 'google-social-media-ads',
