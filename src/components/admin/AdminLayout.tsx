@@ -7,6 +7,7 @@ const navItems = [
   { label: 'Leads', to: '/admin/leads', icon: Mail },
   { label: 'Blog Posts', to: '/admin/posts', icon: FileText },
   { label: 'Page Content', to: '/admin/content', icon: Settings },
+  { label: 'Invoices', to: '/admin/invoices', icon: DollarSign },
   { label: 'Users', to: '/admin/users', icon: Users },
 ];
 
