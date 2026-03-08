@@ -17,6 +17,7 @@ import { SERVICE_OPTIONS } from '@/lib/constants';
 
 const Contact = () => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -24,6 +25,13 @@ const Contact = () => {
     service_interest: '',
     message: '',
   });
+
+  useEffect(() => {
+    const preset = searchParams.get('service');
+    if (preset && SERVICE_OPTIONS.includes(preset as typeof SERVICE_OPTIONS[number])) {
+      setForm((f) => ({ ...f, service_interest: preset }));
+    }
+  }, [searchParams]);
 
   const isAI = form.service_interest === 'AI Automation';
 
