@@ -2,6 +2,8 @@ import { useLocation, Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import ScrollToTop from './ScrollToTop';
+
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
@@ -33,6 +35,7 @@ const Layout = () => {
         </motion.main>
       </AnimatePresence>
       <Footer />
+      <ScrollToTop />
     </div>
   );
 };
