@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://digiiworks.co/sitemap.xml
+Sitemap: https://jiwyrsnwmlxoelrpowbq.supabase.co/functions/v1/generate-sitemap
