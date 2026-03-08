@@ -8,6 +8,7 @@ import HeroOrbs from '@/components/HeroOrbs';
 import StatsBar from '@/components/StatsBar';
 import TechMarquee from '@/components/TechMarquee';
 import AgentPreview from '@/components/AgentPreview';
+import LatestArticles from '@/components/LatestArticles';
 import { PILLARS } from '@/lib/constants';
 
 const PILLAR_ICONS: Record<string, React.ReactNode> = {
