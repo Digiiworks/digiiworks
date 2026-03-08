@@ -180,7 +180,7 @@ const BlogPost = () => {
                   [&_code]:font-mono [&_code]:text-xs [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded
                   [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2
                   [&_img]:rounded-lg [&_img]:max-w-full [&_img]:my-8"
-                dangerouslySetInnerHTML={{ __html: post.content ?? '' }}
+                dangerouslySetInnerHTML={{ __html: injectInlineServiceLink(post.content ?? '', (post as any).tags) }}
               />
             </div>
             {/* Service CTA */}
