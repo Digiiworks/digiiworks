@@ -59,7 +59,7 @@ const AdminLayout = () => {
           </div>
           <div className="flex gap-2 px-3">
             <Link
-              to="/"
+              to={homeLink}
               className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
             >
               <ChevronLeft className="h-3 w-3" /> Site
