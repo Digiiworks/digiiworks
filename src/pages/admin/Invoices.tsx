@@ -269,14 +269,18 @@ export default function Invoices() {
                     <span className="block text-xs text-muted-foreground">{inv.client_email}</span>
                   </TableCell>
                   <TableCell>
-                    <Select value={inv.status} onValueChange={(v) => updateStatus(inv.id, v)}>
-                      <SelectTrigger className="h-7 w-28 border-0 bg-transparent p-0">
-                        <Badge className={`${STATUS_COLORS[inv.status]} border-0 capitalize`}>{inv.status}</Badge>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    {isAdmin ? (
+                      <Select value={inv.status} onValueChange={(v) => updateStatus(inv.id, v)}>
+                        <SelectTrigger className="h-7 w-28 border-0 bg-transparent p-0">
+                          <Badge className={`${STATUS_COLORS[inv.status]} border-0 capitalize`}>{inv.status}</Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge className={`${STATUS_COLORS[inv.status]} border-0 capitalize`}>{inv.status}</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">${inv.total.toFixed(2)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
