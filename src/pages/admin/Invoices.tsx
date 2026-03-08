@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import {
@@ -65,6 +66,7 @@ const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 
 export default function Invoices() {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -233,9 +235,11 @@ export default function Invoices() {
               {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button onClick={() => { resetForm(); setShowCreate(true); }} className="gap-1.5">
-            <Plus className="h-4 w-4" /> New Invoice
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => { resetForm(); setShowCreate(true); }} className="gap-1.5">
+              <Plus className="h-4 w-4" /> New Invoice
+            </Button>
+          )}
         </div>
       </div>
 
@@ -265,14 +269,18 @@ export default function Invoices() {
                     <span className="block text-xs text-muted-foreground">{inv.client_email}</span>
                   </TableCell>
                   <TableCell>
-                    <Select value={inv.status} onValueChange={(v) => updateStatus(inv.id, v)}>
-                      <SelectTrigger className="h-7 w-28 border-0 bg-transparent p-0">
-                        <Badge className={`${STATUS_COLORS[inv.status]} border-0 capitalize`}>{inv.status}</Badge>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    {isAdmin ? (
+                      <Select value={inv.status} onValueChange={(v) => updateStatus(inv.id, v)}>
+                        <SelectTrigger className="h-7 w-28 border-0 bg-transparent p-0">
+                          <Badge className={`${STATUS_COLORS[inv.status]} border-0 capitalize`}>{inv.status}</Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge className={`${STATUS_COLORS[inv.status]} border-0 capitalize`}>{inv.status}</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">${inv.total.toFixed(2)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -283,9 +291,11 @@ export default function Invoices() {
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewDetail(inv)}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(inv.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {isAdmin && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(inv.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
