@@ -65,6 +65,11 @@ const App = () => (
                 {/* Auth */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute requiredRoles={['client']}>
+                    <ClientDashboard />
+                  </ProtectedRoute>
+                } />
 
                 {/* Admin CRM */}
                 <Route path="/admin" element={
