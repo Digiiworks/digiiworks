@@ -76,7 +76,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Make Your Site Work Everywhere',
     ctaDescription: 'Let\'s ensure your customers get a flawless experience on any device they use.',
     ctaButtonLabel: 'Get Responsive Design',
-    contactPreset: 'Custom Dev',
+    contactPreset: 'Responsive Design',
   },
   {
     slug: 'ux-ui-design',
