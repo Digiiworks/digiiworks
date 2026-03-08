@@ -163,6 +163,15 @@
     0% { background-position: 0 0; }
     100% { background-position: 0 60px; }
   }
+
+  @keyframes marquee-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+}
+
+.marquee-track {
+  animation: marquee-scroll 30s linear infinite;
 }
 
 /* Mobile performance: reduce heavy effects */
