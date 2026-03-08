@@ -66,6 +66,7 @@ const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 
 export default function Invoices() {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
