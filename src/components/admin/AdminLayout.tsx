@@ -18,7 +18,7 @@ const AdminLayout = () => {
 
   // Clients only see Dashboard and Leads
   const visibleNav = isClient
-    ? navItems.filter((n) => n.to === '/admin' || n.to === '/admin/leads')
+    ? navItems.filter((n) => n.to === '/admin' || n.to === '/admin/leads' || n.to === '/admin/invoices')
     : navItems;
 
   return (
