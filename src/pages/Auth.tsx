@@ -79,7 +79,7 @@ const Auth = () => {
           </h1>
         </div>
 
-        <div className="glass-card p-6 md:p-8">
+        <div className="glass-card glass-card-glow p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {!isLogin && !forgotPassword && (
               <div className="space-y-2">
