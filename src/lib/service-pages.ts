@@ -47,7 +47,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Ready to Build Something Exceptional?',
     ctaDescription: 'Tell us about your project and we\'ll craft a custom solution engineered for your success.',
     ctaButtonLabel: 'Start Your Project',
-    contactPreset: 'Custom Dev',
+    contactPreset: 'Custom Web Development',
   },
   {
     slug: 'responsive-design',
