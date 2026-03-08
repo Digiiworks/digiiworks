@@ -99,7 +99,7 @@ const Posts = () => {
   };
 
   const openNew = () => {
-    setEditingPost({ title: '', slug: '', content: '', excerpt: '', status: 'draft', featured_image: '' });
+    setEditingPost({ title: '', slug: '', content: '', excerpt: '', status: 'draft', featured_image: '', tags: [] });
     setShowEditor(true);
   };
 
