@@ -15,6 +15,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Services = lazy(() => import("./pages/Services"));
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const Contact = lazy(() => import("./pages/Contact"));
+const GetStarted = lazy(() => import("./pages/GetStarted"));
 const Blog = lazy(() => import("./pages/Blog"));
 const AIAutomation = lazy(() => import("./pages/AIAutomation"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
