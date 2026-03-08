@@ -29,6 +29,7 @@ const Posts = lazy(() => import("./pages/admin/Posts"));
 const PageContent = lazy(() => import("./pages/admin/PageContent"));
 const UsersAdmin = lazy(() => import("./pages/admin/Users"));
 const InvoicesAdmin = lazy(() => import("./pages/admin/Invoices"));
+const ClientsAdmin = lazy(() => import("./pages/admin/Clients"));
 const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
 
 const queryClient = new QueryClient();
