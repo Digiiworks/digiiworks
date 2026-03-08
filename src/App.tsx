@@ -7,6 +7,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PageMeta from "./components/PageMeta";
 import Layout from "./components/Layout";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminLayout from "./components/admin/AdminLayout";
 
 const Index = lazy(() => import("./pages/Index"));
 const Services = lazy(() => import("./pages/Services"));
@@ -16,6 +19,13 @@ const Blog = lazy(() => import("./pages/Blog"));
 const AIAutomation = lazy(() => import("./pages/AIAutomation"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Auth = lazy(() => import("./pages/Auth"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const Leads = lazy(() => import("./pages/admin/Leads"));
+const Posts = lazy(() => import("./pages/admin/Posts"));
+const PageContent = lazy(() => import("./pages/admin/PageContent"));
+const UsersAdmin = lazy(() => import("./pages/admin/Users"));
 
 const queryClient = new QueryClient();
 
@@ -32,21 +42,56 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <PageMeta />
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route element={<Layout />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/services/:slug" element={<ServiceDetail />} />
-                <Route path="/ai" element={<AIAutomation />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/blog/:slug" element={<BlogPost />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
-          </Suspense>
+          <AuthProvider>
+            <PageMeta />
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                {/* Public site */}
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/services/:slug" element={<ServiceDetail />} />
+                  <Route path="/ai" element={<AIAutomation />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/:slug" element={<BlogPost />} />
+                </Route>
+
+                {/* Auth */}
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+
+                {/* Admin CRM */}
+                <Route path="/admin" element={
+                  <ProtectedRoute requiredRoles={['admin', 'editor', 'client']}>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<Dashboard />} />
+                  <Route path="leads" element={<Leads />} />
+                  <Route path="posts" element={
+                    <ProtectedRoute requiredRoles={['admin', 'editor']}>
+                      <Posts />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="content" element={
+                    <ProtectedRoute requiredRoles={['admin', 'editor']}>
+                      <PageContent />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="users" element={
+                    <ProtectedRoute requiredRoles={['admin']}>
+                      <UsersAdmin />
+                    </ProtectedRoute>
+                  } />
+                </Route>
+
+                <Route path="*" element={<Layout />}>
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </Suspense>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
