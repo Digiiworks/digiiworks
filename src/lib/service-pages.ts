@@ -312,7 +312,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Put Social Media on Autopilot',
     ctaDescription: 'Let AI agents handle the daily grind while you focus on growing your business.',
     ctaButtonLabel: 'Automate Social Media',
-    contactPreset: 'AI Automation',
+    contactPreset: 'AI-Powered Social Media',
   },
   {
     slug: 'n8n-workflow-automation',
