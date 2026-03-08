@@ -105,7 +105,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Design That Converts',
     ctaDescription: 'Let\'s create an interface your users will love and your competitors will envy.',
     ctaButtonLabel: 'Start UX/UI Project',
-    contactPreset: 'Custom Dev',
+    contactPreset: 'UX/UI Design',
   },
   {
     slug: 'cms-integration',
