@@ -1,13 +1,20 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { PAGE_META, SITE_URL } from '@/lib/constants';
+import { getServiceBySlug } from '@/lib/service-pages';
 
 const PageMeta = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    const meta = PAGE_META[pathname] || PAGE_META['/'];
-    
+    // Check for dynamic service pages
+    const serviceMatch = pathname.match(/^\/services\/(.+)$/);
+    const servicePage = serviceMatch ? getServiceBySlug(serviceMatch[1]) : undefined;
+
+    const meta = servicePage
+      ? { title: servicePage.metaTitle, description: servicePage.metaDescription }
+      : PAGE_META[pathname] || PAGE_META['/'];
+
     document.title = meta.title;
 
     const setMeta = (attr: string, key: string, value: string) => {
