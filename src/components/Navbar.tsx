@@ -75,6 +75,17 @@ const Navbar = () => {
                 Login
               </Link>
             )}
+
+            {user && (
+              <button
+                onClick={handleLogout}
+                className="ml-2 flex items-center justify-center rounded-md border border-border/50 p-1.5 text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           {/* Mobile burger */}
