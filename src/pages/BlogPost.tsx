@@ -26,6 +26,41 @@ const getServiceForPost = (tags?: string[] | null) => {
   return SERVICE_PAGES.find(s => s.slug === slug) ?? SERVICE_PAGES[0];
 };
 
+/* Get a second, different service for the inline CTA */
+const getSecondaryService = (tags?: string[] | null) => {
+  const primarySlug = TAG_SERVICE_MAP[tags?.[0] ?? ''];
+  // Try second tag first, then pick a different service from the primary
+  if (tags && tags[1] && TAG_SERVICE_MAP[tags[1]]) {
+    const s = SERVICE_PAGES.find(s => s.slug === TAG_SERVICE_MAP[tags[1]]);
+    if (s && s.slug !== primarySlug) return s;
+  }
+  // Fallback: pick a service from a different pillar
+  const primary = SERVICE_PAGES.find(s => s.slug === primarySlug);
+  const alt = SERVICE_PAGES.find(s => s.pillarId !== primary?.pillarId);
+  return alt ?? SERVICE_PAGES[SERVICE_PAGES.length - 1];
+};
+
+/* Inject an inline service banner roughly in the middle of the HTML content */
+const injectInlineServiceLink = (html: string, tags?: string[] | null): string => {
+  if (!html) return html;
+  const service = getSecondaryService(tags);
+  const banner = `
+    <div style="margin:2.5rem 0;padding:1.25rem 1.5rem;border-left:3px solid hsl(var(--primary));border-radius:0.5rem;background:hsl(var(--muted)/0.5);">
+      <p style="margin:0 0 0.25rem;font-family:monospace;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:hsl(var(--muted-foreground));">Explore our service</p>
+      <a href="/services/${service.slug}" style="font-family:monospace;font-size:0.95rem;font-weight:700;color:hsl(var(--primary));text-decoration:none;">
+        ${service.name} →
+      </a>
+      <p style="margin:0.5rem 0 0;font-size:0.85rem;color:hsl(var(--muted-foreground));line-height:1.5;">${service.subtitle}</p>
+    </div>
+  `;
+  // Insert after roughly the middle paragraph
+  const paragraphs = html.split('</p>');
+  if (paragraphs.length < 3) return html + banner;
+  const midIdx = Math.floor(paragraphs.length / 2);
+  paragraphs.splice(midIdx, 0, banner);
+  return paragraphs.join('</p>');
+};
+
 const ArticleJsonLd = ({ post }: { post: Post }) => (
   <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
     "@context": "https://schema.org",
