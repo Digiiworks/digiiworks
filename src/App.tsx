@@ -28,6 +28,7 @@ const Leads = lazy(() => import("./pages/admin/Leads"));
 const Posts = lazy(() => import("./pages/admin/Posts"));
 const PageContent = lazy(() => import("./pages/admin/PageContent"));
 const UsersAdmin = lazy(() => import("./pages/admin/Users"));
+const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,11 @@ const App = () => (
                 {/* Auth */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute requiredRoles={['client']}>
+                    <ClientDashboard />
+                  </ProtectedRoute>
+                } />
 
                 {/* Admin CRM */}
                 <Route path="/admin" element={
