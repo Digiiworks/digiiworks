@@ -126,7 +126,7 @@ const BlogPost = () => {
     });
   }, [post]);
 
-
+  return (
     <div className="relative min-h-screen">
       {post && <ArticleJsonLd post={post} />}
       <div className="absolute inset-0 grid-overlay opacity-10" />
