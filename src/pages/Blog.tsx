@@ -98,7 +98,7 @@ const Blog = () => {
   }, [hasMore]);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(handleObserver, { threshold: 0.1 });
+    const observer = new IntersectionObserver(handleObserver, { threshold: 1.0, rootMargin: '0px' });
     if (loadMoreRef.current) observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
   }, [handleObserver]);
