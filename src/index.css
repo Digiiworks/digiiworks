@@ -153,6 +153,11 @@
 }
 
 @layer utilities {
+  @keyframes rotate-gradient {
+    0% { --border-angle: 0deg; }
+    100% { --border-angle: 360deg; }
+  }
+
   @keyframes pulse-glow {
     0%, 100% {
       opacity: 1;
