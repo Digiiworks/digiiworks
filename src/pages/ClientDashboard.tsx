@@ -164,8 +164,8 @@ const ClientDashboard = () => {
 
           <Card className="border-border bg-card">
             <CardContent className="flex items-center gap-4 p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-xs font-mono uppercase text-muted-foreground tracking-wider">Total Paid</p>
