@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Plus, Pencil, Trash2, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, X } from 'lucide-react';
 import RichEditor from '@/components/admin/RichEditor';
 
 const Posts = () => {
@@ -39,6 +39,7 @@ const Posts = () => {
           excerpt: post.excerpt,
           status: post.status,
           featured_image: post.featured_image,
+          tags: post.tags || [],
         }).eq('id', post.id);
         if (error) throw error;
       } else {
@@ -49,6 +50,7 @@ const Posts = () => {
           excerpt: post.excerpt,
           status: post.status,
           featured_image: post.featured_image,
+          tags: post.tags || [],
           author_id: user?.id,
         });
         if (error) throw error;
@@ -99,7 +101,7 @@ const Posts = () => {
   };
 
   const openNew = () => {
-    setEditingPost({ title: '', slug: '', content: '', excerpt: '', status: 'draft', featured_image: '' });
+    setEditingPost({ title: '', slug: '', content: '', excerpt: '', status: 'draft', featured_image: '', tags: [] });
     setShowEditor(true);
   };
 
@@ -138,9 +140,18 @@ const Posts = () => {
                     {post.status}
                   </span>
                 </div>
-                <p className="font-mono text-xs text-muted-foreground">
-                  /{post.slug} · {format(new Date(post.created_at), 'MMM d, yyyy')}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono text-xs text-muted-foreground">
+                    /{post.slug} · {format(new Date(post.created_at), 'MMM d, yyyy')}
+                  </p>
+                  {(post as any).tags?.length > 0 && (
+                    <div className="flex gap-1">
+                      {(post as any).tags.slice(0, 3).map((tag: string) => (
+                        <span key={tag} className="rounded-full bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary">{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2 ml-4">
@@ -235,6 +246,34 @@ const Posts = () => {
                 <RichEditor
                   content={editingPost.content ?? ''}
                   onChange={(html) => setEditingPost({ ...editingPost, content: html })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Tags</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {(editingPost.tags || []).map((tag: string, i: number) => (
+                    <span key={i} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 font-mono text-xs text-primary">
+                      {tag}
+                      <button type="button" onClick={() => setEditingPost((prev: any) => ({ ...prev, tags: prev.tags.filter((_: string, idx: number) => idx !== i) }))} className="hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <Input
+                  placeholder="Type a tag and press Enter"
+                  className="border-border bg-background/50 font-mono text-xs"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const val = (e.target as HTMLInputElement).value.trim().toLowerCase();
+                      if (val && !(editingPost.tags || []).includes(val)) {
+                        setEditingPost((prev: any) => ({ ...prev, tags: [...(prev.tags || []), val] }));
+                        (e.target as HTMLInputElement).value = '';
+                      }
+                    }
+                  }}
                 />
               </div>
 
