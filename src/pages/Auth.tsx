@@ -1,0 +1,145 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+
+const Auth = () => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [forgotPassword, setForgotPassword] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (forgotPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast({ title: 'Check your email', description: 'Password reset link sent.' });
+        setForgotPassword(false);
+      } else if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        navigate('/admin');
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { display_name: displayName },
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (error) throw error;
+        toast({ title: 'Check your email', description: 'Confirm your email to continue.' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen">
+      <div className="absolute inset-0 grid-overlay opacity-20" />
+      <div className="relative mx-auto max-w-md px-6 py-16 md:py-24">
+        <div className="mb-10 text-center">
+          <Link to="/">
+            <img src="/logo.svg" alt="Digiiworks" className="mx-auto mb-6" style={{ width: 160 }} />
+          </Link>
+          <h1 className="font-mono text-2xl font-bold">
+            <span className="text-gradient">
+              {forgotPassword ? 'Reset Password' : isLogin ? 'Sign In' : 'Create Account'}
+            </span>
+          </h1>
+        </div>
+
+        <div className="glass-card p-6 md:p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {!isLogin && !forgotPassword && (
+              <div className="space-y-2">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Name</Label>
+                <Input
+                  required
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="border-border bg-background/50 focus:border-primary/50"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Email</Label>
+              <Input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="border-border bg-background/50 focus:border-primary/50"
+              />
+            </div>
+
+            {!forgotPassword && (
+              <div className="space-y-2">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Password</Label>
+                <Input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="border-border bg-background/50 focus:border-primary/50"
+                />
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={loading}
+            >
+              {loading
+                ? 'Processing...'
+                : forgotPassword
+                  ? 'Send Reset Link'
+                  : isLogin
+                    ? 'Sign In'
+                    : 'Create Account'}
+            </Button>
+          </form>
+
+          <div className="mt-5 space-y-2 text-center">
+            {!forgotPassword && (
+              <button
+                onClick={() => setForgotPassword(true)}
+                className="block w-full font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                Forgot password?
+              </button>
+            )}
+            <button
+              onClick={() => { setIsLogin(!isLogin); setForgotPassword(false); }}
+              className="block w-full font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Auth;
