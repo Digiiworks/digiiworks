@@ -241,6 +241,34 @@ const Posts = () => {
               </div>
 
               <div className="space-y-2">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Tags</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {(editingPost.tags || []).map((tag: string, i: number) => (
+                    <span key={i} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 font-mono text-xs text-primary">
+                      {tag}
+                      <button type="button" onClick={() => setEditingPost((prev: any) => ({ ...prev, tags: prev.tags.filter((_: string, idx: number) => idx !== i) }))} className="hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <Input
+                  placeholder="Type a tag and press Enter"
+                  className="border-border bg-background/50 font-mono text-xs"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const val = (e.target as HTMLInputElement).value.trim().toLowerCase();
+                      if (val && !(editingPost.tags || []).includes(val)) {
+                        setEditingPost((prev: any) => ({ ...prev, tags: [...(prev.tags || []), val] }));
+                        (e.target as HTMLInputElement).value = '';
+                      }
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Status</Label>
                 <Select value={editingPost.status} onValueChange={(val) => setEditingPost({ ...editingPost, status: val })}>
                   <SelectTrigger className="border-border bg-background/50 font-mono text-xs">
