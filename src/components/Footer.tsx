@@ -14,7 +14,7 @@ const Footer = () => (
         {/* Brand + Engine */}
         <div className="space-y-5">
           <Link to="/">
-            <img src="/logo.svg" alt={SITE_NAME} style={{ width: 140 }} />
+            <img src="/logo.svg" alt={`${SITE_NAME} — Autonomous Digital Agency`} style={{ width: 140 }} />
           </Link>
           <p className="text-sm leading-relaxed text-muted-foreground max-w-xs">
             Human Creativity. Autonomous Execution. Three pillars powering your brand 24/7.
@@ -79,6 +79,14 @@ const Footer = () => (
         <p className="font-mono text-xs text-muted-foreground">
           © {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
         </p>
+        <div className="flex items-center gap-4">
+          <Link to="/privacy" className="font-mono text-xs text-muted-foreground/50 transition-colors hover:text-muted-foreground">
+            Privacy Policy
+          </Link>
+          <Link to="/terms" className="font-mono text-xs text-muted-foreground/50 transition-colors hover:text-muted-foreground">
+            Terms of Service
+          </Link>
+        </div>
         <p className="font-mono text-xs text-muted-foreground/50">
           Powered by Vantage, Pixel, Dex & Forge
         </p>

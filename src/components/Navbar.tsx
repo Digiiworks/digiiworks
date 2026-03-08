@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_LINKS } from '@/lib/constants';
 
 const Navbar = () => {
@@ -10,7 +11,7 @@ const Navbar = () => {
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link to="/">
-          <img src="/logo.svg" alt="Digiiworks" style={{ width: 175 }} />
+          <img src="/logo.svg" alt="Digiiworks — Autonomous Digital Agency" style={{ width: 175 }} />
         </Link>
 
         <div className="flex items-center gap-8">
@@ -31,6 +32,7 @@ const Navbar = () => {
               <Link
                 key={link.to}
                 to={link.to}
+                aria-current={pathname === link.to ? 'page' : undefined}
                 className={`font-mono text-sm font-medium transition-all duration-300 hover:text-primary ${
                   pathname === link.to ? 'text-primary' : 'text-muted-foreground'
                 }`}
@@ -45,6 +47,7 @@ const Navbar = () => {
             className="flex flex-col gap-1.5 md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
           >
             <span className={`block h-0.5 w-5 bg-foreground transition-transform duration-300 ${mobileOpen ? 'translate-y-2 rotate-45' : ''}`} />
             <span className={`block h-0.5 w-5 bg-foreground transition-opacity duration-300 ${mobileOpen ? 'opacity-0' : ''}`} />
@@ -54,26 +57,35 @@ const Navbar = () => {
       </div>
 
       {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden">
-          <div className="flex flex-col gap-1 px-6 py-4">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setMobileOpen(false)}
-                className={`rounded-md px-3 py-2.5 font-mono text-sm font-medium transition-colors ${
-                  pathname === link.to
-                    ? 'bg-muted text-primary'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+            className="overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden"
+          >
+            <div className="flex flex-col gap-1 px-6 py-4">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={pathname === link.to ? 'page' : undefined}
+                  className={`rounded-md px-3 py-2.5 font-mono text-sm font-medium transition-colors ${
+                    pathname === link.to
+                      ? 'bg-muted text-primary'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };

@@ -1,12 +1,31 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AgencyPulse from '@/components/AgencyPulse';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { AGENTS, CONNECTOR_APPS } from '@/lib/constants';
+
+const AIJsonLd = () => (
+  <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "AI Automation — Digiiworks",
+    "url": "https://digiiworks.co/ai",
+    "description": "Human Creativity. Autonomous Execution. Our AI agents run 24/7 — handling SEO, content, lead qualification, and infrastructure.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Digiiworks",
+      "url": "https://digiiworks.co"
+    }
+  }) }} />
+);
 
 const AIAutomation = () => (
   <div className="relative min-h-screen">
+    <AIJsonLd />
     <div className="absolute inset-0 grid-overlay opacity-20" />
     <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-20">
+
+      <Breadcrumbs items={[{ label: 'AI Automation' }]} />
 
       {/* Hero */}
       <div className="mb-16 text-center md:mb-20">

@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { SERVICE_OPTIONS } from '@/lib/constants';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 const Contact = () => {
   const { toast } = useToast();
@@ -64,6 +65,8 @@ const Contact = () => {
     <div className="relative min-h-screen">
       <div className="absolute inset-0 grid-overlay opacity-20" />
       <div className="relative mx-auto max-w-xl px-6 py-16 md:py-20">
+        <Breadcrumbs items={[{ label: 'Contact' }]} />
+
         <div className="mb-10 text-center md:mb-12">
           <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// initiate_contact</p>
           <h1 className="font-mono text-3xl font-bold md:text-4xl">
