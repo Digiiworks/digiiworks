@@ -370,7 +370,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Build a Content Engine That Never Stops',
     ctaDescription: 'Let AI handle the heavy lifting while you maintain creative control.',
     ctaButtonLabel: 'Start Content Strategy',
-    contactPreset: 'AI Automation',
+    contactPreset: 'Content Strategy',
   },
 ];
 
