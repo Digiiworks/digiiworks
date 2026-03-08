@@ -145,6 +145,14 @@ const Navbar = () => {
                   <LogIn className="h-3.5 w-3.5" /> Login
                 </Link>
               )}
+              {user && (
+                <button
+                  onClick={() => { setMobileOpen(false); handleLogout(); }}
+                  className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <LogOut className="h-3.5 w-3.5" /> Sign Out
+                </button>
+              )}
             </div>
           </motion.div>
         )}
