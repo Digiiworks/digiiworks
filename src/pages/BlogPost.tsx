@@ -148,6 +148,30 @@ const BlogPost = () => {
                 dangerouslySetInnerHTML={{ __html: post.content ?? '' }}
               />
             </div>
+            {/* Service CTA */}
+            {(() => {
+              const service = getServiceForPost((post as any).tags);
+              return (
+                <Link
+                  to={`/services/${service.slug}`}
+                  className="mt-10 block glass-card p-6 md:p-8 group hover:glow-blue transition-all duration-500"
+                >
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+                    // related_service
+                  </p>
+                  <h3 className="font-mono text-lg font-bold text-foreground group-hover:text-primary transition-colors mb-2">
+                    {service.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                    {service.subtitle}
+                  </p>
+                  <span className="inline-flex items-center gap-2 font-mono text-xs text-primary">
+                    Learn more about this service
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </Link>
+              );
+            })()}
           </article>
         )}
       </div>
