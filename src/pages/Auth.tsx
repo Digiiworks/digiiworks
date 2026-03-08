@@ -157,7 +157,7 @@ const Auth = () => {
               onClick={() => { setIsLogin(!isLogin); setForgotPassword(false); }}
               className="block w-full font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
             >
-              {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+              {isLogin ? "Don't have an account? Sign up as a client" : 'Already have an account? Sign in'}
             </button>
           </div>
         </div>
