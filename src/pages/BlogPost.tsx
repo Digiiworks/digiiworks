@@ -3,9 +3,28 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Post } from '@/lib/types';
 import { format } from 'date-fns';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SERVICE_PAGES } from '@/lib/service-pages';
+
+/* Map blog tags → service slugs for contextual CTAs */
+const TAG_SERVICE_MAP: Record<string, string> = {
+  'Web Development': 'custom-web-development',
+  'AI Automation': 'n8n-workflow-automation',
+  'SEO': 'data-driven-seo',
+  'UX Design': 'ux-ui-design',
+  'Digital Marketing': 'google-social-media-ads',
+  'Technology': 'cms-integration',
+  'Performance': 'performance-optimization',
+  'Business': 'market-competitor-research',
+};
+
+const getServiceForPost = (tags?: string[] | null) => {
+  if (!tags?.length) return SERVICE_PAGES[0];
+  const slug = TAG_SERVICE_MAP[tags[0]];
+  return SERVICE_PAGES.find(s => s.slug === slug) ?? SERVICE_PAGES[0];
+};
 
 const ArticleJsonLd = ({ post }: { post: Post }) => (
   <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -129,6 +148,30 @@ const BlogPost = () => {
                 dangerouslySetInnerHTML={{ __html: post.content ?? '' }}
               />
             </div>
+            {/* Service CTA */}
+            {(() => {
+              const service = getServiceForPost((post as any).tags);
+              return (
+                <Link
+                  to={`/services/${service.slug}`}
+                  className="mt-10 block glass-card p-6 md:p-8 group hover:glow-blue transition-all duration-500"
+                >
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+                    // related_service
+                  </p>
+                  <h3 className="font-mono text-lg font-bold text-foreground group-hover:text-primary transition-colors mb-2">
+                    {service.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                    {service.subtitle}
+                  </p>
+                  <span className="inline-flex items-center gap-2 font-mono text-xs text-primary">
+                    Learn more about this service
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </Link>
+              );
+            })()}
           </article>
         )}
       </div>
