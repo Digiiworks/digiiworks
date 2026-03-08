@@ -117,15 +117,73 @@ const GetStarted = () => {
   };
 
   if (submitted) {
+    const nextSteps = [
+      { icon: <Mail className="h-5 w-5 text-neon-blue" />, title: 'Check your inbox', desc: `We'll send a confirmation to ${email} shortly.` },
+      { icon: <Clock className="h-5 w-5 text-neon-mint" />, title: 'Response within 24 hours', desc: 'Our team reviews every submission personally — no bots.' },
+      { icon: <MessageSquare className="h-5 w-5 text-neon-purple" />, title: 'Discovery call', desc: 'We\'ll schedule a quick call to discuss scope, timeline, and fit.' },
+      { icon: <Sparkles className="h-5 w-5 text-neon-blue" />, title: 'Custom proposal', desc: 'You\'ll receive a tailored proposal with pricing and deliverables.' },
+    ];
+
     return (
       <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
         <ConstellationBg />
-        <div className="relative mx-auto flex max-w-xl flex-col items-center justify-center px-6 py-24 text-center">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
-            <CheckCircle2 className="mx-auto mb-6 h-16 w-16 text-neon-mint" />
+        <div className="relative mx-auto max-w-2xl px-6 py-16 md:py-24">
+          {/* Success header */}
+          <motion.div className="mb-10 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}>
+              <CheckCircle2 className="mx-auto mb-5 h-16 w-16 text-neon-mint" />
+            </motion.div>
+            <h1 className="mb-3 font-mono text-3xl font-bold text-foreground md:text-4xl">You're on the list.</h1>
+            <p className="text-muted-foreground">Thanks, <span className="text-foreground font-medium">{name}</span>. We've received your answers and we're already on it.</p>
           </motion.div>
-          <h1 className="mb-4 font-mono text-3xl font-bold text-foreground">You're on the list.</h1>
-          <p className="text-muted-foreground">We'll review your answers and get back to you within 24 hours. Keep an eye on your inbox.</p>
+
+          {/* Estimated response */}
+          <motion.div
+            className="glass-card mb-10 rounded-lg border border-neon-mint/20 p-5 text-center"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-1">Estimated response time</p>
+            <p className="font-mono text-2xl font-bold text-neon-mint">Under 24 hours</p>
+          </motion.div>
+
+          {/* Next steps */}
+          <div className="mb-10">
+            <p className="mb-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">// what_happens_next</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {nextSteps.map((s, i) => (
+                <motion.div
+                  key={s.title}
+                  className="glass-card rounded-lg border border-border p-4"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + i * 0.1 }}
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    {s.icon}
+                    <span className="font-mono text-sm font-semibold text-foreground">{s.title}</span>
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground">{s.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTAs */}
+          <motion.div
+            className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+          >
+            <Button asChild className="w-full sm:w-auto font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90 px-8">
+              <Link to="/services">Explore Our Services</Link>
+            </Button>
+            <Button variant="outline" asChild className="w-full sm:w-auto font-mono border-border hover:border-primary/50 hover:text-primary px-8">
+              <Link to="/blog">Read the Blog</Link>
+            </Button>
+          </motion.div>
         </div>
       </div>
     );
