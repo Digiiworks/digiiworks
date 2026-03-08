@@ -32,9 +32,19 @@ const Auth = () => {
         toast({ title: 'Check your email', description: 'Password reset link sent.' });
         setForgotPassword(false);
       } else if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error, data } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate('/admin');
+        // Check roles to redirect appropriately
+        const { data: rolesData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id);
+        const roles = rolesData?.map((r: any) => r.role) ?? [];
+        if (roles.includes('admin') || roles.includes('editor')) {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         const { error } = await supabase.auth.signUp({
           email,
