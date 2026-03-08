@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload } from 'lucide-react';
+import RichEditor from '@/components/admin/RichEditor';
 
 const Posts = () => {
   const { toast } = useToast();
@@ -37,6 +38,7 @@ const Posts = () => {
           content: post.content,
           excerpt: post.excerpt,
           status: post.status,
+          featured_image: post.featured_image,
         }).eq('id', post.id);
         if (error) throw error;
       } else {
@@ -46,6 +48,7 @@ const Posts = () => {
           content: post.content,
           excerpt: post.excerpt,
           status: post.status,
+          featured_image: post.featured_image,
           author_id: user?.id,
         });
         if (error) throw error;
@@ -53,6 +56,7 @@ const Posts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-posts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
       setShowEditor(false);
       setEditingPost(null);
       toast({ title: 'Post saved' });
@@ -73,8 +77,29 @@ const Posts = () => {
     },
   });
 
+  const uploadFeaturedImage = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const ext = file.name.split('.').pop();
+      const path = `featured/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('blog-images').upload(path, file);
+      if (error) {
+        toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+        return;
+      }
+      const { data } = supabase.storage.from('blog-images').getPublicUrl(path);
+      setEditingPost((prev: any) => ({ ...prev, featured_image: data.publicUrl }));
+      toast({ title: 'Image uploaded' });
+    };
+    input.click();
+  };
+
   const openNew = () => {
-    setEditingPost({ title: '', slug: '', content: '', excerpt: '', status: 'draft' });
+    setEditingPost({ title: '', slug: '', content: '', excerpt: '', status: 'draft', featured_image: '' });
     setShowEditor(true);
   };
 
@@ -100,18 +125,23 @@ const Posts = () => {
       <div className="grid gap-4">
         {posts?.map((post: any) => (
           <div key={post.id} className="glass-card flex items-center justify-between p-4">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-mono text-sm font-semibold truncate">{post.title}</h3>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase ${
-                  post.status === 'published' ? 'bg-neon-mint/10 text-neon-mint' : 'bg-muted text-muted-foreground'
-                }`}>
-                  {post.status}
-                </span>
+            <div className="flex items-center gap-4 min-w-0 flex-1">
+              {post.featured_image && (
+                <img src={post.featured_image} alt="" className="h-12 w-16 rounded object-cover shrink-0" />
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-mono text-sm font-semibold truncate">{post.title}</h3>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase ${
+                    post.status === 'published' ? 'bg-neon-mint/10 text-neon-mint' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {post.status}
+                  </span>
+                </div>
+                <p className="font-mono text-xs text-muted-foreground">
+                  /{post.slug} · {format(new Date(post.created_at), 'MMM d, yyyy')}
+                </p>
               </div>
-              <p className="font-mono text-xs text-muted-foreground">
-                /{post.slug} · {format(new Date(post.created_at), 'MMM d, yyyy')}
-              </p>
             </div>
             <div className="flex items-center gap-2 ml-4">
               <Button variant="ghost" size="icon" onClick={() => openEdit(post)}>
@@ -132,7 +162,7 @@ const Posts = () => {
 
       {/* Editor Dialog */}
       <Dialog open={showEditor} onOpenChange={() => { setShowEditor(false); setEditingPost(null); }}>
-        <DialogContent className="border-border bg-card max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="border-border bg-card max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-mono">{editingPost?.id ? 'Edit Post' : 'New Post'}</DialogTitle>
           </DialogHeader>
@@ -141,28 +171,53 @@ const Posts = () => {
               onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(editingPost); }}
               className="space-y-4"
             >
-              <div className="space-y-2">
-                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Title</Label>
-                <Input
-                  required
-                  value={editingPost.title}
-                  onChange={(e) => {
-                    const title = e.target.value;
-                    const slug = editingPost.id ? editingPost.slug : title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                    setEditingPost({ ...editingPost, title, slug });
-                  }}
-                  className="border-border bg-background/50"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Title</Label>
+                  <Input
+                    required
+                    value={editingPost.title}
+                    onChange={(e) => {
+                      const title = e.target.value;
+                      const slug = editingPost.id ? editingPost.slug : title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                      setEditingPost({ ...editingPost, title, slug });
+                    }}
+                    className="border-border bg-background/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Slug</Label>
+                  <Input
+                    required
+                    value={editingPost.slug}
+                    onChange={(e) => setEditingPost({ ...editingPost, slug: e.target.value })}
+                    className="border-border bg-background/50 font-mono text-sm"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Slug</Label>
-                <Input
-                  required
-                  value={editingPost.slug}
-                  onChange={(e) => setEditingPost({ ...editingPost, slug: e.target.value })}
-                  className="border-border bg-background/50 font-mono text-sm"
-                />
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Featured Image</Label>
+                <div className="flex items-center gap-3">
+                  {editingPost.featured_image && (
+                    <img src={editingPost.featured_image} alt="" className="h-16 w-24 rounded object-cover" />
+                  )}
+                  <Button type="button" variant="outline" size="sm" onClick={uploadFeaturedImage} className="font-mono text-xs">
+                    <Upload className="h-3 w-3 mr-1.5" />
+                    {editingPost.featured_image ? 'Replace' : 'Upload'}
+                  </Button>
+                  {editingPost.featured_image && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingPost({ ...editingPost, featured_image: '' })}
+                      className="font-mono text-xs text-destructive"
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -177,12 +232,9 @@ const Posts = () => {
 
               <div className="space-y-2">
                 <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Content</Label>
-                <Textarea
-                  required
-                  value={editingPost.content ?? ''}
-                  onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
-                  className="border-border bg-background/50 font-sans"
-                  rows={12}
+                <RichEditor
+                  content={editingPost.content ?? ''}
+                  onChange={(html) => setEditingPost({ ...editingPost, content: html })}
                 />
               </div>
 

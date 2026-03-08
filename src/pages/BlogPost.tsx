@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import type { Post } from '@/lib/types';
 import { format } from 'date-fns';
 import { ArrowLeft } from 'lucide-react';
@@ -14,6 +14,7 @@ const ArticleJsonLd = ({ post }: { post: Post }) => (
     "headline": post.title,
     "datePublished": post.created_at,
     "url": `https://digiiworks.co/blog/${post.slug}`,
+    ...(post.featured_image ? { "image": post.featured_image } : {}),
     "publisher": {
       "@type": "Organization",
       "name": "Digiiworks",
@@ -87,6 +88,15 @@ const BlogPost = () => {
 
         {post && (
           <article>
+            {/* Featured image */}
+            {post.featured_image && (
+              <img
+                src={post.featured_image}
+                alt={post.title}
+                className="mb-8 w-full rounded-lg object-cover max-h-80"
+              />
+            )}
+
             <div className="mb-6 flex items-center gap-3">
               <span className="font-mono text-xs text-neon-blue">
                 {format(new Date(post.created_at), 'yyyy.MM.dd')}
@@ -101,9 +111,20 @@ const BlogPost = () => {
             </h1>
 
             <div className="glass-card p-6 md:p-10">
-              <div className="prose-invert max-w-none text-foreground/90 leading-relaxed whitespace-pre-wrap font-sans text-base">
-                {post.content}
-              </div>
+              <div
+                className="prose prose-invert max-w-none text-foreground/90 leading-relaxed font-sans text-base
+                  [&_h2]:font-mono [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-8 [&_h2]:mb-4
+                  [&_h3]:font-mono [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-3
+                  [&_p]:mb-4 [&_p]:leading-relaxed
+                  [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4
+                  [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4
+                  [&_blockquote]:border-l-2 [&_blockquote]:border-primary/50 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground
+                  [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-4 [&_pre]:font-mono [&_pre]:text-xs [&_pre]:overflow-x-auto
+                  [&_code]:font-mono [&_code]:text-xs [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded
+                  [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2
+                  [&_img]:rounded-lg [&_img]:max-w-full [&_img]:my-6"
+                dangerouslySetInnerHTML={{ __html: post.content ?? '' }}
+              />
             </div>
           </article>
         )}

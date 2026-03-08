@@ -2,10 +2,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_LINKS } from '@/lib/constants';
+import { useAuth } from '@/contexts/AuthContext';
+import { LayoutDashboard, LogIn } from 'lucide-react';
 
 const Navbar = () => {
   const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, isAdmin, isEditor, isClient } = useAuth();
+  const showAdmin = user && (isAdmin || isEditor || isClient);
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -27,7 +31,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Nav */}
-          <div className="hidden gap-6 md:flex">
+          <div className="hidden gap-6 md:flex items-center">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.to}
@@ -40,6 +44,29 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+
+            {/* Auth/Admin link */}
+            {showAdmin ? (
+              <Link
+                to="/admin"
+                className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-mono text-xs font-medium transition-all duration-300 ${
+                  pathname.startsWith('/admin')
+                    ? 'border-primary/50 bg-primary/10 text-primary'
+                    : 'border-border/50 text-muted-foreground hover:border-primary/30 hover:text-primary'
+                }`}
+              >
+                <LayoutDashboard className="h-3 w-3" />
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/auth"
+                className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <LogIn className="h-3 w-3" />
+                Login
+              </Link>
+            )}
           </div>
 
           {/* Mobile burger */}
@@ -82,6 +109,23 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
+              {showAdmin ? (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-primary bg-primary/10"
+                >
+                  <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+                </Link>
+              ) : (
+                <Link
+                  to="/auth"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-muted-foreground hover:bg-muted"
+                >
+                  <LogIn className="h-3.5 w-3.5" /> Login
+                </Link>
+              )}
             </div>
           </motion.div>
         )}
