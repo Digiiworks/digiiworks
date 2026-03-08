@@ -34,7 +34,7 @@ const Contact = () => {
     }
   }, [searchParams]);
 
-  const isAI = form.service_interest === 'AI Automation';
+  const isAI = ['AI-Powered Social Media', 'n8n Workflow Automation', 'Content Strategy'].includes(form.service_interest);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

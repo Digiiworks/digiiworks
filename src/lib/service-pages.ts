@@ -47,7 +47,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Ready to Build Something Exceptional?',
     ctaDescription: 'Tell us about your project and we\'ll craft a custom solution engineered for your success.',
     ctaButtonLabel: 'Start Your Project',
-    contactPreset: 'Custom Dev',
+    contactPreset: 'Custom Web Development',
   },
   {
     slug: 'responsive-design',
@@ -76,7 +76,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Make Your Site Work Everywhere',
     ctaDescription: 'Let\'s ensure your customers get a flawless experience on any device they use.',
     ctaButtonLabel: 'Get Responsive Design',
-    contactPreset: 'Custom Dev',
+    contactPreset: 'Responsive Design',
   },
   {
     slug: 'ux-ui-design',
@@ -105,7 +105,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Design That Converts',
     ctaDescription: 'Let\'s create an interface your users will love and your competitors will envy.',
     ctaButtonLabel: 'Start UX/UI Project',
-    contactPreset: 'Custom Dev',
+    contactPreset: 'UX/UI Design',
   },
   {
     slug: 'cms-integration',
@@ -134,7 +134,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Take Control of Your Content',
     ctaDescription: 'Let\'s set up a CMS that empowers your team to publish without developer dependency.',
     ctaButtonLabel: 'Get CMS Integration',
-    contactPreset: 'Custom Dev',
+    contactPreset: 'CMS Integration',
   },
   {
     slug: 'rent-a-website',
@@ -194,7 +194,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Dominate Search Results',
     ctaDescription: 'Let\'s build an SEO strategy that drives consistent, high-quality organic traffic.',
     ctaButtonLabel: 'Start SEO Campaign',
-    contactPreset: 'SEO',
+    contactPreset: 'Data-Driven SEO',
   },
   {
     slug: 'performance-optimization',
@@ -223,7 +223,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Make Your Site Lightning Fast',
     ctaDescription: 'Speed is money. Let\'s optimise your site for peak performance and better conversions.',
     ctaButtonLabel: 'Boost Performance',
-    contactPreset: 'Custom Dev',
+    contactPreset: 'Performance Optimization',
   },
   {
     slug: 'google-social-media-ads',
@@ -252,7 +252,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Maximise Your Ad Spend',
     ctaDescription: 'Let\'s build campaigns that drive real revenue — not just clicks.',
     ctaButtonLabel: 'Launch Ad Campaigns',
-    contactPreset: 'SEO',
+    contactPreset: 'Google & Social Media Ads',
   },
   {
     slug: 'market-competitor-research',
@@ -281,7 +281,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Know Your Market Inside Out',
     ctaDescription: 'Get the competitive intelligence you need to make smarter strategic decisions.',
     ctaButtonLabel: 'Get Market Research',
-    contactPreset: 'SEO',
+    contactPreset: 'Market & Competitor Research',
   },
 
   // ─── Pillar 03: Autonomous Agency ───
@@ -312,7 +312,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Put Social Media on Autopilot',
     ctaDescription: 'Let AI agents handle the daily grind while you focus on growing your business.',
     ctaButtonLabel: 'Automate Social Media',
-    contactPreset: 'AI Automation',
+    contactPreset: 'AI-Powered Social Media',
   },
   {
     slug: 'n8n-workflow-automation',
@@ -341,7 +341,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Stop Doing What Robots Should',
     ctaDescription: 'Let\'s automate your repetitive workflows and free your team to focus on what matters.',
     ctaButtonLabel: 'Automate Workflows',
-    contactPreset: 'AI Automation',
+    contactPreset: 'n8n Workflow Automation',
   },
   {
     slug: 'content-strategy',
@@ -370,7 +370,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Build a Content Engine That Never Stops',
     ctaDescription: 'Let AI handle the heavy lifting while you maintain creative control.',
     ctaButtonLabel: 'Start Content Strategy',
-    contactPreset: 'AI Automation',
+    contactPreset: 'Content Strategy',
   },
 ];
 

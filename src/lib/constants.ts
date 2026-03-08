@@ -15,10 +15,18 @@ export const NAV_LINKS = [
 
 // ─── Service Options (Contact Form) ───
 export const SERVICE_OPTIONS = [
-  'Custom Dev',
+  'Custom Web Development',
+  'Responsive Design',
+  'UX/UI Design',
+  'CMS Integration',
   'Rent-A-Website',
-  'SEO',
-  'AI Automation',
+  'Data-Driven SEO',
+  'Performance Optimization',
+  'Google & Social Media Ads',
+  'Market & Competitor Research',
+  'AI-Powered Social Media',
+  'n8n Workflow Automation',
+  'Content Strategy',
 ] as const;
 
 // ─── Agents ───
