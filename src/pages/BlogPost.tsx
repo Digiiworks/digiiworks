@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +8,8 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SERVICE_PAGES } from '@/lib/service-pages';
+import { updateSocialMeta } from '@/lib/seo';
+import { SITE_URL } from '@/lib/constants';
 
 /* Map blog tags → service slugs for contextual CTAs */
 const TAG_SERVICE_MAP: Record<string, string> = {
@@ -110,6 +113,18 @@ const BlogPost = () => {
     },
     enabled: !!slug,
   });
+  // Update social meta tags when post loads
+  useEffect(() => {
+    if (!post) return;
+    const excerpt = post.excerpt || (post.content ? post.content.replace(/<[^>]*>/g, '').slice(0, 160) : '');
+    updateSocialMeta({
+      title: `${post.title} — Digiiworks`,
+      description: excerpt,
+      url: `${SITE_URL}/blog/${post.slug}`,
+      image: post.featured_image || undefined,
+      type: 'article',
+    });
+  }, [post]);
 
   return (
     <div className="relative min-h-screen">
