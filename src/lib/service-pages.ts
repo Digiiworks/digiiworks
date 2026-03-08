@@ -281,7 +281,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Know Your Market Inside Out',
     ctaDescription: 'Get the competitive intelligence you need to make smarter strategic decisions.',
     ctaButtonLabel: 'Get Market Research',
-    contactPreset: 'SEO',
+    contactPreset: 'Market & Competitor Research',
   },
 
   // ─── Pillar 03: Autonomous Agency ───
