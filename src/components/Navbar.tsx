@@ -9,9 +9,15 @@ import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isAdmin, isEditor, isClient } = useAuth();
   const showAdmin = user && (isAdmin || isEditor || isClient);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
