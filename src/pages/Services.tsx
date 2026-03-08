@@ -1,6 +1,14 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import { PILLARS } from '@/lib/constants';
+import { SERVICE_PAGES } from '@/lib/service-pages';
+
+const getSlugForService = (name: string) => {
+  const page = SERVICE_PAGES.find((p) => p.name === name);
+  return page ? `/services/${page.slug}` : '/services';
+};
 
 const Services = () => {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
@@ -30,6 +38,7 @@ const Services = () => {
                   const cardKey = `${pillar.id}-${svc.name}`;
                   const isHovered = hoveredCard === cardKey;
                   const isAi = pillar.id === 'autonomous';
+                  const serviceLink = getSlugForService(svc.name);
 
                   return (
                     <motion.div
@@ -38,25 +47,36 @@ const Services = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: '-40px' }}
                       transition={{ duration: 0.4, delay: idx * 0.1 }}
-                      className="glass-card group cursor-default p-5 transition-all duration-500 md:p-6"
-                      style={{
-                        boxShadow: isHovered
-                          ? isAi
-                            ? '0 0 30px hsl(280 99% 53% / 0.3), 0 0 60px hsl(280 99% 53% / 0.1)'
-                            : '0 0 30px hsl(184 100% 50% / 0.3), 0 0 60px hsl(184 100% 50% / 0.1)'
-                          : 'none',
-                      }}
-                      onMouseEnter={() => setHoveredCard(cardKey)}
-                      onMouseLeave={() => setHoveredCard(null)}
                     >
-                      <h3 className={`mb-2 font-mono text-base font-semibold transition-colors duration-300 ${
-                        isHovered
-                          ? isAi ? 'text-neon-purple' : 'text-neon-blue'
-                          : 'text-foreground'
-                      }`}>
-                        {svc.name}
-                      </h3>
-                      <p className="text-sm leading-relaxed text-muted-foreground">{svc.desc}</p>
+                      <Link
+                        to={serviceLink}
+                        className="glass-card group relative block overflow-hidden p-5 transition-all duration-500 hover:scale-[1.02] md:p-6"
+                        style={{
+                          boxShadow: isHovered
+                            ? isAi
+                              ? '0 0 30px hsl(280 99% 53% / 0.3), 0 0 60px hsl(280 99% 53% / 0.1)'
+                              : '0 0 30px hsl(184 100% 50% / 0.3), 0 0 60px hsl(184 100% 50% / 0.1)'
+                            : 'none',
+                        }}
+                        onMouseEnter={() => setHoveredCard(cardKey)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                      >
+                        <div
+                          className="absolute inset-x-0 top-0 h-[2px] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                          style={{ background: `hsl(${pillar.glowHsl})`, boxShadow: `0 0 12px hsl(${pillar.glowHsl} / 0.5)` }}
+                        />
+                        <h3 className={`mb-2 font-mono text-base font-semibold transition-colors duration-300 ${
+                          isHovered
+                            ? isAi ? 'text-neon-purple' : 'text-neon-blue'
+                            : 'text-foreground'
+                        }`}>
+                          {svc.name}
+                        </h3>
+                        <p className="mb-3 text-sm leading-relaxed text-muted-foreground">{svc.desc}</p>
+                        <span className="flex items-center gap-1 text-xs font-mono text-muted-foreground transition-colors group-hover:text-primary">
+                          Learn more <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </Link>
                     </motion.div>
                   );
                 })}
