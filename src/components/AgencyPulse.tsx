@@ -20,12 +20,12 @@ const AgencyPulse = () => {
     queryFn: async () => {
       try {
         const { data, error } = await supabase
-          .from('agent_logs')
+          .from('agent_logs' as any)
           .select('*')
           .order('created_at', { ascending: false })
           .limit(5);
         if (error) throw error;
-        return (data as AgentLog[]) ?? [];
+        return (data as unknown as AgentLog[]) ?? [];
       } catch {
         return [];
       }
