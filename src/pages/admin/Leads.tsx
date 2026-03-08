@@ -20,7 +20,7 @@ const Leads = () => {
     queryKey: ['admin-leads', filterStatus],
     queryFn: async () => {
       let query = supabase.from('leads').select('*').order('created_at', { ascending: false });
-      if (filterStatus !== 'all') query = query.eq('status', filterStatus);
+      if (filterStatus !== 'all') query = query.eq('status', filterStatus as any);
       const { data, error } = await query;
       if (error) throw error;
       return data;
