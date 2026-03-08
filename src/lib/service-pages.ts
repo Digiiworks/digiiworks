@@ -134,7 +134,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     ctaHeadline: 'Take Control of Your Content',
     ctaDescription: 'Let\'s set up a CMS that empowers your team to publish without developer dependency.',
     ctaButtonLabel: 'Get CMS Integration',
-    contactPreset: 'Custom Dev',
+    contactPreset: 'CMS Integration',
   },
   {
     slug: 'rent-a-website',
