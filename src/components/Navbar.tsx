@@ -3,13 +3,21 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_LINKS } from '@/lib/constants';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, LogIn } from 'lucide-react';
+import { LayoutDashboard, LogIn, LogOut } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isAdmin, isEditor, isClient } = useAuth();
   const showAdmin = user && (isAdmin || isEditor || isClient);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -66,6 +74,17 @@ const Navbar = () => {
                 <LogIn className="h-3 w-3" />
                 Login
               </Link>
+            )}
+
+            {user && (
+              <button
+                onClick={handleLogout}
+                className="ml-2 flex items-center justify-center rounded-md border border-border/50 p-1.5 text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
             )}
           </div>
 
@@ -125,6 +144,14 @@ const Navbar = () => {
                 >
                   <LogIn className="h-3.5 w-3.5" /> Login
                 </Link>
+              )}
+              {user && (
+                <button
+                  onClick={() => { setMobileOpen(false); handleLogout(); }}
+                  className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <LogOut className="h-3.5 w-3.5" /> Sign Out
+                </button>
               )}
             </div>
           </motion.div>
