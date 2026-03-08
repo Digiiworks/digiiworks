@@ -21,6 +21,9 @@ const AdminLayout = () => {
     ? navItems.filter((n) => n.to === '/admin' || n.to === '/admin/leads' || n.to === '/admin/invoices')
     : navItems;
 
+  // Redirect clients to /client dashboard instead
+  const homeLink = isClient ? '/client' : '/';
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
@@ -56,7 +59,7 @@ const AdminLayout = () => {
           </div>
           <div className="flex gap-2 px-3">
             <Link
-              to="/"
+              to={homeLink}
               className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
             >
               <ChevronLeft className="h-3 w-3" /> Site
