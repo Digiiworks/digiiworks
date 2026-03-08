@@ -50,6 +50,7 @@ const Posts = () => {
           excerpt: post.excerpt,
           status: post.status,
           featured_image: post.featured_image,
+          tags: post.tags || [],
           author_id: user?.id,
         });
         if (error) throw error;
