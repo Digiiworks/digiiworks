@@ -3,9 +3,28 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Post } from '@/lib/types';
 import { format } from 'date-fns';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SERVICE_PAGES } from '@/lib/service-pages';
+
+/* Map blog tags → service slugs for contextual CTAs */
+const TAG_SERVICE_MAP: Record<string, string> = {
+  'Web Development': 'custom-web-development',
+  'AI Automation': 'n8n-workflow-automation',
+  'SEO': 'data-driven-seo',
+  'UX Design': 'ux-ui-design',
+  'Digital Marketing': 'google-social-media-ads',
+  'Technology': 'cms-integration',
+  'Performance': 'performance-optimization',
+  'Business': 'market-competitor-research',
+};
+
+const getServiceForPost = (tags?: string[] | null) => {
+  if (!tags?.length) return SERVICE_PAGES[0];
+  const slug = TAG_SERVICE_MAP[tags[0]];
+  return SERVICE_PAGES.find(s => s.slug === slug) ?? SERVICE_PAGES[0];
+};
 
 const ArticleJsonLd = ({ post }: { post: Post }) => (
   <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
