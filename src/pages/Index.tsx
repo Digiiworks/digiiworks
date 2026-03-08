@@ -8,6 +8,7 @@ import HeroOrbs from '@/components/HeroOrbs';
 import StatsBar from '@/components/StatsBar';
 import TechMarquee from '@/components/TechMarquee';
 import AgentPreview from '@/components/AgentPreview';
+import LatestArticles from '@/components/LatestArticles';
 import { PILLARS } from '@/lib/constants';
 
 const PILLAR_ICONS: Record<string, React.ReactNode> = {
@@ -114,6 +115,16 @@ const Index = () => (
       {/* Agent Preview */}
       <div className="mb-14 md:mb-20">
         <AgentPreview />
+      </div>
+
+      {/* Latest Articles */}
+      <div className="mb-14 md:mb-20">
+        <div className="mb-4 flex items-center gap-3 md:mb-6">
+          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">// latest_articles</span>
+          <div className="h-px flex-1 bg-border" />
+          <Link to="/blog" className="font-mono text-xs text-primary hover:underline">View all →</Link>
+        </div>
+        <LatestArticles />
       </div>
 
       {/* Live Pulse */}
