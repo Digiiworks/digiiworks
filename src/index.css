@@ -1,5 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -81,16 +87,20 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(
-      135deg,
-      hsl(var(--neon-blue) / 0.4),
-      hsl(var(--neon-purple) / 0.2),
-      transparent
+    background: conic-gradient(
+      from var(--border-angle),
+      hsl(var(--neon-blue) / 0.6),
+      hsl(var(--neon-purple) / 0.4),
+      transparent 40%,
+      transparent 60%,
+      hsl(var(--neon-purple) / 0.4),
+      hsl(var(--neon-blue) / 0.6)
     );
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
+    animation: rotate-gradient 4s linear infinite;
   }
 
   .glow-blue {
@@ -143,6 +153,11 @@
 }
 
 @layer utilities {
+  @keyframes rotate-gradient {
+    0% { --border-angle: 0deg; }
+    100% { --border-angle: 360deg; }
+  }
+
   @keyframes pulse-glow {
     0%, 100% {
       opacity: 1;

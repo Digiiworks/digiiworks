@@ -1,24 +1,20 @@
 
 
-## Animated Rotating Border Gradient
+## Custom 404 Page — Neon Dark Theme
 
-The user wants the gradient border on the auth card to smoothly rotate/animate around the rectangle, creating a flowing neon border effect.
-
-### Approach
-
-1. **Add a `@keyframes rotate-border` animation** in `src/index.css` that rotates from 0deg to 360deg
-2. **Create a new `.glass-card-animated` class** (or modify `.glass-card`) that uses a `conic-gradient` on the `::before` pseudo-element with the rotation angle driven by a CSS custom property animated via `@property`
-3. Since `@property` + CSS Houdini is the cleanest way to animate gradient angles, we'll use that approach:
-   - Define `@property --border-angle` 
-   - Animate it from `0deg` to `360deg`
-   - Use `conic-gradient(from var(--border-angle), ...)` on the `::before` mask border
+Replace the current plain 404 page with a styled version matching the site's neon-dark aesthetic.
 
 ### Changes
 
-**`src/index.css`**:
-- Add `@property --border-angle` declaration for animatable angle
-- Add `@keyframes rotate-gradient` spinning 0deg → 360deg
-- Update `.glass-card::before` to use `conic-gradient(from var(--border-angle), neon-blue, neon-purple, transparent, neon-blue)` with the animation applied
+**`src/pages/NotFound.tsx`** — Full redesign:
+- Dark background with `grid-overlay` pattern (matching ErrorBoundary style)
+- Glitchy "404" heading using `text-gradient` and `font-mono`
+- Pulsing status indicator (neon-mint dot with `animate-ping`) showing "Route Not Found"
+- Display the attempted path using `useLocation().pathname` in a mono-styled code block
+- Subtitle text in `text-muted-foreground`
+- "Return to Base" button styled with `glow-blue` and primary colors (matching ErrorBoundary's button pattern)
+- `glass-card` container for the content block
+- Wrap in the `Layout` component by moving the `*` route inside the Layout route group in `App.tsx`
 
-This keeps the existing glass-card look but adds a smooth perpetual rotation of the gradient border colors around the card perimeter.
+**`src/App.tsx`** — Move the catch-all route inside the `<Route element={<Layout />}>` group so the 404 page gets the navbar and footer.
 
