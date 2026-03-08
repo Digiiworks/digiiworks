@@ -140,9 +140,18 @@ const Posts = () => {
                     {post.status}
                   </span>
                 </div>
-                <p className="font-mono text-xs text-muted-foreground">
-                  /{post.slug} · {format(new Date(post.created_at), 'MMM d, yyyy')}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono text-xs text-muted-foreground">
+                    /{post.slug} · {format(new Date(post.created_at), 'MMM d, yyyy')}
+                  </p>
+                  {(post as any).tags?.length > 0 && (
+                    <div className="flex gap-1">
+                      {(post as any).tags.slice(0, 3).map((tag: string) => (
+                        <span key={tag} className="rounded-full bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary">{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2 ml-4">
