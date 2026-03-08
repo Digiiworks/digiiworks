@@ -113,8 +113,20 @@ const BlogPost = () => {
     },
     enabled: !!slug,
   });
+  // Update social meta tags when post loads
+  useEffect(() => {
+    if (!post) return;
+    const excerpt = post.excerpt || (post.content ? post.content.replace(/<[^>]*>/g, '').slice(0, 160) : '');
+    updateSocialMeta({
+      title: `${post.title} — Digiiworks`,
+      description: excerpt,
+      url: `${SITE_URL}/blog/${post.slug}`,
+      image: post.featured_image || undefined,
+      type: 'article',
+    });
+  }, [post]);
 
-  return (
+
     <div className="relative min-h-screen">
       {post && <ArticleJsonLd post={post} />}
       <div className="absolute inset-0 grid-overlay opacity-10" />
