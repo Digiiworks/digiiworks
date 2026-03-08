@@ -162,4 +162,8 @@ export const PAGE_META: Record<string, { title: string; description: string }> =
     title: 'Contact — Digiiworks',
     description: 'Ready to automate your growth? Get in touch with Digiiworks for a consultation on web development, SEO, or AI automation.',
   },
+  '/get-started': {
+    title: 'Get Started — Digiiworks',
+    description: 'Answer 5 quick questions and we\'ll scope your project. Web development, SEO, AI automation — let\'s find the right fit.',
+  },
 };

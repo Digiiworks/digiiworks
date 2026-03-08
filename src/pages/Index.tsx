@@ -47,7 +47,7 @@ const Index = () => (
             <Link to="/services">Explore Services</Link>
           </Button>
           <Button variant="outline" asChild className="w-full sm:w-auto font-mono border-border hover:border-primary/50 hover:text-primary px-8 py-3">
-            <Link to="/contact">Get in Touch</Link>
+            <Link to="/get-started">Get Started</Link>
           </Button>
         </div>
       </motion.div>
