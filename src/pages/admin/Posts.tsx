@@ -1,0 +1,218 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
+
+const Posts = () => {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const [showEditor, setShowEditor] = useState(false);
+
+  const { data: posts, isLoading } = useQuery({
+    queryKey: ['admin-posts'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (post: any) => {
+      if (post.id) {
+        const { error } = await supabase.from('posts').update({
+          title: post.title,
+          slug: post.slug,
+          content: post.content,
+          excerpt: post.excerpt,
+          status: post.status,
+        }).eq('id', post.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('posts').insert({
+          title: post.title,
+          slug: post.slug,
+          content: post.content,
+          excerpt: post.excerpt,
+          status: post.status,
+          author_id: user?.id,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-posts'] });
+      setShowEditor(false);
+      setEditingPost(null);
+      toast({ title: 'Post saved' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('posts').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-posts'] });
+      toast({ title: 'Post deleted' });
+    },
+  });
+
+  const openNew = () => {
+    setEditingPost({ title: '', slug: '', content: '', excerpt: '', status: 'draft' });
+    setShowEditor(true);
+  };
+
+  const openEdit = (post: any) => {
+    setEditingPost({ ...post });
+    setShowEditor(true);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-mono text-2xl font-bold text-foreground">Blog Posts</h1>
+          <p className="font-mono text-xs text-muted-foreground mt-1">Create and manage blog content</p>
+        </div>
+        <Button onClick={openNew} className="font-mono text-xs glow-blue bg-primary text-primary-foreground">
+          <Plus className="h-3.5 w-3.5 mr-1.5" /> New Post
+        </Button>
+      </div>
+
+      {isLoading && <p className="font-mono text-sm text-muted-foreground">Loading...</p>}
+
+      <div className="grid gap-4">
+        {posts?.map((post: any) => (
+          <div key={post.id} className="glass-card flex items-center justify-between p-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-mono text-sm font-semibold truncate">{post.title}</h3>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase ${
+                  post.status === 'published' ? 'bg-neon-mint/10 text-neon-mint' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {post.status}
+                </span>
+              </div>
+              <p className="font-mono text-xs text-muted-foreground">
+                /{post.slug} · {format(new Date(post.created_at), 'MMM d, yyyy')}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 ml-4">
+              <Button variant="ghost" size="icon" onClick={() => openEdit(post)}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(post.id)}>
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        {posts?.length === 0 && (
+          <div className="glass-card p-12 text-center">
+            <p className="font-mono text-sm text-muted-foreground">No posts yet. Create your first one.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Editor Dialog */}
+      <Dialog open={showEditor} onOpenChange={() => { setShowEditor(false); setEditingPost(null); }}>
+        <DialogContent className="border-border bg-card max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-mono">{editingPost?.id ? 'Edit Post' : 'New Post'}</DialogTitle>
+          </DialogHeader>
+          {editingPost && (
+            <form
+              onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(editingPost); }}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Title</Label>
+                <Input
+                  required
+                  value={editingPost.title}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    const slug = editingPost.id ? editingPost.slug : title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                    setEditingPost({ ...editingPost, title, slug });
+                  }}
+                  className="border-border bg-background/50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Slug</Label>
+                <Input
+                  required
+                  value={editingPost.slug}
+                  onChange={(e) => setEditingPost({ ...editingPost, slug: e.target.value })}
+                  className="border-border bg-background/50 font-mono text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Excerpt</Label>
+                <Textarea
+                  value={editingPost.excerpt ?? ''}
+                  onChange={(e) => setEditingPost({ ...editingPost, excerpt: e.target.value })}
+                  className="border-border bg-background/50"
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Content</Label>
+                <Textarea
+                  required
+                  value={editingPost.content ?? ''}
+                  onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
+                  className="border-border bg-background/50 font-sans"
+                  rows={12}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Status</Label>
+                <Select value={editingPost.status} onValueChange={(val) => setEditingPost({ ...editingPost, status: val })}>
+                  <SelectTrigger className="border-border bg-background/50 font-mono text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button type="submit" className="font-mono text-xs glow-blue bg-primary text-primary-foreground" disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? 'Saving...' : 'Save Post'}
+                </Button>
+                <Button type="button" variant="outline" className="font-mono text-xs" onClick={() => { setShowEditor(false); setEditingPost(null); }}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Posts;
