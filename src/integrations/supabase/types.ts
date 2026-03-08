@@ -116,6 +116,8 @@ export type Database = {
       leads: {
         Row: {
           assigned_to: string | null
+          budget_range: string | null
+          business_type: string | null
           created_at: string
           email: string
           id: string
@@ -125,10 +127,14 @@ export type Database = {
           priority: boolean | null
           service_interest: string | null
           status: Database["public"]["Enums"]["lead_status"]
+          timeline: string | null
           updated_at: string
+          website_url: string | null
         }
         Insert: {
           assigned_to?: string | null
+          budget_range?: string | null
+          business_type?: string | null
           created_at?: string
           email: string
           id?: string
@@ -138,10 +144,14 @@ export type Database = {
           priority?: boolean | null
           service_interest?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
+          timeline?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Update: {
           assigned_to?: string | null
+          budget_range?: string | null
+          business_type?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -151,7 +161,9 @@ export type Database = {
           priority?: boolean | null
           service_interest?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
+          timeline?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Relationships: []
       }

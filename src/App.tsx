@@ -15,6 +15,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Services = lazy(() => import("./pages/Services"));
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const Contact = lazy(() => import("./pages/Contact"));
+const GetStarted = lazy(() => import("./pages/GetStarted"));
 const Blog = lazy(() => import("./pages/Blog"));
 const AIAutomation = lazy(() => import("./pages/AIAutomation"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
@@ -57,6 +58,7 @@ const App = () => (
                   <Route path="/services" element={<Services />} />
                   <Route path="/services/:slug" element={<ServiceDetail />} />
                   <Route path="/ai" element={<AIAutomation />} />
+                  <Route path="/get-started" element={<GetStarted />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/:slug" element={<BlogPost />} />
