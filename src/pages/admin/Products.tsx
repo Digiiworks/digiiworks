@@ -17,18 +17,23 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Pencil, Loader2, Search, Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { Plus, Trash2, Pencil, Loader2, Search, Package, ChevronLeft, ChevronRight, Tag } from 'lucide-react';
 
 type Product = {
   id: string;
   name: string;
   description: string | null;
+  category: string | null;
   price_usd: number;
   active: boolean;
   created_at: string;
   updated_at: string;
 };
 
+const CATEGORIES = ['Digital Architecture', 'Growth Engine', 'AI & Automation', 'Other'] as const;
 const PAGE_SIZE = 10;
 
 export default function Products() {
@@ -38,19 +43,21 @@ export default function Products() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [showActive, setShowActive] = useState<'all' | 'active' | 'inactive'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState({ name: '', description: '', price_usd: 0, active: true });
+  const [form, setForm] = useState({ name: '', description: '', category: '', price_usd: 0, active: true });
 
   const fetchProducts = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('products')
       .select('*')
+      .order('category', { ascending: true })
       .order('name', { ascending: true });
     if (error) toast({ title: 'Error loading products', description: error.message, variant: 'destructive' });
     setProducts(data ?? []);
@@ -59,33 +66,41 @@ export default function Products() {
 
   useEffect(() => { fetchProducts(); }, []);
 
+  // Get unique categories from products for dynamic filtering
+  const uniqueCategories = useMemo(() => {
+    const cats = new Set(products.map(p => p.category).filter(Boolean) as string[]);
+    return Array.from(cats).sort();
+  }, [products]);
+
   const filtered = useMemo(() => {
     let list = [...products];
     if (showActive === 'active') list = list.filter(p => p.active);
     if (showActive === 'inactive') list = list.filter(p => !p.active);
+    if (categoryFilter !== 'all') list = list.filter(p => p.category === categoryFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(p =>
         p.name.toLowerCase().includes(q) ||
-        (p.description ?? '').toLowerCase().includes(q)
+        (p.description ?? '').toLowerCase().includes(q) ||
+        (p.category ?? '').toLowerCase().includes(q)
       );
     }
     return list;
-  }, [products, search, showActive]);
+  }, [products, search, showActive, categoryFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  useEffect(() => { setPage(1); }, [search, showActive]);
+  useEffect(() => { setPage(1); }, [search, showActive, categoryFilter]);
 
   const openCreate = () => {
-    setForm({ name: '', description: '', price_usd: 0, active: true });
+    setForm({ name: '', description: '', category: '', price_usd: 0, active: true });
     setShowCreate(true);
   };
 
   const openEdit = (p: Product) => {
     setEditProduct(p);
-    setForm({ name: p.name, description: p.description ?? '', price_usd: p.price_usd, active: p.active });
+    setForm({ name: p.name, description: p.description ?? '', category: p.category ?? '', price_usd: p.price_usd, active: p.active });
   };
 
   const handleCreate = async () => {
@@ -94,6 +109,7 @@ export default function Products() {
     const { error } = await supabase.from('products').insert({
       name: form.name.trim(),
       description: form.description.trim() || null,
+      category: form.category.trim() || null,
       price_usd: form.price_usd,
       active: form.active,
     });
@@ -108,6 +124,7 @@ export default function Products() {
     const { error } = await supabase.from('products').update({
       name: form.name.trim(),
       description: form.description.trim() || null,
+      category: form.category.trim() || null,
       price_usd: form.price_usd,
       active: form.active,
     }).eq('id', editProduct.id);
@@ -132,11 +149,33 @@ export default function Products() {
 
   const fmt = (n: number) => `$${n.toFixed(2)}`;
 
+  const getCategoryColor = (cat: string | null) => {
+    switch (cat) {
+      case 'Digital Architecture': return 'bg-blue-500/20 text-blue-400';
+      case 'Growth Engine': return 'bg-green-500/20 text-green-400';
+      case 'AI & Automation': return 'bg-purple-500/20 text-purple-400';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
   const ProductForm = ({ onSubmit, submitLabel }: { onSubmit: () => void; submitLabel: string }) => (
     <div className="space-y-4">
       <div>
         <Label className="font-mono text-xs">Name *</Label>
         <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="bg-background border-border" placeholder="e.g. Custom Web Development" />
+      </div>
+      <div>
+        <Label className="font-mono text-xs">Category</Label>
+        <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
+          <SelectTrigger className="bg-background border-border">
+            <SelectValue placeholder="Select category..." />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map(cat => (
+              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div>
         <Label className="font-mono text-xs">Description</Label>
@@ -164,7 +203,7 @@ export default function Products() {
   return (
     <div className="space-y-6">
       {/* Summary */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <div className="rounded-lg border border-border bg-card/50 p-4">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Total Products</p>
           <p className="font-mono text-2xl font-bold text-foreground">{products.length}</p>
@@ -177,6 +216,10 @@ export default function Products() {
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Inactive</p>
           <p className="font-mono text-2xl font-bold text-muted-foreground">{products.filter(p => !p.active).length}</p>
         </div>
+        <div className="rounded-lg border border-border bg-card/50 p-4">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Categories</p>
+          <p className="font-mono text-2xl font-bold text-foreground">{uniqueCategories.length}</p>
+        </div>
       </div>
 
       {/* Toolbar */}
@@ -185,8 +228,20 @@ export default function Products() {
         <div className="flex flex-wrap gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="w-48 pl-9 bg-card border-border h-9 text-sm" />
+            <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="w-40 pl-9 bg-card border-border h-9 text-sm" />
           </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-44 bg-card border-border h-9">
+              <Tag className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {uniqueCategories.map(cat => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="flex rounded-md border border-border overflow-hidden">
             {(['all', 'active', 'inactive'] as const).map(s => (
               <button
@@ -219,6 +274,7 @@ export default function Products() {
               <TableHeader>
                 <TableRow className="border-border/50">
                   <TableHead className="font-mono text-xs">Name</TableHead>
+                  <TableHead className="font-mono text-xs">Category</TableHead>
                   <TableHead className="font-mono text-xs">Description</TableHead>
                   <TableHead className="font-mono text-xs text-right">Price</TableHead>
                   <TableHead className="font-mono text-xs text-center">Status</TableHead>
@@ -229,6 +285,13 @@ export default function Products() {
                 {paginated.map(p => (
                   <TableRow key={p.id} className="border-border/30">
                     <TableCell className="font-medium text-sm">{p.name}</TableCell>
+                    <TableCell>
+                      {p.category ? (
+                        <Badge className={`border-0 text-xs ${getCategoryColor(p.category)}`}>{p.category}</Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-xs truncate">{p.description ?? '—'}</TableCell>
                     <TableCell className="text-right font-mono text-sm">{fmt(p.price_usd)}</TableCell>
                     <TableCell className="text-center">
