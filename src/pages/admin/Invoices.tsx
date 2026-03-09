@@ -485,15 +485,15 @@ export default function Invoices() {
               <Label className="font-mono text-xs mb-2 block">Line Items</Label>
               <div className="space-y-2">
                 {lineItems.map((li, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-4">
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                     <div className="col-span-4">
                       {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Product / Description</span>}
-                      <Select value={li.product_id ?? ''} onValueChange={v => pickProduct(idx, v)}>
-                        <SelectTrigger className="bg-background border-border h-9 text-xs"><SelectValue placeholder="Product..." /></SelectTrigger>
-                        <SelectContent>
-                          {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} — ${p.price_usd}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <ProductCombobox
+                        products={products}
+                        value={li.product_id}
+                        onSelect={(p) => pickProduct(idx, p.id)}
+                        placeholder="Search products..."
+                      />
                     </div>
                     <div className="col-span-3">
                       {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Description</span>}
