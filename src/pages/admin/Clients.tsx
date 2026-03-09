@@ -21,9 +21,15 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Plus, Trash2, Pencil, Loader2, Search, ChevronLeft, ChevronRight,
-  User, Mail, Phone, Building2, MapPin, FileText, DollarSign,
+  Plus, Trash2, Pencil, Search,
+  User, Mail, Phone, Building2, MapPin, FileText,
 } from 'lucide-react';
+import StatCard from '@/components/admin/StatCard';
+import AdminToolbar from '@/components/admin/AdminToolbar';
+import AdminPagination from '@/components/admin/AdminPagination';
+import EmptyState from '@/components/admin/EmptyState';
+import PageLoader from '@/components/admin/PageLoader';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 type Client = {
   id: string;
