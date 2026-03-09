@@ -59,6 +59,7 @@ const UsersAdmin = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-roles'] });
+      setDeleteRoleId(null);
       toast({ title: 'Role removed' });
     },
   });
