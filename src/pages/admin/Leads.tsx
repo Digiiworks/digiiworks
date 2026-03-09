@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ChevronDown, Trash2, ExternalLink, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'] as const;
 
