@@ -237,24 +237,20 @@ export default function Clients() {
         <StatCard label="Total Outstanding" value={fmt(clients.reduce((s, c) => s + (c.outstanding ?? 0), 0))} valueColor="text-orange-400" />
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-mono text-2xl font-bold text-foreground">Clients</h1>
-        <div className="flex gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search clients..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-52 pl-9 bg-card border-border h-9 text-sm"
-            />
-          </div>
-          <Button onClick={openCreate} className="gap-1.5 h-9">
-            <Plus className="h-4 w-4" /> Add Client
-          </Button>
+      <AdminToolbar title="Clients">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search clients..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-52 pl-9 bg-card border-border h-9 text-sm"
+          />
         </div>
-      </div>
+        <Button onClick={openCreate} className="gap-1.5 h-9">
+          <Plus className="h-4 w-4" /> Add Client
+        </Button>
+      </AdminToolbar>
 
       {/* Table */}
       {loading ? (
