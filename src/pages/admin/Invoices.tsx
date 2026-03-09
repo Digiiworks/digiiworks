@@ -354,32 +354,28 @@ export default function Invoices() {
         )}
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-mono text-2xl font-bold text-foreground">Invoices</h1>
-        <div className="flex flex-wrap gap-2">
-          <Input
-            placeholder="Search invoices..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-48 bg-card border-border h-9 text-sm"
-          />
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-32 bg-card border-border h-9">
-              <SelectValue placeholder="Filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {isAdmin && (
-            <Button onClick={() => { resetForm(); setShowCreate(true); }} className="gap-1.5 h-9">
-              <Plus className="h-4 w-4" /> New Invoice
-            </Button>
-          )}
-        </div>
-      </div>
+      <AdminToolbar title="Invoices">
+        <Input
+          placeholder="Search invoices..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-48 bg-card border-border h-9 text-sm"
+        />
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-32 bg-card border-border h-9">
+            <SelectValue placeholder="Filter" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {isAdmin && (
+          <Button onClick={() => { resetForm(); setShowCreate(true); }} className="gap-1.5 h-9">
+            <Plus className="h-4 w-4" /> New Invoice
+          </Button>
+        )}
+      </AdminToolbar>
 
       {/* Table */}
       {loading ? (
