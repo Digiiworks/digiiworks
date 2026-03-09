@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Trash2 } from 'lucide-react';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const ROLES = ['admin', 'editor', 'client'] as const;
 
@@ -17,6 +18,7 @@ const UsersAdmin = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState<string>('editor');
+  const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null);
 
   const { data: profiles } = useQuery({
     queryKey: ['admin-profiles'],
@@ -57,6 +59,7 @@ const UsersAdmin = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-roles'] });
+      setDeleteRoleId(null);
       toast({ title: 'Role removed' });
     },
   });
@@ -96,7 +99,7 @@ const UsersAdmin = () => {
                         {roles.map((r: any) => (
                           <span key={r.id} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase bg-primary/10 text-primary">
                             {r.role}
-                            <button onClick={() => removeRole.mutate(r.id)} className="hover:text-destructive">
+                            <button onClick={() => setDeleteRoleId(r.id)} className="hover:text-destructive">
                               <Trash2 className="h-2.5 w-2.5" />
                             </button>
                           </span>
@@ -125,6 +128,15 @@ const UsersAdmin = () => {
           </table>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteRoleId}
+        onOpenChange={(open) => !open && setDeleteRoleId(null)}
+        title="Remove role?"
+        description="This will remove the role from this user."
+        confirmLabel="Remove"
+        onConfirm={() => deleteRoleId && removeRole.mutate(deleteRoleId)}
+      />
     </div>
   );
 };

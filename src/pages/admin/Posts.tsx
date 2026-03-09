@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Plus, Pencil, Trash2, Upload, X } from 'lucide-react';
 import RichEditor from '@/components/admin/RichEditor';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const Posts = () => {
   const { toast } = useToast();
@@ -19,6 +20,7 @@ const Posts = () => {
   const queryClient = useQueryClient();
   const [editingPost, setEditingPost] = useState<any>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ['admin-posts'],
@@ -75,6 +77,7 @@ const Posts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-posts'] });
+      setDeleteId(null);
       toast({ title: 'Post deleted' });
     },
   });
@@ -158,7 +161,7 @@ const Posts = () => {
               <Button variant="ghost" size="icon" onClick={() => openEdit(post)}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(post.id)}>
+              <Button variant="ghost" size="icon" onClick={() => setDeleteId(post.id)}>
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
             </div>
@@ -302,6 +305,15 @@ const Posts = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Delete post?"
+        description="This will permanently remove this post and cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
+      />
     </div>
   );
 };

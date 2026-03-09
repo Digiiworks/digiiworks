@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ChevronDown, Trash2, ExternalLink, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'] as const;
 
@@ -27,6 +28,7 @@ const Leads = () => {
   const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [openId, setOpenId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: leads, isLoading } = useQuery({
     queryKey: ['admin-leads', filterStatus],
@@ -58,6 +60,7 @@ const Leads = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-leads'] });
       setOpenId(null);
+      setDeleteId(null);
       toast({ title: 'Lead deleted' });
     },
   });
@@ -188,11 +191,7 @@ const Leads = () => {
                       variant="ghost"
                       size="sm"
                       className="font-mono text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => {
-                        if (confirm('Delete this lead permanently?')) {
-                          deleteLead.mutate(lead.id);
-                        }
-                      }}
+                      onClick={() => setDeleteId(lead.id)}
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                       Delete
@@ -207,6 +206,15 @@ const Leads = () => {
           <p className="py-12 text-center font-mono text-sm text-muted-foreground">No leads found.</p>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Delete lead?"
+        description="This will permanently remove this lead and cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => deleteId && deleteLead.mutate(deleteId)}
+      />
     </div>
   );
 };
