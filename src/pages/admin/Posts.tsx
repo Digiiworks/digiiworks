@@ -20,6 +20,7 @@ const Posts = () => {
   const queryClient = useQueryClient();
   const [editingPost, setEditingPost] = useState<any>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ['admin-posts'],
