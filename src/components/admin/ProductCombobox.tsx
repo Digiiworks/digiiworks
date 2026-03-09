@@ -21,7 +21,9 @@ export default function ProductCombobox({ products, value, onSelect, placeholder
   const filtered = query.trim()
     ? products.filter(p => {
         const q = query.toLowerCase();
-        return p.name.toLowerCase().includes(q) || (p.description ?? '').toLowerCase().includes(q);
+        return p.name.toLowerCase().includes(q) || 
+               (p.description ?? '').toLowerCase().includes(q) ||
+               (p.category ?? '').toLowerCase().includes(q);
       })
     : products;
 
