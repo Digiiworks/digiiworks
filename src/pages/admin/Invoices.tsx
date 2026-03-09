@@ -22,6 +22,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Plus, Trash2, Eye, Loader2, CreditCard, ChevronLeft, ChevronRight, AlertTriangle, ArrowUpDown } from 'lucide-react';
+import ProductCombobox from '@/components/admin/ProductCombobox';
 
 type Invoice = {
   id: string;
