@@ -315,12 +315,9 @@ export default function Products() {
 
       {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        <PageLoader />
       ) : filtered.length === 0 ? (
-        <div className="py-16 text-center">
-          <Package className="mx-auto h-10 w-10 text-muted-foreground/30" />
-          <p className="mt-3 font-mono text-sm text-muted-foreground">No products found.</p>
-        </div>
+        <EmptyState icon={Package} message="No products found." />
       ) : (
         <>
           <div className="rounded-lg border border-border bg-card/50 overflow-x-auto">
