@@ -17,7 +17,12 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, Pencil, Loader2, Search, Package, ChevronLeft, ChevronRight, Tag, Settings2 } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2, Search, Package, Tag, Settings2 } from 'lucide-react';
+import StatCard from '@/components/admin/StatCard';
+import AdminToolbar from '@/components/admin/AdminToolbar';
+import AdminPagination from '@/components/admin/AdminPagination';
+import PageLoader from '@/components/admin/PageLoader';
+import EmptyState from '@/components/admin/EmptyState';
 
 type Category = {
   id: string;
