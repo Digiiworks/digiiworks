@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, Tag } from 'lucide-react';
 
-type Product = { id: string; name: string; price_usd: number; description?: string | null };
+type Product = { id: string; name: string; price_usd: number; description?: string | null; category?: string | null };
 
 interface ProductComboboxProps {
   products: Product[];
