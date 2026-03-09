@@ -18,6 +18,7 @@ const UsersAdmin = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState<string>('editor');
+  const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null);
 
   const { data: profiles } = useQuery({
     queryKey: ['admin-profiles'],
