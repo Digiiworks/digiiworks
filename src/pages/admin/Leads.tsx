@@ -28,6 +28,7 @@ const Leads = () => {
   const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [openId, setOpenId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: leads, isLoading } = useQuery({
     queryKey: ['admin-leads', filterStatus],
