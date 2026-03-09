@@ -400,23 +400,14 @@ export default function Clients() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Client Role?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This removes the client role from this user. Their profile and data will remain intact, but they'll lose client access.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Remove Role
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        title="Remove Client Role?"
+        description="This removes the client role from this user. Their profile and data will remain intact, but they'll lose client access."
+        confirmLabel="Remove Role"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
