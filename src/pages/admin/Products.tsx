@@ -273,26 +273,11 @@ export default function Products() {
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Total Products</p>
-          <p className="font-mono text-2xl font-bold text-foreground">{products.length}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Active</p>
-          <p className="font-mono text-2xl font-bold text-green-400">{products.filter(p => p.active).length}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Inactive</p>
-          <p className="font-mono text-2xl font-bold text-muted-foreground">{products.filter(p => !p.active).length}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setShowCategoryManager(true)}>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-            Categories <Settings2 className="h-3 w-3" />
-          </p>
-          <p className="font-mono text-2xl font-bold text-foreground">{categories.length}</p>
-        </div>
+        <StatCard label="Total Products" value={products.length} />
+        <StatCard label="Active" value={products.filter(p => p.active).length} valueColor="text-green-400" />
+        <StatCard label="Inactive" value={products.filter(p => !p.active).length} valueColor="text-muted-foreground" />
+        <StatCard label="Categories" value={categories.length} icon={Settings2} iconColor="text-muted-foreground" onClick={() => setShowCategoryManager(true)} />
       </div>
 
       {/* Toolbar */}
