@@ -329,31 +329,28 @@ export default function Invoices() {
     <div className="space-y-6">
       {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Outstanding</p>
-          <p className="font-mono text-2xl font-bold text-foreground">${outstandingTotal.toFixed(2)}</p>
-          <p className="font-mono text-xs text-muted-foreground mt-1">
-            {invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).length} invoice(s)
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Paid</p>
-          <p className="font-mono text-2xl font-bold text-green-400">${paidTotal.toFixed(2)}</p>
-          <p className="font-mono text-xs text-muted-foreground mt-1">
-            {invoices.filter(i => i.status === 'paid').length} invoice(s)
-          </p>
-        </div>
+        <StatCard
+          label="Outstanding"
+          value={`$${outstandingTotal.toFixed(2)}`}
+          subtitle={`${invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).length} invoice(s)`}
+        />
+        <StatCard
+          label="Paid"
+          value={`$${paidTotal.toFixed(2)}`}
+          valueColor="text-green-400"
+          subtitle={`${invoices.filter(i => i.status === 'paid').length} invoice(s)`}
+        />
         {overdueCount > 0 && (
-          <div className="rounded-lg border border-orange-500/40 bg-orange-500/5 p-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-orange-400" />
-              <p className="font-mono text-[10px] uppercase tracking-widest text-orange-400">Overdue</p>
-            </div>
-            <p className="font-mono text-2xl font-bold text-orange-400">
-              ${invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0).toFixed(2)}
-            </p>
-            <p className="font-mono text-xs text-orange-400/70 mt-1">{overdueCount} invoice(s)</p>
-          </div>
+          <StatCard
+            label="Overdue"
+            value={`$${invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0).toFixed(2)}`}
+            icon={AlertTriangle}
+            iconColor="text-orange-400"
+            valueColor="text-orange-400"
+            variant="alert"
+            alertColor="orange-500"
+            subtitle={`${overdueCount} invoice(s)`}
+          />
         )}
       </div>
 
