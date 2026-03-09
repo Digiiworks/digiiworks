@@ -358,6 +358,10 @@ const GetStarted = () => {
               {step === 4 && (
                 <div className="space-y-4">
                   <h2 className="font-mono text-lg font-semibold text-foreground">Almost there — how do we reach you?</h2>
+                  {/* Honeypot */}
+                  <div className="absolute opacity-0 h-0 overflow-hidden" aria-hidden="true" tabIndex={-1}>
+                    <input name="fax_number" type="text" value={honeypot} onChange={e => setHoneypot(e.target.value)} autoComplete="off" tabIndex={-1} />
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="mb-1 block font-mono text-xs text-muted-foreground">Name *</label>
