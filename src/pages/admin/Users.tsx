@@ -2,25 +2,21 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import AdminToolbar from '@/components/admin/AdminToolbar';
+import PageLoader from '@/components/admin/PageLoader';
 
 const ROLES = ['admin', 'editor', 'client'] as const;
 
 const UsersAdmin = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [showAdd, setShowAdd] = useState(false);
-  const [newEmail, setNewEmail] = useState('');
-  const [newRole, setNewRole] = useState<string>('editor');
   const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null);
 
-  const { data: profiles } = useQuery({
+  const { data: profiles, isLoading } = useQuery({
     queryKey: ['admin-profiles'],
     queryFn: async () => {
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -68,12 +64,9 @@ const UsersAdmin = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-mono text-2xl font-bold text-foreground">Users & Roles</h1>
-          <p className="font-mono text-xs text-muted-foreground mt-1">Manage team members and permissions</p>
-        </div>
-      </div>
+      <AdminToolbar title="Users & Roles" subtitle="Manage team members and permissions" />
+
+      {isLoading && <PageLoader />}
 
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
