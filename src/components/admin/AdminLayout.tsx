@@ -1,11 +1,12 @@
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard', to: '/admin', icon: LayoutDashboard },
   { label: 'Leads', to: '/admin/leads', icon: Mail },
   { label: 'Clients', to: '/admin/clients', icon: UserCircle },
+  { label: 'Products', to: '/admin/products', icon: Package },
   { label: 'Invoices', to: '/admin/invoices', icon: DollarSign },
   { label: 'Blog Posts', to: '/admin/posts', icon: FileText },
   { label: 'Page Content', to: '/admin/content', icon: Settings },

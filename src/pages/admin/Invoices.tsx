@@ -22,6 +22,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Plus, Trash2, Eye, Loader2, CreditCard, ChevronLeft, ChevronRight, AlertTriangle, ArrowUpDown } from 'lucide-react';
+import ProductCombobox from '@/components/admin/ProductCombobox';
 
 type Invoice = {
   id: string;
@@ -52,7 +53,7 @@ type InvoiceItem = {
 };
 
 type Profile = { user_id: string; display_name: string | null; email: string | null };
-type Product = { id: string; name: string; price_usd: number };
+type Product = { id: string; name: string; price_usd: number; description?: string | null };
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -100,7 +101,7 @@ export default function Invoices() {
     const [invRes, profRes, prodRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('user_id, display_name, email'),
-      supabase.from('products').select('id, name, price_usd').eq('active', true),
+      supabase.from('products').select('id, name, price_usd, description').eq('active', true),
     ]);
     const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
     const enriched = (invRes.data ?? []).map(inv => ({
@@ -484,15 +485,15 @@ export default function Invoices() {
               <Label className="font-mono text-xs mb-2 block">Line Items</Label>
               <div className="space-y-2">
                 {lineItems.map((li, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-4">
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                     <div className="col-span-4">
                       {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Product / Description</span>}
-                      <Select value={li.product_id ?? ''} onValueChange={v => pickProduct(idx, v)}>
-                        <SelectTrigger className="bg-background border-border h-9 text-xs"><SelectValue placeholder="Product..." /></SelectTrigger>
-                        <SelectContent>
-                          {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} — ${p.price_usd}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <ProductCombobox
+                        products={products}
+                        value={li.product_id}
+                        onSelect={(p) => pickProduct(idx, p.id)}
+                        placeholder="Search products..."
+                      />
                     </div>
                     <div className="col-span-3">
                       {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Description</span>}
