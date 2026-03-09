@@ -20,7 +20,14 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, Pencil, Loader2, Search, Package, ChevronLeft, ChevronRight, Tag } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2, Search, Package, ChevronLeft, ChevronRight, Tag, Settings2 } from 'lucide-react';
+
+type Category = {
+  id: string;
+  name: string;
+  color: string;
+  sort_order: number;
+};
 
 type Product = {
   id: string;
@@ -33,12 +40,23 @@ type Product = {
   updated_at: string;
 };
 
-const CATEGORIES = ['Digital Architecture', 'Growth Engine', 'AI & Automation', 'Other'] as const;
+const COLOR_OPTIONS = [
+  { value: 'blue', label: 'Blue', class: 'bg-blue-500/20 text-blue-400' },
+  { value: 'green', label: 'Green', class: 'bg-green-500/20 text-green-400' },
+  { value: 'purple', label: 'Purple', class: 'bg-purple-500/20 text-purple-400' },
+  { value: 'orange', label: 'Orange', class: 'bg-orange-500/20 text-orange-400' },
+  { value: 'red', label: 'Red', class: 'bg-red-500/20 text-red-400' },
+  { value: 'yellow', label: 'Yellow', class: 'bg-yellow-500/20 text-yellow-400' },
+  { value: 'cyan', label: 'Cyan', class: 'bg-cyan-500/20 text-cyan-400' },
+  { value: 'gray', label: 'Gray', class: 'bg-muted text-muted-foreground' },
+];
+
 const PAGE_SIZE = 10;
 
 export default function Products() {
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -50,27 +68,34 @@ export default function Products() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Category management
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [editCategory, setEditCategory] = useState<Category | null>(null);
+  const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
+  const [categoryForm, setCategoryForm] = useState({ name: '', color: 'gray', sort_order: 0 });
+
   const [form, setForm] = useState({ name: '', description: '', category: '', price_usd: 0, active: true });
 
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('category', { ascending: true })
-      .order('name', { ascending: true });
-    if (error) toast({ title: 'Error loading products', description: error.message, variant: 'destructive' });
-    setProducts(data ?? []);
+    const [prodRes, catRes] = await Promise.all([
+      supabase.from('products').select('*').order('category').order('name'),
+      supabase.from('product_categories').select('*').order('sort_order'),
+    ]);
+    if (prodRes.error) toast({ title: 'Error loading products', description: prodRes.error.message, variant: 'destructive' });
+    if (catRes.error) toast({ title: 'Error loading categories', description: catRes.error.message, variant: 'destructive' });
+    setProducts(prodRes.data ?? []);
+    setCategories(catRes.data ?? []);
     setLoading(false);
   };
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  // Get unique categories from products for dynamic filtering
-  const uniqueCategories = useMemo(() => {
-    const cats = new Set(products.map(p => p.category).filter(Boolean) as string[]);
-    return Array.from(cats).sort();
-  }, [products]);
+  const getCategoryColor = (catName: string | null) => {
+    const cat = categories.find(c => c.name === catName);
+    const colorOpt = COLOR_OPTIONS.find(o => o.value === cat?.color);
+    return colorOpt?.class ?? 'bg-muted text-muted-foreground';
+  };
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -114,7 +139,7 @@ export default function Products() {
       active: form.active,
     });
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Product created' }); setShowCreate(false); fetchProducts(); }
+    else { toast({ title: 'Product created' }); setShowCreate(false); fetchData(); }
     setSaving(false);
   };
 
@@ -129,7 +154,7 @@ export default function Products() {
       active: form.active,
     }).eq('id', editProduct.id);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Product updated' }); setEditProduct(null); fetchProducts(); }
+    else { toast({ title: 'Product updated' }); setEditProduct(null); fetchData(); }
     setSaving(false);
   };
 
@@ -137,26 +162,64 @@ export default function Products() {
     if (!deleteId) return;
     const { error } = await supabase.from('products').delete().eq('id', deleteId);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Product deleted' }); fetchProducts(); }
+    else { toast({ title: 'Product deleted' }); fetchData(); }
     setDeleteId(null);
   };
 
   const toggleActive = async (p: Product) => {
     const { error } = await supabase.from('products').update({ active: !p.active }).eq('id', p.id);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    else fetchProducts();
+    else fetchData();
+  };
+
+  // Category CRUD
+  const openCreateCategory = () => {
+    setEditCategory(null);
+    setCategoryForm({ name: '', color: 'gray', sort_order: categories.length });
+  };
+
+  const openEditCategory = (cat: Category) => {
+    setEditCategory(cat);
+    setCategoryForm({ name: cat.name, color: cat.color, sort_order: cat.sort_order });
+  };
+
+  const handleSaveCategory = async () => {
+    if (!categoryForm.name.trim()) { toast({ title: 'Name is required', variant: 'destructive' }); return; }
+    setSaving(true);
+    if (editCategory) {
+      const { error } = await supabase.from('product_categories').update({
+        name: categoryForm.name.trim(),
+        color: categoryForm.color,
+        sort_order: categoryForm.sort_order,
+      }).eq('id', editCategory.id);
+      if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      else { toast({ title: 'Category updated' }); setEditCategory(null); fetchData(); }
+    } else {
+      const { error } = await supabase.from('product_categories').insert({
+        name: categoryForm.name.trim(),
+        color: categoryForm.color,
+        sort_order: categoryForm.sort_order,
+      });
+      if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      else { toast({ title: 'Category created' }); setCategoryForm({ name: '', color: 'gray', sort_order: 0 }); fetchData(); }
+    }
+    setSaving(false);
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!deleteCategoryId) return;
+    const cat = categories.find(c => c.id === deleteCategoryId);
+    // Clear category from products using this category
+    if (cat) {
+      await supabase.from('products').update({ category: null }).eq('category', cat.name);
+    }
+    const { error } = await supabase.from('product_categories').delete().eq('id', deleteCategoryId);
+    if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Category deleted' }); fetchData(); }
+    setDeleteCategoryId(null);
   };
 
   const fmt = (n: number) => `$${n.toFixed(2)}`;
-
-  const getCategoryColor = (cat: string | null) => {
-    switch (cat) {
-      case 'Digital Architecture': return 'bg-blue-500/20 text-blue-400';
-      case 'Growth Engine': return 'bg-green-500/20 text-green-400';
-      case 'AI & Automation': return 'bg-purple-500/20 text-purple-400';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
 
   const ProductForm = ({ onSubmit, submitLabel }: { onSubmit: () => void; submitLabel: string }) => (
     <div className="space-y-4">
@@ -171,8 +234,14 @@ export default function Products() {
             <SelectValue placeholder="Select category..." />
           </SelectTrigger>
           <SelectContent>
-            {CATEGORIES.map(cat => (
-              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            <SelectItem value="">No category</SelectItem>
+            {categories.map(cat => (
+              <SelectItem key={cat.id} value={cat.name}>
+                <span className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${COLOR_OPTIONS.find(o => o.value === cat.color)?.class.split(' ')[0] ?? 'bg-muted'}`} />
+                  {cat.name}
+                </span>
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -216,9 +285,11 @@ export default function Products() {
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Inactive</p>
           <p className="font-mono text-2xl font-bold text-muted-foreground">{products.filter(p => !p.active).length}</p>
         </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Categories</p>
-          <p className="font-mono text-2xl font-bold text-foreground">{uniqueCategories.length}</p>
+        <div className="rounded-lg border border-border bg-card/50 p-4 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setShowCategoryManager(true)}>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+            Categories <Settings2 className="h-3 w-3" />
+          </p>
+          <p className="font-mono text-2xl font-bold text-foreground">{categories.length}</p>
         </div>
       </div>
 
@@ -237,8 +308,8 @@ export default function Products() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              {uniqueCategories.map(cat => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              {categories.map(cat => (
+                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -340,7 +411,7 @@ export default function Products() {
         </>
       )}
 
-      {/* Create Dialog */}
+      {/* Create Product Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-md bg-card border-border">
           <DialogHeader><DialogTitle className="font-mono">New Product / Service</DialogTitle></DialogHeader>
@@ -348,7 +419,7 @@ export default function Products() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
+      {/* Edit Product Dialog */}
       <Dialog open={!!editProduct} onOpenChange={() => setEditProduct(null)}>
         <DialogContent className="max-w-md bg-card border-border">
           <DialogHeader><DialogTitle className="font-mono">Edit Product</DialogTitle></DialogHeader>
@@ -356,16 +427,114 @@ export default function Products() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
+      {/* Delete Product Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Product?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently remove this product. Existing invoice items referencing it will keep their description.</AlertDialogDescription>
+            <AlertDialogDescription>This will permanently remove this product.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Category Manager Dialog */}
+      <Dialog open={showCategoryManager} onOpenChange={setShowCategoryManager}>
+        <DialogContent className="max-w-lg bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-mono flex items-center gap-2">
+              <Tag className="h-4 w-4" /> Manage Categories
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Category List */}
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {categories.map(cat => (
+                <div key={cat.id} className="flex items-center justify-between p-2 rounded-md border border-border/50 bg-background/50">
+                  <div className="flex items-center gap-2">
+                    <Badge className={`border-0 text-xs ${COLOR_OPTIONS.find(o => o.value === cat.color)?.class ?? 'bg-muted text-muted-foreground'}`}>
+                      {cat.name}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">({products.filter(p => p.category === cat.name).length} products)</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditCategory(cat)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteCategoryId(cat.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {categories.length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-4">No categories yet.</p>
+              )}
+            </div>
+
+            {/* Add/Edit Category Form */}
+            <div className="border-t border-border pt-4 space-y-3">
+              <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+                {editCategory ? 'Edit Category' : 'Add New Category'}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="font-mono text-xs">Name</Label>
+                  <Input
+                    value={categoryForm.name}
+                    onChange={e => setCategoryForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="Category name"
+                    className="bg-background border-border h-9"
+                  />
+                </div>
+                <div>
+                  <Label className="font-mono text-xs">Color</Label>
+                  <Select value={categoryForm.color} onValueChange={v => setCategoryForm(f => ({ ...f, color: v }))}>
+                    <SelectTrigger className="bg-background border-border h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COLOR_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <span className="flex items-center gap-2">
+                            <span className={`h-3 w-3 rounded-full ${opt.class.split(' ')[0]}`} />
+                            {opt.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {editCategory && (
+                  <Button variant="outline" size="sm" onClick={() => { setEditCategory(null); setCategoryForm({ name: '', color: 'gray', sort_order: 0 }); }}>
+                    Cancel
+                  </Button>
+                )}
+                <Button size="sm" onClick={handleSaveCategory} disabled={saving || !categoryForm.name.trim()}>
+                  {saving && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                  {editCategory ? 'Update' : 'Add Category'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Category Confirmation */}
+      <AlertDialog open={!!deleteCategoryId} onOpenChange={() => setDeleteCategoryId(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category?</AlertDialogTitle>
+            <AlertDialogDescription>This will remove the category. Products using it will have their category cleared.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
