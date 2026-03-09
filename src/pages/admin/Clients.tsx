@@ -231,24 +231,10 @@ export default function Clients() {
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Total Clients</p>
-          <p className="font-mono text-2xl font-bold text-foreground">{clients.length}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">With Outstanding</p>
-          <p className="font-mono text-2xl font-bold text-foreground">
-            {clients.filter(c => (c.outstanding ?? 0) > 0).length}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Total Outstanding</p>
-          <p className="font-mono text-2xl font-bold text-orange-400">
-            {fmt(clients.reduce((s, c) => s + (c.outstanding ?? 0), 0))}
-          </p>
-        </div>
+        <StatCard label="Total Clients" value={clients.length} />
+        <StatCard label="With Outstanding" value={clients.filter(c => (c.outstanding ?? 0) > 0).length} />
+        <StatCard label="Total Outstanding" value={fmt(clients.reduce((s, c) => s + (c.outstanding ?? 0), 0))} valueColor="text-orange-400" />
       </div>
 
       {/* Toolbar */}
