@@ -53,7 +53,7 @@ type InvoiceItem = {
 };
 
 type Profile = { user_id: string; display_name: string | null; email: string | null };
-type Product = { id: string; name: string; price_usd: number; description?: string | null };
+type Product = { id: string; name: string; price_usd: number; description?: string | null; category?: string | null };
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
