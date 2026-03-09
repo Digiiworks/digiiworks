@@ -96,6 +96,17 @@ const GetStarted = () => {
 
   const handleSubmit = async () => {
     if (!canNext()) return;
+    // Anti-spam
+    if (honeypot) return;
+    const elapsed = Date.now() - formLoadTime.current;
+    if (elapsed < 5000) {
+      toast({ title: 'Please slow down', description: 'Form submitted too quickly.', variant: 'destructive' });
+      return;
+    }
+    if (name.trim().length > 100 || email.trim().length > 255 || message.trim().length > 2000) {
+      toast({ title: 'Input too long', variant: 'destructive' });
+      return;
+    }
     setSubmitting(true);
     try {
       const isPriority = selectedServices.some((s) => s.includes('AI') || s.includes('n8n') || s.includes('Automation'));
