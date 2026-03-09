@@ -34,7 +34,14 @@ const ClientsAdmin = lazy(() => import("./pages/admin/Clients"));
 const ProductsAdmin = lazy(() => import("./pages/admin/Products"));
 const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">

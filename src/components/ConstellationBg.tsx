@@ -15,6 +15,7 @@ const ConstellationBg = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const particlesRef = useRef<Particle[]>([]);
+  const lastFrameRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -23,7 +24,8 @@ const ConstellationBg = () => {
     if (!ctx) return;
 
     const isMobile = window.innerWidth < 768;
-    const particleCount = isMobile ? 30 : 60;
+    const particleCount = isMobile ? 20 : 50;
+    const frameInterval = isMobile ? 1000 / 24 : 1000 / 30; // 24fps mobile, 30fps desktop
 
     const resize = () => {
       const parent = canvas.parentElement;
@@ -45,7 +47,20 @@ const ConstellationBg = () => {
     resize();
     initParticles();
 
-    const animate = () => {
+    const animate = (timestamp: number) => {
+      // Skip if tab is hidden
+      if (document.hidden) {
+        animRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      // Throttle frame rate
+      if (timestamp - lastFrameRef.current < frameInterval) {
+        animRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      lastFrameRef.current = timestamp;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const particles = particlesRef.current;
 
@@ -82,7 +97,7 @@ const ConstellationBg = () => {
       animRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    animRef.current = requestAnimationFrame(animate);
 
     const ro = new ResizeObserver(resize);
     ro.observe(canvas.parentElement!);
