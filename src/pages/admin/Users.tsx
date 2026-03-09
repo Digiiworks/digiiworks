@@ -99,7 +99,7 @@ const UsersAdmin = () => {
                         {roles.map((r: any) => (
                           <span key={r.id} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase bg-primary/10 text-primary">
                             {r.role}
-                            <button onClick={() => removeRole.mutate(r.id)} className="hover:text-destructive">
+                            <button onClick={() => setDeleteRoleId(r.id)} className="hover:text-destructive">
                               <Trash2 className="h-2.5 w-2.5" />
                             </button>
                           </span>
