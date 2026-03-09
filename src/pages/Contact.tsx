@@ -73,7 +73,10 @@ const Contact = () => {
     setLoading(true);
     try {
       const { error } = await supabase.from('leads').insert([{
-        ...result.data,
+        name: result.data.name,
+        email: result.data.email,
+        service_interest: result.data.service_interest || null,
+        message: result.data.message,
         priority: isAI,
       }]);
       if (error) throw error;
