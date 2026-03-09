@@ -17,7 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Plus, Trash2, Pencil, Search,
+  Plus, Trash2, Pencil, Loader2, Search,
   User, Mail, Phone, Building2, MapPin, FileText,
 } from 'lucide-react';
 import StatCard from '@/components/admin/StatCard';
