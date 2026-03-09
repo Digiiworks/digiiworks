@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, Tag } from 'lucide-react';
 
 type Product = { id: string; name: string; price_usd: number; description?: string | null };
 
