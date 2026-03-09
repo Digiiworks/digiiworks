@@ -21,7 +21,13 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Eye, Loader2, CreditCard, ChevronLeft, ChevronRight, AlertTriangle, ArrowUpDown } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import {
+  Plus, Trash2, Eye, Loader2, CreditCard, ChevronLeft, ChevronRight,
+  AlertTriangle, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle,
+} from 'lucide-react';
 import ProductCombobox from '@/components/admin/ProductCombobox';
 
 type Invoice = {
@@ -33,6 +39,7 @@ type Invoice = {
   tax_rate: number;
   total: number;
   due_date: string | null;
+  send_date: string | null;
   notes: string | null;
   payment_method: string | null;
   payment_reference: string | null;
@@ -52,6 +59,17 @@ type InvoiceItem = {
   product_id: string | null;
 };
 
+type InvoiceEmail = {
+  id: string;
+  invoice_id: string;
+  sent_to: string;
+  sent_at: string | null;
+  scheduled_for: string | null;
+  status: 'scheduled' | 'sent' | 'failed';
+  error: string | null;
+  created_at: string;
+};
+
 type Profile = { user_id: string; display_name: string | null; email: string | null };
 type Product = { id: string; name: string; price_usd: number; description?: string | null; category?: string | null };
 
@@ -63,11 +81,22 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-muted text-muted-foreground line-through',
 };
 
+const EMAIL_STATUS_ICON: Record<string, React.ReactNode> = {
+  sent: <CheckCircle className="h-3.5 w-3.5 text-green-400" />,
+  failed: <XCircle className="h-3.5 w-3.5 text-destructive" />,
+  scheduled: <Clock className="h-3.5 w-3.5 text-blue-400" />,
+};
+
 const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
 
 type SortField = 'invoice_number' | 'total' | 'due_date' | 'created_at' | 'status';
 type SortDir = 'asc' | 'desc';
+
+function getFirstOfNextMonth(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+}
 
 export default function Invoices() {
   const { toast } = useToast();
@@ -87,11 +116,14 @@ export default function Invoices() {
   const [showCreate, setShowCreate] = useState(false);
   const [showDetail, setShowDetail] = useState<Invoice | null>(null);
   const [detailItems, setDetailItems] = useState<InvoiceItem[]>([]);
+  const [detailEmails, setDetailEmails] = useState<InvoiceEmail[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
 
   // Create form
   const [form, setForm] = useState({ client_id: '', due_date: '', notes: '', tax_rate: 0 });
+  const [sendDate, setSendDate] = useState<Date | undefined>(getFirstOfNextMonth());
   const [lineItems, setLineItems] = useState<InvoiceItem[]>([
     { description: '', quantity: 1, unit_price: 0, total: 0, product_id: null },
   ]);
@@ -120,11 +152,7 @@ export default function Invoices() {
   // Sort, filter, search, then paginate — overdue always on top
   const processed = useMemo(() => {
     let list = [...invoices];
-
-    // Filter by status
     if (filterStatus !== 'all') list = list.filter(i => i.status === filterStatus);
-
-    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(i =>
@@ -133,13 +161,9 @@ export default function Invoices() {
         (i.client_email ?? '').toLowerCase().includes(q)
       );
     }
-
-    // Sort
     list.sort((a, b) => {
-      // Overdue always first
       if (a.status === 'overdue' && b.status !== 'overdue') return -1;
       if (b.status === 'overdue' && a.status !== 'overdue') return 1;
-
       let cmp = 0;
       if (sortField === 'total' || sortField === 'invoice_number') {
         const av = sortField === 'total' ? a.total : a.invoice_number;
@@ -156,17 +180,14 @@ export default function Invoices() {
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
-
     return list;
   }, [invoices, filterStatus, search, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const paginated = processed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Reset page when filters change
   useEffect(() => { setPage(1); }, [filterStatus, search, sortField, sortDir]);
 
-  // Summary stats
   const outstandingTotal = invoices
     .filter(i => ['draft', 'sent', 'overdue'].includes(i.status))
     .reduce((s, i) => s + i.total, 0);
@@ -180,7 +201,6 @@ export default function Invoices() {
     else { setSortField(field); setSortDir('desc'); }
   };
 
-  // Line item helpers
   const updateLineItem = (idx: number, field: keyof InvoiceItem, value: any) => {
     setLineItems(prev => {
       const next = [...prev];
@@ -214,7 +234,8 @@ export default function Invoices() {
     const { data: inv, error } = await supabase.from('invoices').insert({
       invoice_number: nextNumber, client_id: form.client_id,
       due_date: form.due_date || null, notes: form.notes || null,
-      tax_rate: form.tax_rate, subtotal, total: grandTotal, status: 'draft',
+      tax_rate: form.tax_rate, subtotal, total: grandTotal, status: 'draft' as const,
+      send_date: sendDate ? format(sendDate, 'yyyy-MM-dd') : null,
     }).select().single();
 
     if (error || !inv) {
@@ -236,6 +257,7 @@ export default function Invoices() {
 
   const resetForm = () => {
     setForm({ client_id: '', due_date: '', notes: '', tax_rate: 0 });
+    setSendDate(getFirstOfNextMonth());
     setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }]);
   };
 
@@ -257,12 +279,35 @@ export default function Invoices() {
 
   const viewDetail = async (inv: Invoice) => {
     setShowDetail(inv);
-    const { data } = await supabase.from('invoice_items').select('*').eq('invoice_id', inv.id);
-    setDetailItems((data ?? []) as InvoiceItem[]);
+    const [itemsRes, emailsRes] = await Promise.all([
+      supabase.from('invoice_items').select('*').eq('invoice_id', inv.id),
+      supabase.from('invoice_emails').select('*').eq('invoice_id', inv.id).order('created_at', { ascending: false }),
+    ]);
+    setDetailItems((itemsRes.data ?? []) as InvoiceItem[]);
+    setDetailEmails((emailsRes.data ?? []) as unknown as InvoiceEmail[]);
+  };
+
+  const handleSendEmail = async (invoiceId: string, isResend = false) => {
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-invoice-email', {
+        body: { invoice_id: invoiceId, force_resend: isResend },
+      });
+      if (error) throw error;
+      toast({ title: isResend ? 'Invoice resent' : 'Invoice emailed', description: `Sent to ${data.sent_to}` });
+      fetchAll();
+      // Refresh email history if detail is open
+      if (showDetail) {
+        const { data: emails } = await supabase.from('invoice_emails').select('*').eq('invoice_id', invoiceId).order('created_at', { ascending: false });
+        setDetailEmails((emails ?? []) as unknown as InvoiceEmail[]);
+      }
+    } catch (err: any) {
+      toast({ title: 'Failed to send email', description: err.message, variant: 'destructive' });
+    }
+    setSending(false);
   };
 
   const handlePayClick = (inv: Invoice) => {
-    // Placeholder — will be connected to payment gateway later
     toast({ title: 'Payment', description: `Payment link for ${inv.invoice_number} ($${inv.total.toFixed(2)}) coming soon.` });
   };
 
@@ -353,6 +398,7 @@ export default function Invoices() {
                   <SortHeader field="status">Status</SortHeader>
                   <SortHeader field="total"><span className="ml-auto">Total</span></SortHeader>
                   <SortHeader field="due_date">Due Date</SortHeader>
+                  <TableHead className="font-mono text-xs">Send Date</TableHead>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -395,8 +441,28 @@ export default function Invoices() {
                       <TableCell className={`text-sm ${isOverdue ? 'text-orange-400' : 'text-muted-foreground'}`}>
                         {inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—'}
                       </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {inv.send_date ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {format(new Date(inv.send_date), 'MMM d')}
+                          </span>
+                        ) : '—'}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 gap-1 font-mono text-xs border-primary/50 text-primary hover:bg-primary/10"
+                              onClick={() => handleSendEmail(inv.id)}
+                              disabled={sending}
+                            >
+                              {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                              Email
+                            </Button>
+                          )}
                           {isUnpaid && (
                             <Button
                               variant="outline"
@@ -481,6 +547,36 @@ export default function Invoices() {
                 <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} className="bg-background border-border" />
               </div>
             </div>
+
+            {/* Send Date Picker */}
+            <div>
+              <Label className="font-mono text-xs">Email Send Date</Label>
+              <p className="text-[10px] text-muted-foreground mb-1">Invoice will be emailed to the client on this date (defaults to 1st of next month)</p>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal bg-background border-border",
+                      !sendDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {sendDate ? format(sendDate, 'PPP') : <span>Pick a send date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={sendDate}
+                    onSelect={setSendDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
             <div>
               <Label className="font-mono text-xs mb-2 block">Line Items</Label>
               <div className="space-y-2">
@@ -549,7 +645,7 @@ export default function Invoices() {
 
       {/* Detail Dialog */}
       <Dialog open={!!showDetail} onOpenChange={() => setShowDetail(null)}>
-        <DialogContent className="max-w-lg bg-card border-border">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-card border-border">
           <DialogHeader>
             <DialogTitle className="font-mono">{showDetail?.invoice_number}</DialogTitle>
           </DialogHeader>
@@ -560,6 +656,15 @@ export default function Invoices() {
                 <div><span className="text-muted-foreground">Status:</span> <Badge className={`${STATUS_COLORS[showDetail.status]} border-0 capitalize`}>{showDetail.status}</Badge></div>
                 <div><span className="text-muted-foreground">Due:</span> {showDetail.due_date ? format(new Date(showDetail.due_date), 'MMM d, yyyy') : '—'}</div>
                 <div><span className="text-muted-foreground">Created:</span> {format(new Date(showDetail.created_at), 'MMM d, yyyy')}</div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Send Date:</span>{' '}
+                  {showDetail.send_date ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Mail className="h-3 w-3 text-primary" />
+                      {format(new Date(showDetail.send_date), 'MMM d, yyyy')}
+                    </span>
+                  ) : '—'}
+                </div>
               </div>
               {detailItems.length > 0 && (
                 <Table>
@@ -588,6 +693,32 @@ export default function Invoices() {
                 <p className="font-mono text-xs text-muted-foreground">Tax ({showDetail.tax_rate}%): ${(showDetail.subtotal * showDetail.tax_rate / 100).toFixed(2)}</p>
                 <p className="font-mono text-sm font-bold text-foreground">Total: ${showDetail.total.toFixed(2)}</p>
               </div>
+
+              {/* Email Actions */}
+              {isAdmin && showDetail.status !== 'cancelled' && (
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 gap-2 font-mono"
+                    onClick={() => handleSendEmail(showDetail.id)}
+                    disabled={sending}
+                  >
+                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    Send Email Now
+                  </Button>
+                  {detailEmails.some(e => e.status === 'sent') && (
+                    <Button
+                      variant="outline"
+                      className="gap-2 font-mono"
+                      onClick={() => handleSendEmail(showDetail.id, true)}
+                      disabled={sending}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Resend
+                    </Button>
+                  )}
+                </div>
+              )}
+
               {['sent', 'overdue'].includes(showDetail.status) && (
                 <Button
                   className={`w-full gap-2 font-mono ${
@@ -601,7 +732,40 @@ export default function Invoices() {
                   Pay Now — ${showDetail.total.toFixed(2)}
                 </Button>
               )}
+
               {showDetail.notes && <p className="text-sm text-muted-foreground italic">{showDetail.notes}</p>}
+
+              {/* Email History */}
+              {detailEmails.length > 0 && (
+                <div className="border-t border-border/50 pt-3">
+                  <h4 className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" /> Email History
+                  </h4>
+                  <div className="space-y-2">
+                    {detailEmails.map(email => (
+                      <div key={email.id} className="flex items-center justify-between rounded-md border border-border/50 bg-background/50 px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          {EMAIL_STATUS_ICON[email.status]}
+                          <div>
+                            <p className="text-xs font-mono">{email.sent_to}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {email.sent_at ? format(new Date(email.sent_at), 'MMM d, yyyy HH:mm') : 'Pending'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={email.status === 'sent' ? 'default' : email.status === 'failed' ? 'destructive' : 'secondary'} className="text-[10px] capitalize">
+                            {email.status}
+                          </Badge>
+                          {email.error && (
+                            <p className="text-[10px] text-destructive mt-0.5 max-w-[200px] truncate">{email.error}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
