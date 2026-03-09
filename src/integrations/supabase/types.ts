@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      invoice_emails: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          invoice_id: string
+          scheduled_for: string | null
+          sent_at: string | null
+          sent_to: string
+          status: Database["public"]["Enums"]["invoice_email_status"]
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          invoice_id: string
+          scheduled_for?: string | null
+          sent_at?: string | null
+          sent_to: string
+          status?: Database["public"]["Enums"]["invoice_email_status"]
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          invoice_id?: string
+          scheduled_for?: string | null
+          sent_at?: string | null
+          sent_to?: string
+          status?: Database["public"]["Enums"]["invoice_email_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_emails_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           created_at: string
@@ -73,6 +114,7 @@ export type Database = {
           paid_at: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
           payment_reference: string | null
+          send_date: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
           tax_rate: number
@@ -89,6 +131,7 @@ export type Database = {
           paid_at?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_reference?: string | null
+          send_date?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           tax_rate?: number
@@ -105,6 +148,7 @@ export type Database = {
           paid_at?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_reference?: string | null
+          send_date?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           tax_rate?: number
@@ -371,6 +415,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "editor" | "client"
+      invoice_email_status: "scheduled" | "sent" | "failed"
       invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
       lead_status: "new" | "contacted" | "qualified" | "converted" | "lost"
       payment_method: "stripe" | "yoco" | "manual"
@@ -503,6 +548,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "editor", "client"],
+      invoice_email_status: ["scheduled", "sent", "failed"],
       invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
       lead_status: ["new", "contacted", "qualified", "converted", "lost"],
       payment_method: ["stripe", "yoco", "manual"],
