@@ -101,7 +101,7 @@ export default function Invoices() {
     const [invRes, profRes, prodRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('user_id, display_name, email'),
-      supabase.from('products').select('id, name, price_usd, description').eq('active', true),
+      supabase.from('products').select('id, name, price_usd, description, category').eq('active', true),
     ]);
     const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
     const enriched = (invRes.data ?? []).map(inv => ({
