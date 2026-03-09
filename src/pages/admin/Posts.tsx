@@ -161,7 +161,7 @@ const Posts = () => {
               <Button variant="ghost" size="icon" onClick={() => openEdit(post)}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(post.id)}>
+              <Button variant="ghost" size="icon" onClick={() => setDeleteId(post.id)}>
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
             </div>

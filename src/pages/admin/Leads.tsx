@@ -206,6 +206,15 @@ const Leads = () => {
           <p className="py-12 text-center font-mono text-sm text-muted-foreground">No leads found.</p>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Delete lead?"
+        description="This will permanently remove this lead and cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => deleteId && deleteLead.mutate(deleteId)}
+      />
     </div>
   );
 };
