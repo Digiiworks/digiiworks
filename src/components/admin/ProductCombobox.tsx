@@ -61,7 +61,14 @@ export default function ProductCombobox({ products, value, onSelect, placeholder
                 }`}
                 onClick={() => { onSelect(p); setQuery(''); setOpen(false); }}
               >
-                <span className="truncate">{p.name}</span>
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="truncate font-medium">{p.name}</span>
+                  {p.category && (
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Tag className="h-2.5 w-2.5" /> {p.category}
+                    </span>
+                  )}
+                </div>
                 <span className="ml-2 font-mono text-muted-foreground shrink-0">${p.price_usd.toFixed(2)}</span>
               </button>
             ))
