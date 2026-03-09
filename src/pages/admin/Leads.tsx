@@ -60,6 +60,7 @@ const Leads = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-leads'] });
       setOpenId(null);
+      setDeleteId(null);
       toast({ title: 'Lead deleted' });
     },
   });
