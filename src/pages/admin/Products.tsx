@@ -280,42 +280,38 @@ export default function Products() {
         <StatCard label="Categories" value={categories.length} icon={Settings2} iconColor="text-muted-foreground" onClick={() => setShowCategoryManager(true)} />
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-mono text-2xl font-bold text-foreground">Products & Services</h1>
-        <div className="flex flex-wrap gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="w-40 pl-9 bg-card border-border h-9 text-sm" />
-          </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-44 bg-card border-border h-9">
-              <Tag className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(cat => (
-                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="flex rounded-md border border-border overflow-hidden">
-            {(['all', 'active', 'inactive'] as const).map(s => (
-              <button
-                key={s}
-                onClick={() => setShowActive(s)}
-                className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${showActive === s ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted'}`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-          <Button onClick={openCreate} className="gap-1.5 h-9">
-            <Plus className="h-4 w-4" /> Add Product
-          </Button>
+      <AdminToolbar title="Products & Services">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="w-40 pl-9 bg-card border-border h-9 text-sm" />
         </div>
-      </div>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-44 bg-card border-border h-9">
+            <Tag className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map(cat => (
+              <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex rounded-md border border-border overflow-hidden">
+          {(['all', 'active', 'inactive'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setShowActive(s)}
+              className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${showActive === s ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted'}`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <Button onClick={openCreate} className="gap-1.5 h-9">
+          <Plus className="h-4 w-4" /> Add Product
+        </Button>
+      </AdminToolbar>
 
       {/* Table */}
       {loading ? (
