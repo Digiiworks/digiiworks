@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Plus, Pencil, Trash2, Upload, X } from 'lucide-react';
 import RichEditor from '@/components/admin/RichEditor';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const Posts = () => {
   const { toast } = useToast();
