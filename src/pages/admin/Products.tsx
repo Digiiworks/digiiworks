@@ -481,19 +481,14 @@ export default function Products() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Category Confirmation */}
-      <AlertDialog open={!!deleteCategoryId} onOpenChange={() => setDeleteCategoryId(null)}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category?</AlertDialogTitle>
-            <AlertDialogDescription>This will remove the category. Products using it will have their category cleared.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteCategoryId}
+        onOpenChange={() => setDeleteCategoryId(null)}
+        title="Delete Category?"
+        description="This will remove the category. Products using it will have their category cleared."
+        confirmLabel="Delete"
+        onConfirm={handleDeleteCategory}
+      />
     </div>
   );
 }
