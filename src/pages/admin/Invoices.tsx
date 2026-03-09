@@ -379,9 +379,9 @@ export default function Invoices() {
 
       {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        <PageLoader />
       ) : processed.length === 0 ? (
-        <p className="py-12 text-center text-muted-foreground font-mono text-sm">No invoices found.</p>
+        <EmptyState message="No invoices found." />
       ) : (
         <>
           <div className="rounded-lg border border-border bg-card/50 overflow-x-auto">
