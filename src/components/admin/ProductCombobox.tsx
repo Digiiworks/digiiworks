@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, Tag } from 'lucide-react';
 
-type Product = { id: string; name: string; price_usd: number; description?: string | null };
+type Product = { id: string; name: string; price_usd: number; description?: string | null; category?: string | null };
 
 interface ProductComboboxProps {
   products: Product[];
@@ -21,7 +21,9 @@ export default function ProductCombobox({ products, value, onSelect, placeholder
   const filtered = query.trim()
     ? products.filter(p => {
         const q = query.toLowerCase();
-        return p.name.toLowerCase().includes(q) || (p.description ?? '').toLowerCase().includes(q);
+        return p.name.toLowerCase().includes(q) || 
+               (p.description ?? '').toLowerCase().includes(q) ||
+               (p.category ?? '').toLowerCase().includes(q);
       })
     : products;
 
@@ -59,7 +61,14 @@ export default function ProductCombobox({ products, value, onSelect, placeholder
                 }`}
                 onClick={() => { onSelect(p); setQuery(''); setOpen(false); }}
               >
-                <span className="truncate">{p.name}</span>
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="truncate font-medium">{p.name}</span>
+                  {p.category && (
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Tag className="h-2.5 w-2.5" /> {p.category}
+                    </span>
+                  )}
+                </div>
                 <span className="ml-2 font-mono text-muted-foreground shrink-0">${p.price_usd.toFixed(2)}</span>
               </button>
             ))
