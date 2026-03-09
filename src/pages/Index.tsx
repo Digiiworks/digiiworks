@@ -9,6 +9,7 @@ import StatsBar from '@/components/StatsBar';
 import TechMarquee from '@/components/TechMarquee';
 import AgentPreview from '@/components/AgentPreview';
 import LatestArticles from '@/components/LatestArticles';
+import LazySection from '@/components/LazySection';
 import { PILLARS } from '@/lib/constants';
 
 const PILLAR_ICONS: Record<string, React.ReactNode> = {
@@ -108,33 +109,33 @@ const Index = () => (
       </div>
 
       {/* Tech Marquee */}
-      <div className="mb-14 md:mb-20">
+      <LazySection className="mb-14 md:mb-20">
         <TechMarquee />
-      </div>
+      </LazySection>
 
       {/* Agent Preview */}
-      <div className="mb-14 md:mb-20">
+      <LazySection className="mb-14 md:mb-20">
         <AgentPreview />
-      </div>
+      </LazySection>
 
       {/* Latest Articles */}
-      <div className="mb-14 md:mb-20">
+      <LazySection className="mb-14 md:mb-20">
         <div className="mb-4 flex items-center gap-3 md:mb-6">
           <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">// latest_articles</span>
           <div className="h-px flex-1 bg-border" />
           <Link to="/blog" className="font-mono text-xs text-primary hover:underline">View all →</Link>
         </div>
         <LatestArticles />
-      </div>
+      </LazySection>
 
       {/* Live Pulse */}
-      <div className="mx-auto max-w-2xl">
+      <LazySection className="mx-auto max-w-2xl">
         <div className="mb-4 flex items-center gap-3">
           <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">// live_feed</span>
           <div className="h-px flex-1 bg-border" />
         </div>
         <AgencyPulse />
-      </div>
+      </LazySection>
     </div>
   </div>
 );

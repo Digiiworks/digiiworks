@@ -1,53 +1,20 @@
 
 
-## Performance and Security Improvements
+## Custom 404 Page — Neon Dark Theme
 
-### Security Fixes (Critical)
+Replace the current plain 404 page with a styled version matching the site's neon-dark aesthetic.
 
-**1. Fix profiles table RLS policy** — The security scan found that ALL authenticated users can read every user's sensitive profile data. Replace the permissive SELECT policy with:
-- Users can read their own profile (`auth.uid() = user_id`)
-- Admins can read all profiles via `has_role()`
+### Changes
 
-**2. Enable leaked password protection** — Turn on the built-in leaked password check in auth config so users can't sign up with compromised passwords.
+**`src/pages/NotFound.tsx`** — Full redesign:
+- Dark background with `grid-overlay` pattern (matching ErrorBoundary style)
+- Glitchy "404" heading using `text-gradient` and `font-mono`
+- Pulsing status indicator (neon-mint dot with `animate-ping`) showing "Route Not Found"
+- Display the attempted path using `useLocation().pathname` in a mono-styled code block
+- Subtitle text in `text-muted-foreground`
+- "Return to Base" button styled with `glow-blue` and primary colors (matching ErrorBoundary's button pattern)
+- `glass-card` container for the content block
+- Wrap in the `Layout` component by moving the `*` route inside the Layout route group in `App.tsx`
 
-**3. Fix permissive RLS policies** — Audit and tighten any INSERT/UPDATE/DELETE policies that use `USING (true)` or `WITH CHECK (true)`.
-
-**4. Add security headers** — Update `nginx.conf` with:
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Content-Security-Policy` (basic restrictive policy)
-- `Permissions-Policy` to disable camera/mic/geolocation
-- `Strict-Transport-Security` (HSTS)
-
-**5. Add `rel="noopener noreferrer"` audit** — Already present on Footer links; verify all external links across the site.
-
-### Performance Improvements
-
-**1. Optimize ConstellationBg canvas** — The homepage runs a canvas particle animation on every frame. Improvements:
-- Reduce particle count further on low-end devices
-- Use `OffscreenCanvas` where supported or throttle to 30fps on mobile
-- Skip rendering when tab is not visible (`document.hidden`)
-
-**2. Lazy-load heavy homepage sections** — The Index page eagerly renders ConstellationBg, HeroOrbs, AgentPreview, LatestArticles, AgencyPulse, TechMarquee, and StatsBar all at once. Wrap below-the-fold sections (AgentPreview, LatestArticles, AgencyPulse) in intersection-observer-based lazy wrappers so they only mount when scrolled into view.
-
-**3. Preload critical assets** — Add `<link rel="preload">` for the logo SVG and Inter/JetBrains Mono fonts in `index.html` to reduce render-blocking.
-
-**4. Optimize font loading** — Switch Google Fonts import to use `font-display: swap` (add `&display=swap` — already present) and preconnect to `fonts.googleapis.com` / `fonts.gstatic.com`.
-
-**5. Image optimization** — Add `loading="lazy"` and explicit `width`/`height` to blog images and any other `<img>` tags to prevent layout shift and defer offscreen images.
-
-**6. QueryClient stale time** — Set a default `staleTime` (e.g. 5 minutes) on the QueryClient to avoid redundant refetches on navigation.
-
-### Summary of Changes
-
-| Area | Files |
-|------|-------|
-| DB migration | Fix profiles RLS policy, audit other permissive policies |
-| Auth config | Enable leaked password protection |
-| nginx.conf | Add security headers |
-| index.html | Add preconnect + preload hints |
-| ConstellationBg.tsx | Throttle/pause when hidden, reduce mobile work |
-| Index.tsx | Lazy-load below-fold sections |
-| App.tsx | Set QueryClient defaults |
+**`src/App.tsx`** — Move the catch-all route inside the `<Route element={<Layout />}>` group so the 404 page gets the navbar and footer.
 
