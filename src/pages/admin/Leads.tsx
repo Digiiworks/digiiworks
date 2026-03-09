@@ -191,11 +191,7 @@ const Leads = () => {
                       variant="ghost"
                       size="sm"
                       className="font-mono text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => {
-                        if (confirm('Delete this lead permanently?')) {
-                          deleteLead.mutate(lead.id);
-                        }
-                      }}
+                      onClick={() => setDeleteId(lead.id)}
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                       Delete
