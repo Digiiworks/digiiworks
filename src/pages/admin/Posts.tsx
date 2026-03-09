@@ -13,6 +13,9 @@ import { format } from 'date-fns';
 import { Plus, Pencil, Trash2, Upload, X } from 'lucide-react';
 import RichEditor from '@/components/admin/RichEditor';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import AdminToolbar from '@/components/admin/AdminToolbar';
+import PageLoader from '@/components/admin/PageLoader';
+import EmptyState from '@/components/admin/EmptyState';
 
 const Posts = () => {
   const { toast } = useToast();
@@ -35,25 +38,16 @@ const Posts = () => {
     mutationFn: async (post: any) => {
       if (post.id) {
         const { error } = await supabase.from('posts').update({
-          title: post.title,
-          slug: post.slug,
-          content: post.content,
-          excerpt: post.excerpt,
-          status: post.status,
-          featured_image: post.featured_image,
+          title: post.title, slug: post.slug, content: post.content,
+          excerpt: post.excerpt, status: post.status, featured_image: post.featured_image,
           tags: post.tags || [],
         }).eq('id', post.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('posts').insert({
-          title: post.title,
-          slug: post.slug,
-          content: post.content,
-          excerpt: post.excerpt,
-          status: post.status,
-          featured_image: post.featured_image,
-          tags: post.tags || [],
-          author_id: user?.id,
+          title: post.title, slug: post.slug, content: post.content,
+          excerpt: post.excerpt, status: post.status, featured_image: post.featured_image,
+          tags: post.tags || [], author_id: user?.id,
         });
         if (error) throw error;
       }
@@ -115,17 +109,13 @@ const Posts = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-mono text-2xl font-bold text-foreground">Blog Posts</h1>
-          <p className="font-mono text-xs text-muted-foreground mt-1">Create and manage blog content</p>
-        </div>
+      <AdminToolbar title="Blog Posts" subtitle="Create and manage blog content">
         <Button onClick={openNew} className="font-mono text-xs glow-blue bg-primary text-primary-foreground">
           <Plus className="h-3.5 w-3.5 mr-1.5" /> New Post
         </Button>
-      </div>
+      </AdminToolbar>
 
-      {isLoading && <p className="font-mono text-sm text-muted-foreground">Loading...</p>}
+      {isLoading && <PageLoader />}
 
       <div className="grid gap-4">
         {posts?.map((post: any) => (
@@ -167,11 +157,7 @@ const Posts = () => {
             </div>
           </div>
         ))}
-        {posts?.length === 0 && (
-          <div className="glass-card p-12 text-center">
-            <p className="font-mono text-sm text-muted-foreground">No posts yet. Create your first one.</p>
-          </div>
-        )}
+        {posts?.length === 0 && <EmptyState message="No posts yet. Create your first one." />}
       </div>
 
       {/* Editor Dialog */}
@@ -222,9 +208,7 @@ const Posts = () => {
                   </Button>
                   {editingPost.featured_image && (
                     <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
+                      type="button" variant="ghost" size="sm"
                       onClick={() => setEditingPost({ ...editingPost, featured_image: '' })}
                       className="font-mono text-xs text-destructive"
                     >

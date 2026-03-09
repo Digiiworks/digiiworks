@@ -9,6 +9,9 @@ import { format } from 'date-fns';
 import { ChevronDown, Trash2, ExternalLink, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import AdminToolbar from '@/components/admin/AdminToolbar';
+import PageLoader from '@/components/admin/PageLoader';
+import EmptyState from '@/components/admin/EmptyState';
 
 const STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'] as const;
 
@@ -69,11 +72,7 @@ const Leads = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-mono text-2xl font-bold text-foreground">Leads</h1>
-          <p className="font-mono text-xs text-muted-foreground mt-1">Manage contact form submissions</p>
-        </div>
+      <AdminToolbar title="Leads" subtitle="Manage contact form submissions">
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-36 border-border bg-background/50 font-mono text-xs">
             <SelectValue />
@@ -85,16 +84,15 @@ const Leads = () => {
             ))}
           </SelectContent>
         </Select>
-      </div>
+      </AdminToolbar>
 
-      {isLoading && <p className="font-mono text-sm text-muted-foreground">Loading...</p>}
+      {isLoading && <PageLoader />}
 
       <div className="divide-y divide-border/30">
         {leads?.map((lead: any) => {
           const isOpen = openId === lead.id;
           return (
             <div key={lead.id}>
-              {/* Accordion trigger row */}
               <button
                 type="button"
                 onClick={() => toggle(lead.id)}
@@ -120,7 +118,6 @@ const Leads = () => {
                 />
               </button>
 
-              {/* Accordion content */}
               {isOpen && (
                 <div className="pb-5 pl-2 pr-2 space-y-4 animate-in fade-in-0 slide-in-from-top-1 duration-200">
                   <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -202,9 +199,7 @@ const Leads = () => {
             </div>
           );
         })}
-        {leads?.length === 0 && (
-          <p className="py-12 text-center font-mono text-sm text-muted-foreground">No leads found.</p>
-        )}
+        {leads?.length === 0 && <EmptyState message="No leads found." />}
       </div>
 
       <ConfirmDialog

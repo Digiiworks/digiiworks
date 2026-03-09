@@ -4,16 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Users, FileText, Mail, TrendingUp, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, subDays, startOfDay } from 'date-fns';
-
-const StatCard = ({ label, value, icon: Icon, color }: { label: string; value: number | string; icon: any; color: string }) => (
-  <div className="glass-card p-5">
-    <div className="flex items-center justify-between mb-3">
-      <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
-      <Icon className={`h-4 w-4 ${color}`} />
-    </div>
-    <p className="font-mono text-2xl font-bold text-foreground">{value}</p>
-  </div>
-);
+import StatCard from '@/components/admin/StatCard';
+import AdminToolbar from '@/components/admin/AdminToolbar';
 
 const COLORS = ['hsl(184, 100%, 50%)', 'hsl(280, 99%, 53%)', 'hsl(106, 100%, 55%)', 'hsl(0, 72%, 51%)', 'hsl(45, 100%, 60%)'];
 
@@ -107,18 +99,15 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-mono text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="font-mono text-xs text-muted-foreground mt-1">Overview of your agency operations</p>
-      </div>
+      <AdminToolbar title="Dashboard" subtitle="Overview of your agency operations" />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Leads" value={leadCount ?? 0} icon={Mail} color="text-neon-blue" />
-        <StatCard label="New Leads" value={newLeads ?? 0} icon={TrendingUp} color="text-neon-mint" />
+        <StatCard label="Total Leads" value={leadCount ?? 0} icon={Mail} iconColor="text-neon-blue" />
+        <StatCard label="New Leads" value={newLeads ?? 0} icon={TrendingUp} iconColor="text-neon-mint" />
         {!isClient && (
           <>
-            <StatCard label="Blog Posts" value={postCount ?? 0} icon={FileText} color="text-neon-purple" />
-            <StatCard label="Conversion Rate" value={conversionRate} icon={Users} color="text-primary" />
+            <StatCard label="Blog Posts" value={postCount ?? 0} icon={FileText} iconColor="text-neon-purple" />
+            <StatCard label="Conversion Rate" value={conversionRate} icon={Users} iconColor="text-primary" />
           </>
         )}
       </div>

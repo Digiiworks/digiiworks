@@ -14,16 +14,18 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Plus, Trash2, Pencil, Loader2, Search, ChevronLeft, ChevronRight,
-  User, Mail, Phone, Building2, MapPin, FileText, DollarSign,
+  Plus, Trash2, Pencil, Loader2, Search,
+  User, Mail, Phone, Building2, MapPin, FileText,
 } from 'lucide-react';
+import StatCard from '@/components/admin/StatCard';
+import AdminToolbar from '@/components/admin/AdminToolbar';
+import AdminPagination from '@/components/admin/AdminPagination';
+import EmptyState from '@/components/admin/EmptyState';
+import PageLoader from '@/components/admin/PageLoader';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 type Client = {
   id: string;
@@ -225,53 +227,32 @@ export default function Clients() {
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Total Clients</p>
-          <p className="font-mono text-2xl font-bold text-foreground">{clients.length}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">With Outstanding</p>
-          <p className="font-mono text-2xl font-bold text-foreground">
-            {clients.filter(c => (c.outstanding ?? 0) > 0).length}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Total Outstanding</p>
-          <p className="font-mono text-2xl font-bold text-orange-400">
-            {fmt(clients.reduce((s, c) => s + (c.outstanding ?? 0), 0))}
-          </p>
-        </div>
+        <StatCard label="Total Clients" value={clients.length} />
+        <StatCard label="With Outstanding" value={clients.filter(c => (c.outstanding ?? 0) > 0).length} />
+        <StatCard label="Total Outstanding" value={fmt(clients.reduce((s, c) => s + (c.outstanding ?? 0), 0))} valueColor="text-orange-400" />
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-mono text-2xl font-bold text-foreground">Clients</h1>
-        <div className="flex gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search clients..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-52 pl-9 bg-card border-border h-9 text-sm"
-            />
-          </div>
-          <Button onClick={openCreate} className="gap-1.5 h-9">
-            <Plus className="h-4 w-4" /> Add Client
-          </Button>
+      <AdminToolbar title="Clients">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search clients..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-52 pl-9 bg-card border-border h-9 text-sm"
+          />
         </div>
-      </div>
+        <Button onClick={openCreate} className="gap-1.5 h-9">
+          <Plus className="h-4 w-4" /> Add Client
+        </Button>
+      </AdminToolbar>
 
       {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        <PageLoader />
       ) : filtered.length === 0 ? (
-        <div className="py-16 text-center">
-          <User className="mx-auto h-10 w-10 text-muted-foreground/30" />
-          <p className="mt-3 font-mono text-sm text-muted-foreground">No clients found.</p>
-        </div>
+        <EmptyState icon={User} message="No clients found." />
       ) : (
         <>
           <div className="rounded-lg border border-border bg-card/50 overflow-x-auto">
@@ -350,27 +331,7 @@ export default function Clients() {
             </Table>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="font-mono text-xs text-muted-foreground">
-                Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
-              </p>
-              <div className="flex items-center gap-1">
-                <Button variant="outline" size="icon" className="h-8 w-8" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                  <Button key={p} variant={p === page ? 'default' : 'outline'} size="icon" className="h-8 w-8 font-mono text-xs" onClick={() => setPage(p)}>
-                    {p}
-                  </Button>
-                ))}
-                <Button variant="outline" size="icon" className="h-8 w-8" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <AdminPagination page={page} totalPages={totalPages} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
         </>
       )}
 
@@ -435,23 +396,14 @@ export default function Clients() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Client Role?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This removes the client role from this user. Their profile and data will remain intact, but they'll lose client access.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Remove Role
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        title="Remove Client Role?"
+        description="This removes the client role from this user. Their profile and data will remain intact, but they'll lose client access."
+        confirmLabel="Remove Role"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

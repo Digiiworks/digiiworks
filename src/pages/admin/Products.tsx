@@ -13,14 +13,16 @@ import { Switch } from '@/components/ui/switch';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, Pencil, Loader2, Search, Package, ChevronLeft, ChevronRight, Tag, Settings2 } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2, Search, Package, Tag, Settings2 } from 'lucide-react';
+import StatCard from '@/components/admin/StatCard';
+import AdminToolbar from '@/components/admin/AdminToolbar';
+import AdminPagination from '@/components/admin/AdminPagination';
+import PageLoader from '@/components/admin/PageLoader';
+import EmptyState from '@/components/admin/EmptyState';
 
 type Category = {
   id: string;
@@ -271,73 +273,51 @@ export default function Products() {
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Total Products</p>
-          <p className="font-mono text-2xl font-bold text-foreground">{products.length}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Active</p>
-          <p className="font-mono text-2xl font-bold text-green-400">{products.filter(p => p.active).length}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Inactive</p>
-          <p className="font-mono text-2xl font-bold text-muted-foreground">{products.filter(p => !p.active).length}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setShowCategoryManager(true)}>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-            Categories <Settings2 className="h-3 w-3" />
-          </p>
-          <p className="font-mono text-2xl font-bold text-foreground">{categories.length}</p>
-        </div>
+        <StatCard label="Total Products" value={products.length} />
+        <StatCard label="Active" value={products.filter(p => p.active).length} valueColor="text-green-400" />
+        <StatCard label="Inactive" value={products.filter(p => !p.active).length} valueColor="text-muted-foreground" />
+        <StatCard label="Categories" value={categories.length} icon={Settings2} iconColor="text-muted-foreground" onClick={() => setShowCategoryManager(true)} />
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-mono text-2xl font-bold text-foreground">Products & Services</h1>
-        <div className="flex flex-wrap gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="w-40 pl-9 bg-card border-border h-9 text-sm" />
-          </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-44 bg-card border-border h-9">
-              <Tag className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(cat => (
-                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="flex rounded-md border border-border overflow-hidden">
-            {(['all', 'active', 'inactive'] as const).map(s => (
-              <button
-                key={s}
-                onClick={() => setShowActive(s)}
-                className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${showActive === s ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted'}`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-          <Button onClick={openCreate} className="gap-1.5 h-9">
-            <Plus className="h-4 w-4" /> Add Product
-          </Button>
+      <AdminToolbar title="Products & Services">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="w-40 pl-9 bg-card border-border h-9 text-sm" />
         </div>
-      </div>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-44 bg-card border-border h-9">
+            <Tag className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map(cat => (
+              <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex rounded-md border border-border overflow-hidden">
+          {(['all', 'active', 'inactive'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setShowActive(s)}
+              className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${showActive === s ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted'}`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <Button onClick={openCreate} className="gap-1.5 h-9">
+          <Plus className="h-4 w-4" /> Add Product
+        </Button>
+      </AdminToolbar>
 
       {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        <PageLoader />
       ) : filtered.length === 0 ? (
-        <div className="py-16 text-center">
-          <Package className="mx-auto h-10 w-10 text-muted-foreground/30" />
-          <p className="mt-3 font-mono text-sm text-muted-foreground">No products found.</p>
-        </div>
+        <EmptyState icon={Package} message="No products found." />
       ) : (
         <>
           <div className="rounded-lg border border-border bg-card/50 overflow-x-auto">
@@ -388,26 +368,7 @@ export default function Products() {
             </Table>
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="font-mono text-xs text-muted-foreground">
-                Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
-              </p>
-              <div className="flex items-center gap-1">
-                <Button variant="outline" size="icon" className="h-8 w-8" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                  <Button key={p} variant={p === page ? 'default' : 'outline'} size="icon" className="h-8 w-8 font-mono text-xs" onClick={() => setPage(p)}>
-                    {p}
-                  </Button>
-                ))}
-                <Button variant="outline" size="icon" className="h-8 w-8" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <AdminPagination page={page} totalPages={totalPages} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
         </>
       )}
 
@@ -427,19 +388,14 @@ export default function Products() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Product Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently remove this product.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        title="Delete Product?"
+        description="This will permanently remove this product."
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+      />
 
       {/* Category Manager Dialog */}
       <Dialog open={showCategoryManager} onOpenChange={setShowCategoryManager}>
@@ -525,19 +481,14 @@ export default function Products() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Category Confirmation */}
-      <AlertDialog open={!!deleteCategoryId} onOpenChange={() => setDeleteCategoryId(null)}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category?</AlertDialogTitle>
-            <AlertDialogDescription>This will remove the category. Products using it will have their category cleared.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteCategoryId}
+        onOpenChange={() => setDeleteCategoryId(null)}
+        title="Delete Category?"
+        description="This will remove the category. Products using it will have their category cleared."
+        confirmLabel="Delete"
+        onConfirm={handleDeleteCategory}
+      />
     </div>
   );
 }

@@ -17,17 +17,19 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import {
-  Plus, Trash2, Eye, Loader2, CreditCard, ChevronLeft, ChevronRight,
-  AlertTriangle, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle,
+  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle,
 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
+import StatCard from '@/components/admin/StatCard';
+import AdminToolbar from '@/components/admin/AdminToolbar';
+import AdminPagination from '@/components/admin/AdminPagination';
+import PageLoader from '@/components/admin/PageLoader';
+import EmptyState from '@/components/admin/EmptyState';
 import ProductCombobox from '@/components/admin/ProductCombobox';
 
 type Invoice = {
@@ -327,66 +329,59 @@ export default function Invoices() {
     <div className="space-y-6">
       {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Outstanding</p>
-          <p className="font-mono text-2xl font-bold text-foreground">${outstandingTotal.toFixed(2)}</p>
-          <p className="font-mono text-xs text-muted-foreground mt-1">
-            {invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).length} invoice(s)
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card/50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Paid</p>
-          <p className="font-mono text-2xl font-bold text-green-400">${paidTotal.toFixed(2)}</p>
-          <p className="font-mono text-xs text-muted-foreground mt-1">
-            {invoices.filter(i => i.status === 'paid').length} invoice(s)
-          </p>
-        </div>
+        <StatCard
+          label="Outstanding"
+          value={`$${outstandingTotal.toFixed(2)}`}
+          subtitle={`${invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).length} invoice(s)`}
+        />
+        <StatCard
+          label="Paid"
+          value={`$${paidTotal.toFixed(2)}`}
+          valueColor="text-green-400"
+          subtitle={`${invoices.filter(i => i.status === 'paid').length} invoice(s)`}
+        />
         {overdueCount > 0 && (
-          <div className="rounded-lg border border-orange-500/40 bg-orange-500/5 p-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-orange-400" />
-              <p className="font-mono text-[10px] uppercase tracking-widest text-orange-400">Overdue</p>
-            </div>
-            <p className="font-mono text-2xl font-bold text-orange-400">
-              ${invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0).toFixed(2)}
-            </p>
-            <p className="font-mono text-xs text-orange-400/70 mt-1">{overdueCount} invoice(s)</p>
-          </div>
+          <StatCard
+            label="Overdue"
+            value={`$${invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0).toFixed(2)}`}
+            icon={AlertTriangle}
+            iconColor="text-orange-400"
+            valueColor="text-orange-400"
+            variant="alert"
+            alertColor="orange-500"
+            subtitle={`${overdueCount} invoice(s)`}
+          />
         )}
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-mono text-2xl font-bold text-foreground">Invoices</h1>
-        <div className="flex flex-wrap gap-2">
-          <Input
-            placeholder="Search invoices..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-48 bg-card border-border h-9 text-sm"
-          />
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-32 bg-card border-border h-9">
-              <SelectValue placeholder="Filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {isAdmin && (
-            <Button onClick={() => { resetForm(); setShowCreate(true); }} className="gap-1.5 h-9">
-              <Plus className="h-4 w-4" /> New Invoice
-            </Button>
-          )}
-        </div>
-      </div>
+      <AdminToolbar title="Invoices">
+        <Input
+          placeholder="Search invoices..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-48 bg-card border-border h-9 text-sm"
+        />
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-32 bg-card border-border h-9">
+            <SelectValue placeholder="Filter" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {isAdmin && (
+          <Button onClick={() => { resetForm(); setShowCreate(true); }} className="gap-1.5 h-9">
+            <Plus className="h-4 w-4" /> New Invoice
+          </Button>
+        )}
+      </AdminToolbar>
 
       {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        <PageLoader />
       ) : processed.length === 0 ? (
-        <p className="py-12 text-center text-muted-foreground font-mono text-sm">No invoices found.</p>
+        <EmptyState message="No invoices found." />
       ) : (
         <>
           <div className="rounded-lg border border-border bg-card/50 overflow-x-auto">
@@ -495,31 +490,7 @@ export default function Invoices() {
             </Table>
           </div>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between">
-            <p className="font-mono text-xs text-muted-foreground">
-              Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, processed.length)} of {processed.length}
-            </p>
-            <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" className="h-8 w-8" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                <Button
-                  key={p}
-                  variant={p === page ? 'default' : 'outline'}
-                  size="icon"
-                  className="h-8 w-8 font-mono text-xs"
-                  onClick={() => setPage(p)}
-                >
-                  {p}
-                </Button>
-              ))}
-              <Button variant="outline" size="icon" className="h-8 w-8" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <AdminPagination page={page} totalPages={totalPages} totalItems={processed.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
         </>
       )}
 
@@ -771,19 +742,14 @@ export default function Invoices() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Invoice?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete this invoice and all its line items.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        title="Delete Invoice?"
+        description="This will permanently delete this invoice and all its line items."
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
