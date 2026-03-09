@@ -77,6 +77,7 @@ const Posts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-posts'] });
+      setDeleteId(null);
       toast({ title: 'Post deleted' });
     },
   });
