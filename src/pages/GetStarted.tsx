@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Send, CheckCircle2, Loader2, Clock, Mail, MessageSquare, Sparkles } from 'lucide-react';
@@ -66,6 +66,8 @@ const GetStarted = () => {
   const [dir, setDir] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const formLoadTime = useRef(Date.now());
+  const [honeypot, setHoneypot] = useState('');
 
   // Form state
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -94,6 +96,17 @@ const GetStarted = () => {
 
   const handleSubmit = async () => {
     if (!canNext()) return;
+    // Anti-spam
+    if (honeypot) return;
+    const elapsed = Date.now() - formLoadTime.current;
+    if (elapsed < 5000) {
+      toast({ title: 'Please slow down', description: 'Form submitted too quickly.', variant: 'destructive' });
+      return;
+    }
+    if (name.trim().length > 100 || email.trim().length > 255 || message.trim().length > 2000) {
+      toast({ title: 'Input too long', variant: 'destructive' });
+      return;
+    }
     setSubmitting(true);
     try {
       const isPriority = selectedServices.some((s) => s.includes('AI') || s.includes('n8n') || s.includes('Automation'));
@@ -345,6 +358,10 @@ const GetStarted = () => {
               {step === 4 && (
                 <div className="space-y-4">
                   <h2 className="font-mono text-lg font-semibold text-foreground">Almost there — how do we reach you?</h2>
+                  {/* Honeypot */}
+                  <div className="absolute opacity-0 h-0 overflow-hidden" aria-hidden="true" tabIndex={-1}>
+                    <input name="fax_number" type="text" value={honeypot} onChange={e => setHoneypot(e.target.value)} autoComplete="off" tabIndex={-1} />
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="mb-1 block font-mono text-xs text-muted-foreground">Name *</label>
