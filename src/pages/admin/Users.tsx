@@ -128,6 +128,15 @@ const UsersAdmin = () => {
           </table>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteRoleId}
+        onOpenChange={(open) => !open && setDeleteRoleId(null)}
+        title="Remove role?"
+        description="This will remove the role from this user."
+        confirmLabel="Remove"
+        onConfirm={() => deleteRoleId && removeRole.mutate(deleteRoleId)}
+      />
     </div>
   );
 };

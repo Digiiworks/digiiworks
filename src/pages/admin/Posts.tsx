@@ -305,6 +305,15 @@ const Posts = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Delete post?"
+        description="This will permanently remove this post and cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
+      />
     </div>
   );
 };
