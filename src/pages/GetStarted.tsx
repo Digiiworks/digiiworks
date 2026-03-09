@@ -66,6 +66,8 @@ const GetStarted = () => {
   const [dir, setDir] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const formLoadTime = useRef(Date.now());
+  const [honeypot, setHoneypot] = useState('');
 
   // Form state
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
