@@ -84,7 +84,17 @@ Deno.serve(async (req) => {
       })
       .eq("user_id", userId);
 
-    return new Response(JSON.stringify({ success: true, user_id: userId }), {
+    // Send password reset email so the client can set their own password
+    const { error: resetError } = await adminClient.auth.resetPasswordForEmail(email, {
+      redirectTo: `${req.headers.get("origin") || supabaseUrl}/reset-password`,
+    });
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      user_id: userId,
+      reset_email_sent: !resetError,
+      reset_error: resetError?.message || null,
+    }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
