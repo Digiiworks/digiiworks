@@ -198,7 +198,10 @@ export default function Clients() {
     if (error || data?.error) {
       toast({ title: 'Error creating client', description: data?.error || error?.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Client created successfully' });
+      const resetMsg = data?.reset_email_sent 
+        ? 'A password reset email has been sent so they can set their password.' 
+        : 'Client created, but the reset email could not be sent.';
+      toast({ title: 'Client created successfully', description: resetMsg });
       setShowCreate(false);
       fetchClients();
     }
