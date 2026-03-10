@@ -11,13 +11,16 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/admin/AdminLayout";
 
-const Index = lazy(() => import("./pages/Index"));
-const Services = lazy(() => import("./pages/Services"));
+// Eager imports for main nav pages — instant navigation
+import Index from "./pages/Index";
+import Services from "./pages/Services";
+import Contact from "./pages/Contact";
+import GetStarted from "./pages/GetStarted";
+import Blog from "./pages/Blog";
+import AIAutomation from "./pages/AIAutomation";
+
+// Lazy imports for low-traffic / detail pages
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
-const Contact = lazy(() => import("./pages/Contact"));
-const GetStarted = lazy(() => import("./pages/GetStarted"));
-const Blog = lazy(() => import("./pages/Blog"));
-const AIAutomation = lazy(() => import("./pages/AIAutomation"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -37,7 +40,7 @@ const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
     },
   },
@@ -58,11 +61,10 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <PageMeta />
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Public site */}
-                <Route element={<Layout />}>
-                  <Route path="/" element={<Index />} />
+            <Routes>
+              {/* Public site */}
+              <Route element={<Layout />}>
+                <Route path="/" element={<Index />} />
                   <Route path="/services" element={<Services />} />
                   <Route path="/services/:slug" element={<ServiceDetail />} />
                   <Route path="/ai" element={<AIAutomation />} />
