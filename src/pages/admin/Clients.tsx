@@ -179,29 +179,30 @@ export default function Clients() {
       toast({ title: 'Email is required', variant: 'destructive' });
       return;
     }
-    setSaving(true);
-
-    // Create auth user via edge function or just create a profile entry
-    // Since we can't create auth users from client-side, we'll create a placeholder profile
-    // and inform admin to send invite
-    const { data: existing } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('email', form.email)
-      .maybeSingle();
-
-    if (existing) {
-      toast({ title: 'A user with this email already exists', variant: 'destructive' });
-      setSaving(false);
+    if (!form.display_name) {
+      toast({ title: 'Contact name is required', variant: 'destructive' });
       return;
     }
+    setSaving(true);
 
-    toast({
-      title: 'Note',
-      description: 'To add a new client, they need to sign up through the auth page. You can then manage their profile here.',
+    const { data, error } = await supabase.functions.invoke('create-client', {
+      body: {
+        email: form.email,
+        display_name: form.display_name,
+        phone: form.phone,
+        company: form.company,
+        address: form.address,
+      },
     });
+
+    if (error || data?.error) {
+      toast({ title: 'Error creating client', description: data?.error || error?.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Client created successfully' });
+      setShowCreate(false);
+      fetchClients();
+    }
     setSaving(false);
-    setShowCreate(false);
   };
 
   const handleDelete = async () => {
