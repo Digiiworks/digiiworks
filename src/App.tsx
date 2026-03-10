@@ -126,10 +126,9 @@ const App = () => (
                 </Route>
 
                 <Route path="*" element={<Layout />}>
-                  <Route path="*" element={<NotFound />} />
+                  <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
                 </Route>
               </Routes>
-            </Suspense>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
