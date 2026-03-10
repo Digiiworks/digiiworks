@@ -88,7 +88,7 @@ const App = () => (
                 {/* Admin CRM */}
                 <Route path="/admin" element={
                   <ProtectedRoute requiredRoles={['admin', 'editor', 'client']}>
-                    <AdminLayout />
+                    <Suspense fallback={<PageLoader />}><AdminLayout /></Suspense>
                   </ProtectedRoute>
                 }>
                   <Route index element={<Dashboard />} />
