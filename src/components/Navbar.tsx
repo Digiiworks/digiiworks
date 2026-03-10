@@ -14,6 +14,11 @@ const Navbar = () => {
   const { user, isAdmin, isEditor, isClient } = useAuth();
   const showAdmin = user && (isAdmin || isEditor || isClient);
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/');
