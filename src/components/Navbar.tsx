@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { NAV_LINKS } from '@/lib/constants';
 import { NAV_LINKS } from '@/lib/constants';
 import { useAuth } from '@/contexts/AuthContext';
 import { LayoutDashboard, LogIn, LogOut } from 'lucide-react';
