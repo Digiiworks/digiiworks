@@ -381,18 +381,35 @@ export default function Clients() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-md bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="font-mono">Add Client</DialogTitle>
+            <DialogTitle className="font-mono">Onboard New Client</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              New clients sign up via the auth page and automatically receive the client role. You can then edit their details here.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              To promote an existing user to client, go to <span className="text-primary font-mono">Users</span> and assign the role.
-            </p>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5"><User className="h-3 w-3" /> Contact Name *</Label>
+              <Input value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} className="bg-background border-border" placeholder="John Doe" />
+            </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5"><Mail className="h-3 w-3" /> Email *</Label>
+              <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="bg-background border-border" placeholder="john@company.com" />
+            </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5"><Phone className="h-3 w-3" /> Phone</Label>
+              <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="bg-background border-border" placeholder="+1 234 567 8900" />
+            </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5"><Building2 className="h-3 w-3" /> Company Name</Label>
+              <Input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} className="bg-background border-border" placeholder="Acme Inc." />
+            </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Address</Label>
+              <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="bg-background border-border" placeholder="123 Main St, City" />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Client
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
