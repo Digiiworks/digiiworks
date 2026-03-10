@@ -1,11 +1,9 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import { NAV_LINKS } from '@/lib/constants';
 import { useAuth } from '@/contexts/AuthContext';
 import { LayoutDashboard, LogIn, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
   const { pathname } = useLocation();
@@ -13,6 +11,7 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isAdmin, isEditor, isClient } = useAuth();
   const showAdmin = user && (isAdmin || isEditor || isClient);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -20,6 +19,7 @@ const Navbar = () => {
   }, [pathname]);
 
   const handleLogout = async () => {
+    setMobileOpen(false);
     await supabase.auth.signOut();
     navigate('/');
   };
@@ -58,7 +58,6 @@ const Navbar = () => {
               </Link>
             ))}
 
-            {/* Auth/Admin link */}
             {showAdmin ? (
               <Link
                 to="/admin"
@@ -107,62 +106,56 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
-      <AnimatePresence mode="wait">
-        {mobileOpen && (
-          <motion.div
-            key="mobile-menu"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-            className="overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden"
-          >
-            <div className="flex flex-col gap-1 px-6 py-4">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={() => setMobileOpen(false)}
-                  aria-current={pathname === link.to ? 'page' : undefined}
-                  className={`rounded-md px-3 py-2.5 font-mono text-sm font-medium transition-colors ${
-                    pathname === link.to
-                      ? 'bg-muted text-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              {showAdmin ? (
-                <Link
-                  to="/admin"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-primary bg-primary/10"
-                >
-                  <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
-                </Link>
-              ) : (
-                <Link
-                  to="/auth"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-muted-foreground hover:bg-muted"
-                >
-                  <LogIn className="h-3.5 w-3.5" /> Login
-                </Link>
-              )}
-              {user && (
-                <button
-                  onClick={() => { setMobileOpen(false); handleLogout(); }}
-                  className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <LogOut className="h-3.5 w-3.5" /> Sign Out
-                </button>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Mobile menu - CSS transition instead of AnimatePresence */}
+      <div
+        ref={menuRef}
+        className={`overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden transition-all duration-200 ease-out ${
+          mobileOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 border-t-0'
+        }`}
+      >
+        <div className="flex flex-col gap-1 px-6 py-4">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              onClick={() => setMobileOpen(false)}
+              aria-current={pathname === link.to ? 'page' : undefined}
+              className={`rounded-md px-3 py-2.5 font-mono text-sm font-medium transition-colors ${
+                pathname === link.to
+                  ? 'bg-muted text-primary'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+          {showAdmin ? (
+            <Link
+              to="/admin"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-primary bg-primary/10"
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-muted-foreground hover:bg-muted"
+            >
+              <LogIn className="h-3.5 w-3.5" /> Login
+            </Link>
+          )}
+          {user && (
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="h-3.5 w-3.5" /> Sign Out
+            </button>
+          )}
+        </div>
+      </div>
     </nav>
   );
 };
