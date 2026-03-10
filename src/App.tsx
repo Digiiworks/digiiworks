@@ -77,11 +77,11 @@ const App = () => (
                 </Route>
 
                 {/* Auth */}
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/auth" element={<Suspense fallback={<PageLoader />}><Auth /></Suspense>} />
+                <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
                 <Route path="/client" element={
                   <ProtectedRoute requiredRoles={['client']}>
-                    <ClientDashboard />
+                    <Suspense fallback={<PageLoader />}><ClientDashboard /></Suspense>
                   </ProtectedRoute>
                 } />
 
