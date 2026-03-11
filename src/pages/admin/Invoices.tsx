@@ -712,7 +712,122 @@ export default function Invoices() {
         </DialogContent>
       </Dialog>
 
-      {/* Detail Dialog */}
+      {/* Edit Dialog */}
+      <Dialog open={showEdit} onOpenChange={(open) => { if (!open) { setShowEdit(false); resetForm(); } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-mono">Edit Invoice — {editingInvoice?.invoice_number}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label className="font-mono text-xs">Client</Label>
+                <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v }))}>
+                  <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select client" /></SelectTrigger>
+                  <SelectContent>
+                    {profiles.map(p => {
+                      const label = p.company
+                        ? `${p.company} / ${(p.display_name ?? p.email ?? '').split(' ')[0]}`
+                        : p.display_name || p.email;
+                      return <SelectItem key={p.user_id} value={p.user_id}>{label}</SelectItem>;
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="font-mono text-xs">Due Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal bg-background border-border", !form.due_date && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.due_date ? format(new Date(form.due_date + 'T00:00:00'), 'MMM d, yyyy') : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={form.due_date ? new Date(form.due_date + 'T00:00:00') : undefined} onSelect={(date) => setForm(f => ({ ...f, due_date: date ? format(date, 'yyyy-MM-dd') : '' }))} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div>
+              <Label className="font-mono text-xs">Email Send Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal bg-background border-border", !sendDate && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {sendDate ? format(sendDate, 'PPP') : <span>Pick a send date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={sendDate} onSelect={setSendDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div>
+              <Label className="font-mono text-xs mb-2 block">Line Items</Label>
+              <div className="space-y-2">
+                {lineItems.map((li, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                    <div className="col-span-4">
+                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Product / Description</span>}
+                      <ProductCombobox products={products} value={li.product_id} onSelect={(p) => pickProduct(idx, p.id)} placeholder="Search products..." />
+                    </div>
+                    <div className="col-span-3">
+                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Description</span>}
+                      <Input value={li.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} className="h-9 text-xs bg-background border-border" placeholder="Custom desc" />
+                    </div>
+                    <div className="col-span-1">
+                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Qty</span>}
+                      <Input type="number" min={1} value={li.quantity} onChange={e => updateLineItem(idx, 'quantity', +e.target.value)} className="h-9 text-xs bg-background border-border" />
+                    </div>
+                    <div className="col-span-2">
+                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Price</span>}
+                      <Input type="number" min={0} step={0.01} value={li.unit_price} onChange={e => updateLineItem(idx, 'unit_price', +e.target.value)} className="h-9 text-xs bg-background border-border" />
+                    </div>
+                    <div className="col-span-1 text-right font-mono text-xs text-muted-foreground pt-1">{fmtCurrency(li.total, profiles.find(p => p.user_id === form.client_id)?.currency)}</div>
+                    <div className="col-span-1">
+                      {lineItems.length > 1 && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button variant="outline" size="sm" className="mt-2 font-mono text-xs" onClick={() => setLineItems(prev => [...prev, { description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }])}>
+                + Add Line
+              </Button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label className="font-mono text-xs">Tax Rate (%)</Label>
+                <Input type="number" min={0} step={0.5} value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: +e.target.value }))} className="bg-background border-border" />
+              </div>
+              <div className="text-right space-y-1 pt-4">
+                {(() => { const c = profiles.find(p => p.user_id === form.client_id)?.currency; return (<>
+                  <p className="font-mono text-xs text-muted-foreground">Subtotal: {fmtCurrency(subtotal, c)}</p>
+                  <p className="font-mono text-xs text-muted-foreground">Tax: {fmtCurrency(taxAmount, c)}</p>
+                  <p className="font-mono text-sm font-bold text-foreground">Total: {fmtCurrency(grandTotal, c)}</p>
+                </>); })()}
+              </div>
+            </div>
+            <div>
+              <Label className="font-mono text-xs">Notes</Label>
+              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="bg-background border-border" rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowEdit(false); resetForm(); }}>Cancel</Button>
+            <Button onClick={handleUpdate} disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!showDetail} onOpenChange={() => setShowDetail(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-card border-border">
           <DialogHeader>
