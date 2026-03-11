@@ -336,7 +336,7 @@ export default function Invoices() {
   };
 
   const resetForm = () => {
-    setForm({ client_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
+    setForm({ client_id: '', client_company_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
     setSendDate(get25thOfCurrentMonth());
     setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }]);
     setEditingInvoice(null);
