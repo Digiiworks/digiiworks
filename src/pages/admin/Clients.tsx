@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, startOfMonth, addMonths } from 'date-fns';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -80,6 +80,14 @@ export default function Clients() {
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [startDate, setStartDate] = useState<string | null>(null);
+
+  // Invoice prompt state
+  const [showInvoicePrompt, setShowInvoicePrompt] = useState(false);
+  const [pendingInvoiceData, setPendingInvoiceData] = useState<{
+    user_id: string; client_company_id: string; currency: string; company_name: string;
+    services: RecurringService[];
+  } | null>(null);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
 
   // Fuzzy search state
   const [emailQuery, setEmailQuery] = useState('');
@@ -394,6 +402,7 @@ export default function Clients() {
       toast({ title: 'Error creating client', description: data.error, variant: 'destructive' });
     } else {
       // Save recurring services
+      const activeServices = recurringServices.filter(s => s.active);
       if (data?.user_id && data?.client_company_id && recurringServices.length > 0) {
         await supabase.from('client_recurring_services').insert(
           recurringServices.map(s => ({
@@ -416,6 +425,32 @@ export default function Clients() {
           : 'Client created, but the reset email could not be sent.';
       toast({ title: 'Client created successfully', description: resetMsg });
       setShowCreate(false);
+
+      // Check if we should prompt for invoice generation
+      const today = new Date();
+      if (activeServices.length > 0 && today.getDate() >= 3 && data?.client_company_id) {
+        const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
+        const nextMonthStart = format(startOfMonth(addMonths(today, 1)), 'yyyy-MM-dd');
+        const { data: existingInvoices } = await supabase
+          .from('invoices')
+          .select('id')
+          .eq('client_company_id', data.client_company_id)
+          .gte('created_at', monthStart)
+          .lt('created_at', nextMonthStart)
+          .limit(1);
+
+        if (!existingInvoices || existingInvoices.length === 0) {
+          setPendingInvoiceData({
+            user_id: data.user_id,
+            client_company_id: data.client_company_id,
+            currency: countryToCurrency(form.country),
+            company_name: form.company,
+            services: activeServices,
+          });
+          setShowInvoicePrompt(true);
+        }
+      }
+
       fetchClients();
     }
     setSaving(false);
@@ -792,6 +827,85 @@ export default function Clients() {
         description="This deactivates the company. The user account and data will remain intact."
         confirmLabel="Deactivate"
         onConfirm={handleDelete}
+      />
+
+      <ConfirmDialog
+        open={showInvoicePrompt}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowInvoicePrompt(false);
+            setPendingInvoiceData(null);
+          }
+        }}
+        title="Generate Invoice for This Month?"
+        description={`No invoice exists for ${pendingInvoiceData?.company_name ?? 'this company'} this month. Would you like to generate a draft invoice now from the recurring services?`}
+        confirmLabel={generatingInvoice ? 'Generating...' : 'Generate Invoice'}
+        cancelLabel="Skip"
+        variant="default"
+        onConfirm={async () => {
+          if (!pendingInvoiceData || generatingInvoice) return;
+          setGeneratingInvoice(true);
+          try {
+            // Get next invoice number
+            const { data: lastInvoice } = await supabase
+              .from('invoices')
+              .select('invoice_number')
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            const lastNum = lastInvoice?.[0]?.invoice_number;
+            const nextNum = lastNum
+              ? `INV-${String(parseInt(lastNum.replace('INV-', '')) + 1).padStart(4, '0')}`
+              : 'INV-0001';
+
+            const today = new Date();
+            const dueDate = format(startOfMonth(addMonths(today, 1)), 'yyyy-MM-dd');
+            const sendDate = format(new Date(today.getFullYear(), today.getMonth(), 25), 'yyyy-MM-dd');
+
+            // Calculate totals
+            const items = pendingInvoiceData.services.map(s => ({
+              description: s.product_name,
+              product_id: s.product_id,
+              quantity: s.quantity,
+              unit_price: s.price_override ?? s.price,
+              total: (s.price_override ?? s.price) * s.quantity,
+            }));
+            const subtotal = items.reduce((sum, i) => sum + i.total, 0);
+
+            // Insert invoice
+            const { data: inv, error: invError } = await supabase
+              .from('invoices')
+              .insert({
+                client_id: pendingInvoiceData.user_id,
+                client_company_id: pendingInvoiceData.client_company_id,
+                invoice_number: nextNum,
+                status: 'draft',
+                subtotal,
+                total: subtotal,
+                tax_rate: 0,
+                due_date: dueDate,
+                send_date: sendDate,
+              })
+              .select('id')
+              .single();
+
+            if (invError) throw invError;
+
+            // Insert line items
+            await supabase.from('invoice_items').insert(
+              items.map(i => ({ ...i, invoice_id: inv.id }))
+            );
+
+            toast({ title: 'Draft invoice generated', description: `${nextNum} created for ${pendingInvoiceData.company_name}` });
+            fetchClients();
+          } catch (err: any) {
+            toast({ title: 'Error generating invoice', description: err.message, variant: 'destructive' });
+          } finally {
+            setGeneratingInvoice(false);
+            setShowInvoicePrompt(false);
+            setPendingInvoiceData(null);
+          }
+        }}
       />
     </div>
   );
