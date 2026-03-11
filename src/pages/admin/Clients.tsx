@@ -69,6 +69,8 @@ export default function Clients() {
     email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa' | 'thailand',
   });
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
+  const [billingCycle, setBillingCycle] = useState('monthly');
+  const [startDate, setStartDate] = useState<string | null>(null);
 
   const fetchClients = async () => {
     setLoading(true);
