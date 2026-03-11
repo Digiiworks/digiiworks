@@ -149,20 +149,42 @@ export default function Invoices() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [invRes, profRes, prodRes] = await Promise.all([
+    const [invRes, profRes, prodRes, compRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('user_id, display_name, email, company, currency'),
       supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
+      supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
     ]);
     const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
-    const enriched = (invRes.data ?? []).map(inv => ({
-      ...inv,
-      client_name: profileMap.get(inv.client_id)?.display_name ?? 'Unknown',
-      client_email: profileMap.get(inv.client_id)?.email ?? '',
-      currency: profileMap.get(inv.client_id)?.currency ?? 'USD',
-    }));
+    const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
+
+    // Build client company options with profile info
+    const companyOptions: ClientCompanyOption[] = (compRes.data ?? []).map((c: any) => {
+      const profile = profileMap.get(c.user_id);
+      return {
+        id: c.id,
+        user_id: c.user_id,
+        company_name: c.company_name,
+        currency: c.currency,
+        display_name: profile?.display_name ?? null,
+        email: profile?.email ?? null,
+      };
+    });
+
+    const enriched = (invRes.data ?? []).map(inv => {
+      const company = inv.client_company_id ? companyMap.get(inv.client_company_id) : null;
+      const profile = profileMap.get(inv.client_id);
+      return {
+        ...inv,
+        client_name: company?.company_name ?? profile?.display_name ?? 'Unknown',
+        client_email: profile?.email ?? '',
+        currency: company?.currency ?? profile?.currency ?? 'USD',
+        company_name: company?.company_name ?? profile?.company ?? '',
+      };
+    });
     setInvoices(enriched);
     setProfiles(profRes.data ?? []);
+    setClientCompanies(companyOptions);
     setProducts(prodRes.data ?? []);
     setLoading(false);
   };
