@@ -52,6 +52,26 @@ const ClientDashboard = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [yocoLoading, setYocoLoading] = useState(false);
+
+  const handleYocoPayment = async (invoiceId: string) => {
+    setYocoLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-yoco-checkout', {
+        body: { invoice_id: invoiceId },
+      });
+      if (error) throw error;
+      if (data?.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        throw new Error('No redirect URL received');
+      }
+    } catch (err: any) {
+      console.error('Yoco payment error:', err);
+      alert(err.message || 'Failed to initiate payment');
+      setYocoLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
