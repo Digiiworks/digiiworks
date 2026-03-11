@@ -19,6 +19,16 @@ import GetStarted from "./pages/GetStarted";
 import Blog from "./pages/Blog";
 import AIAutomation from "./pages/AIAutomation";
 
+// Eager imports for admin pages — fast admin navigation
+import Dashboard from "./pages/admin/Dashboard";
+import Leads from "./pages/admin/Leads";
+import Posts from "./pages/admin/Posts";
+import PageContent from "./pages/admin/PageContent";
+import UsersAdmin from "./pages/admin/Users";
+import InvoicesAdmin from "./pages/admin/Invoices";
+import ClientsAdmin from "./pages/admin/Clients";
+import ProductsAdmin from "./pages/admin/Products";
+
 // Lazy imports for low-traffic / detail pages
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
@@ -27,14 +37,6 @@ const Auth = lazy(() => import("./pages/Auth"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
-const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
-const Leads = lazy(() => import("./pages/admin/Leads"));
-const Posts = lazy(() => import("./pages/admin/Posts"));
-const PageContent = lazy(() => import("./pages/admin/PageContent"));
-const UsersAdmin = lazy(() => import("./pages/admin/Users"));
-const InvoicesAdmin = lazy(() => import("./pages/admin/Invoices"));
-const ClientsAdmin = lazy(() => import("./pages/admin/Clients"));
-const ProductsAdmin = lazy(() => import("./pages/admin/Products"));
 const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
 
 const queryClient = new QueryClient({
