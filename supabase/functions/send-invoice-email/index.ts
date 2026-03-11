@@ -52,7 +52,7 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
     '<table style="width:100%;border-collapse:collapse;">' + fields.join('') + '</table>' +
     refNote +
     '</div>' +
-    (linksHTML ? '<div style="text-align:center;margin:24px 0 0;">' + linksHTML + '</div>' : '');
+    (linksHTML ? '<div style="text-align:center;margin:24px 0 0;">' + linksHTML + '<p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">Don\'t have a Wise account? <a href="https://wise.com/invite/dic/justind507" style="color:#0d9488;text-decoration:underline;">Sign up today</a> for fee-free transfers.</p></div>' : '');
 }
 
 function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, currency: string, paymentSettings?: any) {
