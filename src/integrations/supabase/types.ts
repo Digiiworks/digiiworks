@@ -17,31 +17,37 @@ export type Database = {
       client_recurring_services: {
         Row: {
           active: boolean
+          billing_cycle: string
           client_id: string
           created_at: string
           id: string
           product_id: string
           quantity: number
+          start_date: string | null
           unit_price_override: number | null
           updated_at: string
         }
         Insert: {
           active?: boolean
+          billing_cycle?: string
           client_id: string
           created_at?: string
           id?: string
           product_id: string
           quantity?: number
+          start_date?: string | null
           unit_price_override?: number | null
           updated_at?: string
         }
         Update: {
           active?: boolean
+          billing_cycle?: string
           client_id?: string
           created_at?: string
           id?: string
           product_id?: string
           quantity?: number
+          start_date?: string | null
           unit_price_override?: number | null
           updated_at?: string
         }
