@@ -352,6 +352,37 @@ export default function Clients() {
       await saveRecurringServices(editClient.user_id, editClient.id);
       toast({ title: 'Client updated' });
       setEditClient(null);
+
+      // Check if new active services were added that weren't there before
+      const currentActiveProductIds = new Set(
+        recurringServices.filter(s => s.active).map(s => s.product_id)
+      );
+      const hasNewServices = [...currentActiveProductIds].some(id => !originalRecurringIds.has(id));
+
+      if (hasNewServices && currentActiveProductIds.size > 0) {
+        const today = new Date();
+        const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
+        const nextMonthStart = format(startOfMonth(addMonths(today, 1)), 'yyyy-MM-dd');
+        const { data: existingInvoices } = await supabase
+          .from('invoices')
+          .select('id')
+          .eq('client_company_id', editClient.id)
+          .gte('created_at', monthStart)
+          .lt('created_at', nextMonthStart)
+          .limit(1);
+
+        if (!existingInvoices || existingInvoices.length === 0) {
+          setPendingInvoiceData({
+            user_id: editClient.user_id,
+            client_company_id: editClient.id,
+            currency: countryToCurrency(form.country),
+            company_name: form.company || editClient.company_name,
+            services: recurringServices.filter(s => s.active),
+          });
+          setShowInvoicePrompt(true);
+        }
+      }
+
       fetchClients();
     }
     setSaving(false);
