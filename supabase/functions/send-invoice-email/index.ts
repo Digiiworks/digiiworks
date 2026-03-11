@@ -170,9 +170,6 @@ async function sendEmail(to: string, subject: string, html: string) {
       user: smtpUser,
       pass: smtpPass,
     },
-    authMethod: "LOGIN",
-    debug: true,
-    logger: true,
   });
 
   await transporter.sendMail({
