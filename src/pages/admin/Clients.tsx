@@ -65,7 +65,7 @@ export default function Clients() {
 
   // Form
   const [form, setForm] = useState({
-    email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa',
+    email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa' | 'thailand',
   });
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
 
@@ -157,7 +157,7 @@ export default function Clients() {
       company: client.company ?? '',
       address: client.address ?? '',
       notes: client.notes ?? '',
-      country: 'global',
+      country: (client as any).currency === 'ZAR' ? 'south_africa' : (client as any).currency === 'THB' ? 'thailand' : 'global',
     });
     // Load existing recurring services
     const { data } = await supabase
@@ -213,6 +213,8 @@ export default function Clients() {
     }
   };
 
+  const countryToCurrency = (c: string) => c === 'south_africa' ? 'ZAR' : c === 'thailand' ? 'THB' : 'USD';
+
   const handleUpdate = async () => {
     if (!editClient) return;
     setSaving(true);
@@ -224,6 +226,7 @@ export default function Clients() {
         company: form.company || null,
         address: form.address || null,
         notes: form.notes || null,
+        currency: countryToCurrency(form.country),
       })
       .eq('user_id', editClient.user_id);
 
@@ -249,7 +252,7 @@ export default function Clients() {
     }
     setSaving(true);
 
-    const currency = form.country === 'south_africa' ? 'ZAR' : 'USD';
+    const currency = countryToCurrency(form.country);
     const { data, error } = await supabase.functions.invoke('create-client', {
       body: {
         email: form.email,
@@ -428,7 +431,7 @@ export default function Clients() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editClient} onOpenChange={() => setEditClient(null)}>
-        <DialogContent className="max-w-md bg-card border-border">
+        <DialogContent className="max-w-md bg-card border-border max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-mono">Edit Client</DialogTitle>
           </DialogHeader>
@@ -455,7 +458,18 @@ export default function Clients() {
             </div>
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><FileText className="h-3 w-3" /> Notes</Label>
-              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="bg-background border-border" rows={3} />
+              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="bg-background border-border" rows={2} />
+            </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5">🌍 Country / Region</Label>
+              <Select value={form.country} onValueChange={(v: 'global' | 'south_africa' | 'thailand') => setForm(f => ({ ...f, country: v }))}>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Global (USD)</SelectItem>
+                  <SelectItem value="south_africa">South Africa (ZAR)</SelectItem>
+                  <SelectItem value="thailand">Thailand (THB)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} />
           </div>
@@ -470,7 +484,7 @@ export default function Clients() {
 
       {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-md bg-card border-border">
+        <DialogContent className="max-w-md bg-card border-border max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-mono">Onboard New Client</DialogTitle>
           </DialogHeader>
@@ -497,11 +511,12 @@ export default function Clients() {
             </div>
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5">🌍 Country / Region</Label>
-              <Select value={form.country} onValueChange={(v: 'global' | 'south_africa') => setForm(f => ({ ...f, country: v }))}>
+              <Select value={form.country} onValueChange={(v: 'global' | 'south_africa' | 'thailand') => setForm(f => ({ ...f, country: v }))}>
                 <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="global">Global (USD)</SelectItem>
                   <SelectItem value="south_africa">South Africa (ZAR)</SelectItem>
+                  <SelectItem value="thailand">Thailand (THB)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
