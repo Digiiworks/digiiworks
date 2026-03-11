@@ -451,7 +451,7 @@ export default function Products() {
 
       {/* Category Manager Dialog */}
       <Dialog open={showCategoryManager} onOpenChange={setShowCategoryManager}>
-        <DialogContent className="max-w-lg bg-card border-border">
+        <DialogContent className="w-[95vw] max-w-lg bg-card border-border">
           <DialogHeader>
             <DialogTitle className="font-mono flex items-center gap-2">
               <Tag className="h-4 w-4" /> Manage Categories

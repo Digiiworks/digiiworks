@@ -68,7 +68,53 @@ const UsersAdmin = () => {
 
       {isLoading && <PageLoader />}
 
-      <div className="glass-card overflow-hidden">
+      {/* Mobile card view */}
+      <div className="space-y-3 md:hidden">
+        {profiles?.map((profile: any) => {
+          const roles = getUserRoles(profile.user_id);
+          return (
+            <div key={profile.id} className="rounded-lg border border-border bg-card/50 p-3 space-y-2">
+              <div>
+                <p className="font-mono text-sm font-medium truncate">{profile.display_name}</p>
+                <p className="font-mono text-xs text-muted-foreground truncate">{profile.email}</p>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {roles.map((r: any) => (
+                  <span key={r.id} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase bg-primary/10 text-primary">
+                    {r.role}
+                    <button onClick={() => setDeleteRoleId(r.id)} className="hover:text-destructive">
+                      <Trash2 className="h-2.5 w-2.5" />
+                    </button>
+                  </span>
+                ))}
+                {roles.length === 0 && (
+                  <span className="font-mono text-[10px] text-muted-foreground">No roles</span>
+                )}
+              </div>
+              {(() => {
+                const existingRoles = roles.map((r: any) => r.role);
+                const availableRoles = ROLES.filter(r => !existingRoles.includes(r));
+                if (availableRoles.length === 0) return null;
+                return (
+                  <Select onValueChange={(role) => addRole.mutate({ userId: profile.user_id, role })}>
+                    <SelectTrigger className="w-full border-border bg-background/50 font-mono text-[10px] h-8">
+                      <SelectValue placeholder="Add role..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableRoles.map((r) => (
+                        <SelectItem key={r} value={r} className="font-mono text-xs capitalize">{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              })()}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop table view */}
+      <div className="glass-card overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
