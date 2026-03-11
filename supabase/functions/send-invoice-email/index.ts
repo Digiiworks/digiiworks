@@ -144,7 +144,6 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
     </div>
     ${(() => {
       if (!paymentSettings) return '';
-      const currency = client.currency || 'USD';
       const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
       return buildBankingHTML(paymentSettings[bankKey], paymentSettings.payment_links, currency);
     })()}
