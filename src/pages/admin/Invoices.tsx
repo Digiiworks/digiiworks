@@ -36,6 +36,7 @@ type Invoice = {
   id: string;
   invoice_number: string;
   client_id: string;
+  client_company_id: string | null;
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
   subtotal: number;
   tax_rate: number;
@@ -51,6 +52,7 @@ type Invoice = {
   client_name?: string;
   client_email?: string;
   currency?: string;
+  company_name?: string;
 };
 
 type InvoiceItem = {
