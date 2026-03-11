@@ -204,12 +204,39 @@ export default function Invoices() {
 
   useEffect(() => { setPage(1); }, [filterStatus, search, sortField, sortDir]);
 
-  const outstandingTotal = invoices
-    .filter(i => ['draft', 'sent', 'overdue'].includes(i.status))
-    .reduce((s, i) => s + i.total, 0);
-  const paidTotal = invoices
-    .filter(i => i.status === 'paid')
-    .reduce((s, i) => s + i.total, 0);
+  const outstandingByCurrency = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).forEach(i => {
+      const c = i.currency ?? 'USD';
+      if (!map[c]) map[c] = { total: 0, count: 0 };
+      map[c].total += i.total;
+      map[c].count++;
+    });
+    return map;
+  }, [invoices]);
+
+  const paidByCurrency = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    invoices.filter(i => i.status === 'paid').forEach(i => {
+      const c = i.currency ?? 'USD';
+      if (!map[c]) map[c] = { total: 0, count: 0 };
+      map[c].total += i.total;
+      map[c].count++;
+    });
+    return map;
+  }, [invoices]);
+
+  const overdueByCurrency = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    invoices.filter(i => i.status === 'overdue').forEach(i => {
+      const c = i.currency ?? 'USD';
+      if (!map[c]) map[c] = { total: 0, count: 0 };
+      map[c].total += i.total;
+      map[c].count++;
+    });
+    return map;
+  }, [invoices]);
+
   const overdueCount = invoices.filter(i => i.status === 'overdue').length;
 
   const toggleSort = (field: SortField) => {
@@ -404,31 +431,44 @@ export default function Invoices() {
 
   return (
     <div className="space-y-6">
-      {/* Summary cards */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-        <StatCard
-          label="Outstanding"
-          value={fmtCurrency(outstandingTotal)}
-          subtitle={`${invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).length} invoice(s)`}
-        />
-        <StatCard
-          label="Paid"
-          value={fmtCurrency(paidTotal)}
-          valueColor="text-green-400"
-          subtitle={`${invoices.filter(i => i.status === 'paid').length} invoice(s)`}
-        />
-        {overdueCount > 0 && (
+      {/* Summary cards - per currency */}
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+        {Object.entries(outstandingByCurrency).map(([currency, { total, count }]) => (
           <StatCard
-            label="Overdue"
-            value={fmtCurrency(invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0))}
+            key={`out-${currency}`}
+            label={`Outstanding (${currency})`}
+            value={fmtCurrency(total, currency)}
+            subtitle={`${count} invoice(s)`}
+          />
+        ))}
+        {Object.keys(outstandingByCurrency).length === 0 && (
+          <StatCard label="Outstanding" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
+        )}
+        {Object.entries(paidByCurrency).map(([currency, { total, count }]) => (
+          <StatCard
+            key={`paid-${currency}`}
+            label={`Paid (${currency})`}
+            value={fmtCurrency(total, currency)}
+            valueColor="text-green-400"
+            subtitle={`${count} invoice(s)`}
+          />
+        ))}
+        {Object.keys(paidByCurrency).length === 0 && (
+          <StatCard label="Paid" value={fmtCurrency(0)} valueColor="text-green-400" subtitle="0 invoice(s)" />
+        )}
+        {Object.entries(overdueByCurrency).map(([currency, { total, count }]) => (
+          <StatCard
+            key={`overdue-${currency}`}
+            label={`Overdue (${currency})`}
+            value={fmtCurrency(total, currency)}
             icon={AlertTriangle}
             iconColor="text-orange-400"
             valueColor="text-orange-400"
             variant="alert"
             alertColor="orange-500"
-            subtitle={`${overdueCount} invoice(s)`}
+            subtitle={`${count} invoice(s)`}
           />
-        )}
+        ))}
       </div>
 
       <AdminToolbar title="Invoices">
