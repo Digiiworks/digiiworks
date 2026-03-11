@@ -288,7 +288,8 @@ export default function Invoices() {
   const pickProduct = (idx: number, productId: string) => {
     const p = products.find(pr => pr.id === productId);
     if (!p) return;
-    const clientCurrency = profiles.find(pr => pr.user_id === form.client_id)?.currency ?? 'USD';
+    const selectedCompany = clientCompanies.find(cc => cc.id === form.client_company_id);
+    const clientCurrency = selectedCompany?.currency ?? 'USD';
     const unitPrice = getProductPrice(p, clientCurrency);
     setLineItems(prev => {
       const next = [...prev];
