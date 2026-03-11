@@ -736,7 +736,7 @@ export default function Invoices() {
                   onClick={() => handlePayClick(showDetail)}
                 >
                   <CreditCard className="h-4 w-4" />
-                  Pay Now — ${showDetail.total.toFixed(2)}
+                  Pay Now — {fmtCurrency(showDetail.total, showDetail.currency)}
                 </Button>
               )}
 
