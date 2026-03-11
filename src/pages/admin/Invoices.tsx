@@ -688,8 +688,8 @@ export default function Invoices() {
                       <TableRow key={i} className="border-border/30">
                         <TableCell className="text-sm">{it.description}</TableCell>
                         <TableCell className="text-right text-sm">{it.quantity}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">${it.unit_price.toFixed(2)}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">${it.total.toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">{fmtCurrency(it.unit_price, showDetail?.currency)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">{fmtCurrency(it.total, showDetail?.currency)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
