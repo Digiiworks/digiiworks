@@ -295,7 +295,8 @@ Deno.serve(async (req) => {
         company: "Test Company",
       };
 
-      const html = buildEmailHTML(mockInvoice, items, mockClient, dashboardBaseUrl, testCurrency, paymentSettings);
+      const testToken = await hmacSign("test-invoice-id", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const html = buildEmailHTML(mockInvoice, items, mockClient, dashboardBaseUrl, testCurrency, testToken, paymentSettings);
       await sendEmail(send_to, "[TEST] Invoice TEST-0001 from DigiiWorks (" + testCurrency + ")", html);
 
       return new Response(
