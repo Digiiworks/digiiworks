@@ -46,55 +46,101 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, display_name, phone, company, address, currency } = await req.json();
+    const { email, display_name, phone, company, address, currency, existing_user_id } = await req.json();
 
-    if (!email) {
-      return new Response(JSON.stringify({ error: "Email is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    let userId: string;
+    let resetEmailSent = false;
+    let resetError: string | null = null;
+
+    if (existing_user_id) {
+      // Link new company to existing user — skip auth creation
+      userId = existing_user_id;
+
+      // Ensure client role exists
+      await adminClient
+        .from("user_roles")
+        .upsert({ user_id: userId, role: "client" }, { onConflict: "user_id,role" });
+    } else {
+      // Create new auth user
+      if (!email) {
+        return new Response(JSON.stringify({ error: "Email is required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const randomPassword = crypto.randomUUID() + "Aa1!";
+      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        password: randomPassword,
+        email_confirm: true,
+        user_metadata: { display_name: display_name || email.split("@")[0] },
       });
+
+      if (createError) {
+        // If user already exists, return a hint so the UI can offer to link
+        if (createError.message.includes("already been registered") || createError.message.includes("already exists")) {
+          // Look up the existing user
+          const { data: { users } } = await adminClient.auth.admin.listUsers();
+          const existingUser = users?.find((u: any) => u.email === email);
+          return new Response(JSON.stringify({
+            error: "user_exists",
+            message: `A user with email ${email} already exists. You can link a new company to this user.`,
+            existing_user_id: existingUser?.id ?? null,
+            existing_display_name: existingUser?.user_metadata?.display_name ?? null,
+          }), {
+            status: 409,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ error: createError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      userId = newUser.user.id;
+
+      // Update profile with extra details (trigger already creates profile + client role)
+      await adminClient
+        .from("profiles")
+        .update({
+          phone: phone || null,
+          company: company || null,
+          address: address || null,
+          display_name: display_name || null,
+          currency: currency || "USD",
+        })
+        .eq("user_id", userId);
+
+      // Send password reset email
+      const { error: rstError } = await adminClient.auth.resetPasswordForEmail(email, {
+        redirectTo: `${req.headers.get("origin") || supabaseUrl}/reset-password`,
+      });
+      resetEmailSent = !rstError;
+      resetError = rstError?.message || null;
     }
 
-    // Create auth user with a random password (client can reset via email)
-    const randomPassword = crypto.randomUUID() + "Aa1!";
-    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-      email,
-      password: randomPassword,
-      email_confirm: true,
-      user_metadata: { display_name: display_name || email.split("@")[0] },
-    });
-
-    if (createError) {
-      return new Response(JSON.stringify({ error: createError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userId = newUser.user.id;
-
-    // Update profile with extra details (trigger already creates profile + client role)
-    await adminClient
-      .from("profiles")
-      .update({
-        phone: phone || null,
-        company: company || null,
+    // Create the client_companies record
+    const { data: companyRow, error: companyError } = await adminClient
+      .from("client_companies")
+      .insert({
+        user_id: userId,
+        company_name: company || display_name || email || "Unnamed",
         address: address || null,
-        display_name: display_name || null,
         currency: currency || "USD",
+        phone: phone || null,
       })
-      .eq("user_id", userId);
+      .select("id")
+      .single();
 
-    // Send password reset email so the client can set their own password
-    const { error: resetError } = await adminClient.auth.resetPasswordForEmail(email, {
-      redirectTo: `${req.headers.get("origin") || supabaseUrl}/reset-password`,
-    });
-
-    return new Response(JSON.stringify({ 
-      success: true, 
+    return new Response(JSON.stringify({
+      success: true,
       user_id: userId,
-      reset_email_sent: !resetError,
-      reset_error: resetError?.message || null,
+      client_company_id: companyRow?.id ?? null,
+      reset_email_sent: resetEmailSent,
+      reset_error: resetError,
+      company_error: companyError?.message || null,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

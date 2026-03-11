@@ -36,6 +36,7 @@ type Invoice = {
   id: string;
   invoice_number: string;
   client_id: string;
+  client_company_id: string | null;
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
   subtotal: number;
   tax_rate: number;
@@ -51,6 +52,7 @@ type Invoice = {
   client_name?: string;
   client_email?: string;
   currency?: string;
+  company_name?: string;
 };
 
 type InvoiceItem = {
@@ -74,6 +76,7 @@ type InvoiceEmail = {
 };
 
 type Profile = { user_id: string; display_name: string | null; email: string | null; company: string | null; currency?: string };
+type ClientCompanyOption = { id: string; user_id: string; company_name: string; currency: string; display_name: string | null; email: string | null };
 type Product = { id: string; name: string; price_usd: number; price_zar: number; price_thb: number; description?: string | null; category?: string | null };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -117,6 +120,7 @@ export default function Invoices() {
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [clientCompanies, setClientCompanies] = useState<ClientCompanyOption[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -137,7 +141,7 @@ export default function Invoices() {
   const [sending, setSending] = useState(false);
 
   // Create/Edit form
-  const [form, setForm] = useState({ client_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
+  const [form, setForm] = useState({ client_id: '', client_company_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
   const [sendDate, setSendDate] = useState<Date | undefined>(get25thOfCurrentMonth());
   const [lineItems, setLineItems] = useState<InvoiceItem[]>([
     { description: '', quantity: 1, unit_price: 0, total: 0, product_id: null },
@@ -145,20 +149,42 @@ export default function Invoices() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [invRes, profRes, prodRes] = await Promise.all([
+    const [invRes, profRes, prodRes, compRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('user_id, display_name, email, company, currency'),
       supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
+      supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
     ]);
     const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
-    const enriched = (invRes.data ?? []).map(inv => ({
-      ...inv,
-      client_name: profileMap.get(inv.client_id)?.display_name ?? 'Unknown',
-      client_email: profileMap.get(inv.client_id)?.email ?? '',
-      currency: profileMap.get(inv.client_id)?.currency ?? 'USD',
-    }));
+    const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
+
+    // Build client company options with profile info
+    const companyOptions: ClientCompanyOption[] = (compRes.data ?? []).map((c: any) => {
+      const profile = profileMap.get(c.user_id);
+      return {
+        id: c.id,
+        user_id: c.user_id,
+        company_name: c.company_name,
+        currency: c.currency,
+        display_name: profile?.display_name ?? null,
+        email: profile?.email ?? null,
+      };
+    });
+
+    const enriched = (invRes.data ?? []).map(inv => {
+      const company = inv.client_company_id ? companyMap.get(inv.client_company_id) : null;
+      const profile = profileMap.get(inv.client_id);
+      return {
+        ...inv,
+        client_name: company?.company_name ?? profile?.display_name ?? 'Unknown',
+        client_email: profile?.email ?? '',
+        currency: company?.currency ?? profile?.currency ?? 'USD',
+        company_name: company?.company_name ?? profile?.company ?? '',
+      };
+    });
     setInvoices(enriched);
     setProfiles(profRes.data ?? []);
+    setClientCompanies(companyOptions);
     setProducts(prodRes.data ?? []);
     setLoading(false);
   };
@@ -262,7 +288,8 @@ export default function Invoices() {
   const pickProduct = (idx: number, productId: string) => {
     const p = products.find(pr => pr.id === productId);
     if (!p) return;
-    const clientCurrency = profiles.find(pr => pr.user_id === form.client_id)?.currency ?? 'USD';
+    const selectedCompany = clientCompanies.find(cc => cc.id === form.client_company_id);
+    const clientCurrency = selectedCompany?.currency ?? 'USD';
     const unitPrice = getProductPrice(p, clientCurrency);
     setLineItems(prev => {
       const next = [...prev];
@@ -277,13 +304,15 @@ export default function Invoices() {
   const nextNumber = `INV-${String((invoices.length || 0) + 1).padStart(4, '0')}`;
 
   const handleCreate = async () => {
-    if (!form.client_id || lineItems.every(li => !li.description)) {
-      toast({ title: 'Fill in client and at least one line item', variant: 'destructive' });
+    if (!form.client_company_id || lineItems.every(li => !li.description)) {
+      toast({ title: 'Fill in client company and at least one line item', variant: 'destructive' });
       return;
     }
+    const selectedCompany = clientCompanies.find(cc => cc.id === form.client_company_id);
     setSaving(true);
     const { data: inv, error } = await supabase.from('invoices').insert({
-      invoice_number: nextNumber, client_id: form.client_id,
+      invoice_number: nextNumber, client_id: selectedCompany?.user_id ?? form.client_id,
+      client_company_id: form.client_company_id || null,
       due_date: form.due_date || null, notes: form.notes || null,
       tax_rate: form.tax_rate, subtotal, total: grandTotal, status: 'draft' as const,
       send_date: sendDate ? format(sendDate, 'yyyy-MM-dd') : null,
@@ -307,7 +336,7 @@ export default function Invoices() {
   };
 
   const resetForm = () => {
-    setForm({ client_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
+    setForm({ client_id: '', client_company_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
     setSendDate(get25thOfCurrentMonth());
     setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }]);
     setEditingInvoice(null);
@@ -317,6 +346,7 @@ export default function Invoices() {
     setEditingInvoice(inv);
     setForm({
       client_id: inv.client_id,
+      client_company_id: inv.client_company_id ?? '',
       due_date: inv.due_date ?? '',
       notes: inv.notes ?? '',
       tax_rate: inv.tax_rate,
@@ -333,13 +363,15 @@ export default function Invoices() {
 
   const handleUpdate = async () => {
     if (!editingInvoice) return;
-    if (!form.client_id || lineItems.every(li => !li.description)) {
-      toast({ title: 'Fill in client and at least one line item', variant: 'destructive' });
+    if (!form.client_company_id || lineItems.every(li => !li.description)) {
+      toast({ title: 'Fill in client company and at least one line item', variant: 'destructive' });
       return;
     }
+    const selectedCompany = clientCompanies.find(cc => cc.id === form.client_company_id);
     setSaving(true);
     const { error } = await supabase.from('invoices').update({
-      client_id: form.client_id,
+      client_id: selectedCompany?.user_id ?? form.client_id,
+      client_company_id: form.client_company_id || null,
       due_date: form.due_date || null,
       notes: form.notes || null,
       tax_rate: form.tax_rate,
@@ -677,18 +709,18 @@ export default function Invoices() {
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label className="font-mono text-xs">Client</Label>
-                <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v }))}>
-                  <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select client" /></SelectTrigger>
+                <Label className="font-mono text-xs">Client Company</Label>
+                <Select value={form.client_company_id} onValueChange={v => {
+                  const cc = clientCompanies.find(c => c.id === v);
+                  setForm(f => ({ ...f, client_company_id: v, client_id: cc?.user_id ?? '' }));
+                }}>
+                  <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select company" /></SelectTrigger>
                   <SelectContent>
-                    {profiles.map(p => {
-                      const label = p.company
-                        ? `${p.company} / ${(p.display_name ?? p.email ?? '').split(' ')[0]}`
-                        : p.display_name || p.email;
-                      return (
-                        <SelectItem key={p.user_id} value={p.user_id}>{label}</SelectItem>
-                      );
-                    })}
+                    {clientCompanies.map(cc => (
+                      <SelectItem key={cc.id} value={cc.id}>
+                        {cc.company_name} — {cc.display_name ?? cc.email}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -831,16 +863,18 @@ export default function Invoices() {
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label className="font-mono text-xs">Client</Label>
-                <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v }))}>
-                  <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select client" /></SelectTrigger>
+                <Label className="font-mono text-xs">Client Company</Label>
+                <Select value={form.client_company_id} onValueChange={v => {
+                  const cc = clientCompanies.find(c => c.id === v);
+                  setForm(f => ({ ...f, client_company_id: v, client_id: cc?.user_id ?? '' }));
+                }}>
+                  <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select company" /></SelectTrigger>
                   <SelectContent>
-                    {profiles.map(p => {
-                      const label = p.company
-                        ? `${p.company} / ${(p.display_name ?? p.email ?? '').split(' ')[0]}`
-                        : p.display_name || p.email;
-                      return <SelectItem key={p.user_id} value={p.user_id}>{label}</SelectItem>;
-                    })}
+                    {clientCompanies.map(cc => (
+                      <SelectItem key={cc.id} value={cc.id}>
+                        {cc.company_name} — {cc.display_name ?? cc.email}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
