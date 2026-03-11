@@ -143,6 +143,7 @@ export default function Invoices() {
       ...inv,
       client_name: profileMap.get(inv.client_id)?.display_name ?? 'Unknown',
       client_email: profileMap.get(inv.client_id)?.email ?? '',
+      currency: profileMap.get(inv.client_id)?.currency ?? 'USD',
     }));
     setInvoices(enriched);
     setProfiles(profRes.data ?? []);
