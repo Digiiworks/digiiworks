@@ -14,7 +14,8 @@ const currencySymbol = (c: string) => (c === 'ZAR' ? 'R' : c === 'THB' ? '฿' :
 
 const InvoicePrint = () => {
   const { id } = useParams<{ id: string }>();
-  const [invoice, setInvoice] = useState<any>(null);
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [client, setClient] = useState<any>(null);
   const [currency, setCurrency] = useState('USD');
