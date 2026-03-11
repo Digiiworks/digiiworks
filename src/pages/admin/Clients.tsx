@@ -317,7 +317,7 @@ export default function Clients() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Total Clients" value={clients.length} />
         <StatCard label="With Outstanding" value={clients.filter(c => (c.outstanding ?? 0) > 0).length} />
-        <StatCard label="Total Outstanding" value={fmt(clients.reduce((s, c) => s + (c.outstanding ?? 0), 0))} valueColor="text-orange-400" />
+        <StatCard label="Total Outstanding" value={fmtCurrency(clients.reduce((s, c) => s + (c.outstanding ?? 0), 0))} valueColor="text-orange-400" />
       </div>
 
       <AdminToolbar title="Clients">
