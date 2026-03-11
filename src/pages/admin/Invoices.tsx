@@ -350,7 +350,7 @@ export default function Invoices() {
         {overdueCount > 0 && (
           <StatCard
             label="Overdue"
-            value={`$${invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0).toFixed(2)}`}
+            value={fmtCurrency(invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0))}
             icon={AlertTriangle}
             iconColor="text-orange-400"
             valueColor="text-orange-400"
