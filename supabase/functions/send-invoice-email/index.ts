@@ -163,8 +163,8 @@ async function sendEmail(to: string, subject: string, html: string) {
   const client = new SMTPClient({
     connection: {
       hostname: smtpHost,
-      port: 465,
-      tls: true,
+      port: 587,
+      tls: false,
       auth: {
         username: smtpUser,
         password: smtpPass,
