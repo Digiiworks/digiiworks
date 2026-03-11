@@ -28,6 +28,7 @@ import UsersAdmin from "./pages/admin/Users";
 import InvoicesAdmin from "./pages/admin/Invoices";
 import ClientsAdmin from "./pages/admin/Clients";
 import ProductsAdmin from "./pages/admin/Products";
+import SettingsAdmin from "./pages/admin/Settings";
 
 // Lazy imports for low-traffic / detail pages
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
