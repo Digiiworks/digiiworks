@@ -107,7 +107,8 @@ const Leads = () => {
                     </span>
                   </div>
                   <p className="font-mono text-xs text-muted-foreground truncate mt-0.5">
-                    {lead.email} · {lead.service_interest || 'No service selected'} · {format(new Date(lead.created_at), 'MMM d, yyyy')}
+                    {lead.email}
+                    <span className="hidden sm:inline"> · {lead.service_interest || 'No service selected'} · {format(new Date(lead.created_at), 'MMM d, yyyy')}</span>
                   </p>
                 </div>
                 <ChevronDown
