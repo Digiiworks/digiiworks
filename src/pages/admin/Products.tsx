@@ -332,7 +332,43 @@ export default function Products() {
         <EmptyState icon={Package} message="No products found." />
       ) : (
         <>
-          <div className="rounded-lg border border-border bg-card/50 overflow-x-auto">
+          {/* Mobile card view */}
+          <div className="space-y-3 md:hidden">
+            {paginated.map(p => (
+              <div key={p.id} className="rounded-lg border border-border bg-card/50 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    {p.category && (
+                      <Badge className={`border-0 text-[10px] mt-0.5 ${getCategoryColor(p.category)}`}>{p.category}</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => toggleActive(p)}>
+                      <Badge className={`border-0 text-[10px] ${p.active ? 'bg-green-500/20 text-green-400' : 'bg-muted text-muted-foreground'}`}>
+                        {p.active ? 'Active' : 'Off'}
+                      </Badge>
+                    </button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(p.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                {p.description && <p className="text-xs text-muted-foreground line-clamp-1">{p.description}</p>}
+                <div className="grid grid-cols-3 gap-2 text-xs font-mono">
+                  <div><span className="text-muted-foreground block">USD</span>${p.price_usd.toFixed(2)}</div>
+                  <div><span className="text-muted-foreground block">ZAR</span>R{((p as any).price_zar ?? 0).toFixed(2)}</div>
+                  <div><span className="text-muted-foreground block">THB</span>฿{((p as any).price_thb ?? 0).toFixed(2)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table view */}
+          <div className="rounded-lg border border-border bg-card/50 overflow-x-auto hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow className="border-border/50">
