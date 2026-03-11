@@ -779,7 +779,7 @@ export default function Invoices() {
 
       {/* Edit Dialog */}
       <Dialog open={showEdit} onOpenChange={(open) => { if (!open) { setShowEdit(false); resetForm(); } }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
           <DialogHeader>
             <DialogTitle className="font-mono">Edit Invoice — {editingInvoice?.invoice_number}</DialogTitle>
           </DialogHeader>
