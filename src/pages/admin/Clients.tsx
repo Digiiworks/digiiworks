@@ -208,6 +208,8 @@ export default function Clients() {
     setShowCreate(true);
     setForm({ email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' });
     setRecurringServices([]);
+    setBillingCycle('monthly');
+    setStartDate(null);
   };
 
   const saveRecurringServices = async (clientId: string) => {
