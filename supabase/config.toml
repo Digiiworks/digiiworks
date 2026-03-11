@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.yoco-webhook]
 verify_jwt = false
+
+[functions.get-invoice-public]
+verify_jwt = false

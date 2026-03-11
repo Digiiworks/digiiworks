@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 
@@ -27,27 +26,22 @@ const InvoicePrint = () => {
     if (!id) return;
     (async () => {
       try {
-        const [invRes, itemsRes, settingsRes] = await Promise.all([
-          supabase.from('invoices').select('*').eq('id', id).single(),
-          supabase.from('invoice_items').select('*').eq('invoice_id', id),
-          supabase.from('page_content').select('content').eq('page_key', 'payment_settings').single(),
-        ]);
-        if (invRes.error || !invRes.data) { setError('Invoice not found'); setLoading(false); return; }
-        const inv = invRes.data;
-        setInvoice(inv);
-        setItems((itemsRes.data as any[]) ?? []);
-        if (settingsRes.data) setPaymentSettings(settingsRes.data.content as any);
-
-        // Get client profile & currency
-        const { data: prof } = await supabase.from('profiles').select('*').eq('user_id', inv.client_id).single();
-        if (prof) setClient(prof);
-
-        if (inv.client_company_id) {
-          const { data: co } = await supabase.from('client_companies').select('currency').eq('id', inv.client_company_id).single();
-          if (co?.currency) setCurrency(co.currency);
-        } else if (prof?.currency) {
-          setCurrency(prof.currency);
-        }
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/get-invoice-public`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoice_id: id }),
+          }
+        );
+        if (!res.ok) { setError('Invoice not found'); setLoading(false); return; }
+        const data = await res.json();
+        setInvoice(data.invoice);
+        setItems(data.items ?? []);
+        setClient(data.client);
+        setCurrency(data.currency || 'USD');
+        setPaymentSettings(data.paymentSettings);
       } catch { setError('Failed to load invoice'); }
       setLoading(false);
     })();
