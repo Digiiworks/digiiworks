@@ -434,7 +434,7 @@ export default function Products() {
 
       {/* Edit Product Dialog */}
       <Dialog open={!!editProduct} onOpenChange={() => setEditProduct(null)}>
-        <DialogContent className="max-w-md bg-card border-border">
+        <DialogContent className="w-[95vw] max-w-md bg-card border-border">
           <DialogHeader><DialogTitle className="font-mono">Edit Product</DialogTitle></DialogHeader>
           {renderProductForm(handleUpdate, "Save Changes")}
         </DialogContent>
