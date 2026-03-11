@@ -81,6 +81,14 @@ export default function Clients() {
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [startDate, setStartDate] = useState<string | null>(null);
 
+  // Invoice prompt state
+  const [showInvoicePrompt, setShowInvoicePrompt] = useState(false);
+  const [pendingInvoiceData, setPendingInvoiceData] = useState<{
+    user_id: string; client_company_id: string; currency: string; company_name: string;
+    services: RecurringService[];
+  } | null>(null);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
+
   // Fuzzy search state
   const [emailQuery, setEmailQuery] = useState('');
   const [emailMatches, setEmailMatches] = useState<ProfileMatch[]>([]);
