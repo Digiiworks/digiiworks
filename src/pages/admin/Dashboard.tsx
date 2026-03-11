@@ -190,14 +190,14 @@ const Dashboard = () => {
             <p className="px-5 py-8 text-center font-mono text-sm text-muted-foreground">No leads yet.</p>
           )}
           {recentLeads?.map((lead: any) => (
-            <div key={lead.id} className="flex items-center justify-between px-5 py-3">
-              <div>
-                <p className="font-mono text-sm text-foreground">{lead.name}</p>
-                <p className="font-mono text-xs text-muted-foreground">{lead.email}</p>
+            <div key={lead.id} className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="font-mono text-sm text-foreground truncate">{lead.name}</p>
+                <p className="font-mono text-xs text-muted-foreground truncate">{lead.email}</p>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs text-muted-foreground hidden sm:inline">{lead.service_interest}</span>
-                <span className={`rounded-full px-2 py-0.5 font-mono text-[10px] uppercase ${
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="font-mono text-xs text-muted-foreground hidden sm:inline truncate max-w-[120px]">{lead.service_interest}</span>
+                <span className={`rounded-full px-2 py-0.5 font-mono text-[10px] uppercase whitespace-nowrap ${
                   lead.status === 'new' ? 'bg-neon-blue/10 text-neon-blue' :
                   lead.status === 'contacted' ? 'bg-neon-purple/10 text-neon-purple' :
                   lead.status === 'converted' ? 'bg-neon-mint/10 text-neon-mint' :
