@@ -52,7 +52,7 @@ interface BankingInfo {
 }
 
 const defaultData: BankingInfo = {
-  global: { bank_name: '', account_name: '', account_number: '', swift_code: '', currency: 'USD', reference_note: '' },
+  global: { bank_name: '', account_name: '', account_number: '', swift_code: '', routing_number: '', currency: 'USD', reference_note: '' },
   thai: { bank_name: '', account_name: '', account_number: '', branch: '', currency: 'THB', reference_note: '' },
   south_africa: { bank_name: '', account_name: '', account_number: '', branch_code: '', account_type: 'Cheque', currency: 'ZAR', reference_note: '' },
   payment_links: { yoco_payment_link: '', wise_payment_link: '' },
