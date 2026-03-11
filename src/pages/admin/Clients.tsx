@@ -213,6 +213,8 @@ export default function Clients() {
     }
   };
 
+  const countryToCurrency = (c: string) => c === 'south_africa' ? 'ZAR' : c === 'thailand' ? 'THB' : 'USD';
+
   const handleUpdate = async () => {
     if (!editClient) return;
     setSaving(true);
@@ -224,6 +226,7 @@ export default function Clients() {
         company: form.company || null,
         address: form.address || null,
         notes: form.notes || null,
+        currency: countryToCurrency(form.country),
       })
       .eq('user_id', editClient.user_id);
 
