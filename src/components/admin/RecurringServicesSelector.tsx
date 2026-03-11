@@ -51,6 +51,20 @@ export default function RecurringServicesSelector({ services, onChange, currency
       });
   }, []);
 
+  // Re-price existing services when currency changes
+  useEffect(() => {
+    if (products.length === 0 || services.length === 0) return;
+    const updated = services.map(s => {
+      const product = products.find(p => p.id === s.product_id);
+      if (!product) return s;
+      return { ...s, price: getProductPrice(product, currency) };
+    });
+    // Only call onChange if prices actually changed
+    if (updated.some((u, i) => u.price !== services[i].price)) {
+      onChange(updated);
+    }
+  }, [currency, products]);
+
   const availableProducts = products.filter(
     p => !services.some(s => s.product_id === p.id)
   );
