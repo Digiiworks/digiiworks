@@ -431,7 +431,7 @@ export default function Clients() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editClient} onOpenChange={() => setEditClient(null)}>
-        <DialogContent className="max-w-md bg-card border-border">
+        <DialogContent className="max-w-md bg-card border-border max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-mono">Edit Client</DialogTitle>
           </DialogHeader>
