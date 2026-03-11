@@ -30,7 +30,9 @@ const AgencyPulse = () => {
         return [];
       }
     },
-    refetchInterval: 15000,
+    staleTime: 60 * 60 * 1000,
+    refetchInterval: false,
+    retry: false,
   });
 
   const displayLogs: readonly { id: string; agent: string; message: string }[] =
