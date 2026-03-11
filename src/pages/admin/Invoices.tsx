@@ -625,7 +625,7 @@ export default function Invoices() {
 
       {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
           <DialogHeader>
             <DialogTitle className="font-mono">New Invoice — {nextNumber}</DialogTitle>
           </DialogHeader>
