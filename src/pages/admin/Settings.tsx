@@ -242,6 +242,22 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="tracking">
+          <Card className="border-border bg-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-mono text-base">
+                <BarChart3 className="h-4 w-4 text-primary" /> Tracking Pixels
+              </CardTitle>
+              <CardDescription>Google Analytics / Ads and Meta (Facebook) pixel IDs injected into the site</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Field label="Google Pixel / GA4 Measurement ID" path={['tracking', 'google_pixel_id']} placeholder="G-XXXXXXXXXX or AW-XXXXXXXXX" />
+              <Separator />
+              <Field label="Meta (Facebook) Pixel ID" path={['tracking', 'meta_pixel_id']} placeholder="123456789012345" />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
