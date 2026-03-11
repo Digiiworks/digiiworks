@@ -1,0 +1,1 @@
+ALTER TABLE public.client_recurring_services ADD COLUMN unit_price_override numeric DEFAULT NULL;

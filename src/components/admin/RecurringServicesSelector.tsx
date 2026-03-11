@@ -26,6 +26,8 @@ export type RecurringService = {
   product_name: string;
   quantity: number;
   price: number;
+  /** null = use standard product price; number = client-specific override */
+  price_override: number | null;
   active: boolean;
 };
 
@@ -51,15 +53,16 @@ export default function RecurringServicesSelector({ services, onChange, currency
       });
   }, []);
 
-  // Re-price existing services when currency changes
+  // Re-price existing services when currency changes (only standard price, not overrides)
   useEffect(() => {
     if (products.length === 0 || services.length === 0) return;
     const updated = services.map(s => {
       const product = products.find(p => p.id === s.product_id);
       if (!product) return s;
-      return { ...s, price: getProductPrice(product, currency) };
+      const standardPrice = getProductPrice(product, currency);
+      // Update the standard price reference; override stays as-is
+      return { ...s, price: standardPrice };
     });
-    // Only call onChange if prices actually changed
     if (updated.some((u, i) => u.price !== services[i].price)) {
       onChange(updated);
     }
@@ -78,6 +81,7 @@ export default function RecurringServicesSelector({ services, onChange, currency
         product_name: product.name,
         quantity: 1,
         price,
+        price_override: null,
         active: true,
       },
     ]);
@@ -91,6 +95,9 @@ export default function RecurringServicesSelector({ services, onChange, currency
   const removeService = (index: number) => {
     onChange(services.filter((_, i) => i !== index));
   };
+
+  /** The effective price for display and totals */
+  const effectivePrice = (s: RecurringService) => s.price_override ?? s.price;
 
   if (loading) {
     return (
@@ -108,45 +115,82 @@ export default function RecurringServicesSelector({ services, onChange, currency
 
       {services.length > 0 && (
         <div className="space-y-2">
-          {services.map((service, idx) => (
-            <div
-              key={service.product_id}
-              className="flex items-center gap-2 rounded-md border border-border bg-background p-2"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate">{service.product_name}</p>
-                <p className="text-[10px] text-muted-foreground font-mono">
-                  {fmtCurrency(service.price, currency)} / unit
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Label className="text-[10px] text-muted-foreground">Qty</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={service.quantity}
-                  onChange={e =>
-                    updateService(idx, { quantity: Math.max(1, parseInt(e.target.value) || 1) })
-                  }
-                  className="w-14 h-7 text-xs bg-card border-border text-center"
-                />
-              </div>
-              <Switch
-                checked={service.active}
-                onCheckedChange={checked => updateService(idx, { active: checked })}
-                className="shrink-0"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
-                onClick={() => removeService(idx)}
+          {services.map((service, idx) => {
+            const hasOverride = service.price_override !== null;
+            return (
+              <div
+                key={service.product_id}
+                className="rounded-md border border-border bg-background p-2 space-y-1.5"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          ))}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{service.product_name}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono">
+                      Standard: {fmtCurrency(service.price, currency)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Label className="text-[10px] text-muted-foreground">Qty</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={service.quantity}
+                      onChange={e =>
+                        updateService(idx, { quantity: Math.max(1, parseInt(e.target.value) || 1) })
+                      }
+                      className="w-14 h-7 text-xs bg-card border-border text-center"
+                    />
+                  </div>
+                  <Switch
+                    checked={service.active}
+                    onCheckedChange={checked => updateService(idx, { active: checked })}
+                    className="shrink-0"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
+                    onClick={() => removeService(idx)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                {/* Price override row */}
+                <div className="flex items-center gap-2">
+                  <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Client Price</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={hasOverride ? service.price_override! : ''}
+                    placeholder={service.price.toFixed(2)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      updateService(idx, {
+                        price_override: val === '' ? null : Math.max(0, parseFloat(val) || 0),
+                      });
+                    }}
+                    className={`h-7 text-xs bg-card border-border flex-1 font-mono ${hasOverride ? 'text-primary' : 'text-muted-foreground'}`}
+                  />
+                  {hasOverride && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[10px] text-muted-foreground px-2"
+                      onClick={() => updateService(idx, { price_override: null })}
+                    >
+                      Reset
+                    </Button>
+                  )}
+                  <span className="font-mono text-xs text-foreground shrink-0">
+                    {fmtCurrency(effectivePrice(service), currency)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -172,7 +216,7 @@ export default function RecurringServicesSelector({ services, onChange, currency
             {fmtCurrency(
               services
                 .filter(s => s.active)
-                .reduce((sum, s) => sum + s.price * s.quantity, 0),
+                .reduce((sum, s) => sum + effectivePrice(s) * s.quantity, 0),
               currency
             )}
             /month

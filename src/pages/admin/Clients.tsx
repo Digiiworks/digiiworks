@@ -163,7 +163,7 @@ export default function Clients() {
     // Load existing recurring services
     const { data } = await supabase
       .from('client_recurring_services')
-      .select('id, product_id, quantity, active')
+      .select('id, product_id, quantity, active, unit_price_override')
       .eq('client_id', client.user_id);
 
     if (data && data.length > 0) {
@@ -188,6 +188,7 @@ export default function Clients() {
           product_name: productMap.get(d.product_id)?.name ?? 'Unknown',
           quantity: d.quantity,
           price: productMap.get(d.product_id) ? getPrice(productMap.get(d.product_id)) : 0,
+          price_override: d.unit_price_override ?? null,
           active: d.active,
         }))
       );
@@ -216,6 +217,7 @@ export default function Clients() {
           product_id: s.product_id,
           quantity: s.quantity,
           active: s.active,
+          unit_price_override: s.price_override,
         }))
       );
     }
