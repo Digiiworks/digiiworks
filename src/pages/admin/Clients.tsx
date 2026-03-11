@@ -530,7 +530,7 @@ export default function Clients() {
                 </SelectContent>
               </Select>
             </div>
-            <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} />
+            <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} currency={countryToCurrency(form.country)} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditClient(null)}>Cancel</Button>
