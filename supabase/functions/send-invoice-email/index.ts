@@ -160,6 +160,8 @@ async function sendEmail(to: string, subject: string, html: string) {
   const smtpUser = Deno.env.get("SMTP_USER")!;
   const smtpPass = Deno.env.get("SMTP_PASS")!;
 
+  console.log("SMTP config:", { host: smtpHost, user: smtpUser, passLength: smtpPass?.length });
+
   const transporter = nodemailer.createTransport({
     host: smtpHost,
     port: 465,
@@ -168,6 +170,9 @@ async function sendEmail(to: string, subject: string, html: string) {
       user: smtpUser,
       pass: smtpPass,
     },
+    authMethod: "LOGIN",
+    debug: true,
+    logger: true,
   });
 
   await transporter.sendMail({
