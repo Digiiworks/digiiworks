@@ -72,7 +72,7 @@ type InvoiceEmail = {
   created_at: string;
 };
 
-type Profile = { user_id: string; display_name: string | null; email: string | null };
+type Profile = { user_id: string; display_name: string | null; email: string | null; company: string | null };
 type Product = { id: string; name: string; price_usd: number; description?: string | null; category?: string | null };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -134,7 +134,7 @@ export default function Invoices() {
     setLoading(true);
     const [invRes, profRes, prodRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('user_id, display_name, email'),
+      supabase.from('profiles').select('user_id, display_name, email, company'),
       supabase.from('products').select('id, name, price_usd, description, category').eq('active', true),
     ]);
     const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
@@ -507,9 +507,14 @@ export default function Invoices() {
                 <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v }))}>
                   <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select client" /></SelectTrigger>
                   <SelectContent>
-                    {profiles.map(p => (
-                      <SelectItem key={p.user_id} value={p.user_id}>{p.display_name || p.email}</SelectItem>
-                    ))}
+                    {profiles.map(p => {
+                      const label = p.company
+                        ? `${p.company} / ${(p.display_name ?? p.email ?? '').split(' ')[0]}`
+                        : p.display_name || p.email;
+                      return (
+                        <SelectItem key={p.user_id} value={p.user_id}>{label}</SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
