@@ -331,10 +331,16 @@ const ClientDashboard = () => {
 
               {/* Download PDF */}
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button variant="outline" className="font-mono" asChild>
-                  <Link to={`/invoice/${selectedInvoice.id}`} target="_blank">
-                    <Download className="h-4 w-4 mr-1" /> Download PDF
-                  </Link>
+                <Button variant="outline" className="font-mono" onClick={async () => {
+                  try {
+                    const { data, error } = await supabase.functions.invoke('generate-invoice-token', {
+                      body: { invoice_id: selectedInvoice.id },
+                    });
+                    if (error || !data?.token) { alert('Could not generate PDF link'); return; }
+                    window.open(`/invoice/${selectedInvoice.id}?token=${data.token}`, '_blank');
+                  } catch { alert('Could not generate PDF link'); }
+                }}>
+                  <Download className="h-4 w-4 mr-1" /> Download PDF
                 </Button>
               </div>
 

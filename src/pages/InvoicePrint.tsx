@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 
@@ -14,6 +14,9 @@ const currencySymbol = (c: string) => (c === 'ZAR' ? 'R' : c === 'THB' ? '฿' :
 
 const InvoicePrint = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+
   const [invoice, setInvoice] = useState<any>(null);
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [client, setClient] = useState<any>(null);
@@ -24,6 +27,7 @@ const InvoicePrint = () => {
 
   useEffect(() => {
     if (!id) return;
+    if (!token) { setError('Access denied — invalid link'); setLoading(false); return; }
     (async () => {
       try {
         const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -32,10 +36,10 @@ const InvoicePrint = () => {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ invoice_id: id }),
+            body: JSON.stringify({ invoice_id: id, token }),
           }
         );
-        if (!res.ok) { setError('Invoice not found'); setLoading(false); return; }
+        if (!res.ok) { setError('Invoice not found or access denied'); setLoading(false); return; }
         const data = await res.json();
         setInvoice(data.invoice);
         setItems(data.items ?? []);
@@ -45,7 +49,7 @@ const InvoicePrint = () => {
       } catch { setError('Failed to load invoice'); }
       setLoading(false);
     })();
-  }, [id]);
+  }, [id, token]);
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'sans-serif' }}>Loading…</div>;
   if (error || !invoice) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'sans-serif', color: '#ef4444' }}>{error || 'Not found'}</div>;
