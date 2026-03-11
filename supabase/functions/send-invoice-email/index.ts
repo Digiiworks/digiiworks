@@ -47,15 +47,20 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string) {
     ${linksHTML ? `<div style="text-align:center;margin:20px 0 0;">${linksHTML}</div>` : ''}`;
 }
 
-function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, paymentSettings?: any) {
+function currencySymbol(currency: string) {
+  return currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
+}
+
+function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, currency: string, paymentSettings?: any) {
+  const sym = currencySymbol(currency);
   const itemRows = items
     .map(
       (it) => `
     <tr>
       <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;">${it.description}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;text-align:center;">${it.quantity}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;text-align:right;">$${Number(it.unit_price).toFixed(2)}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;text-align:right;">$${Number(it.total).toFixed(2)}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;text-align:right;">${sym}${Number(it.unit_price).toFixed(2)}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;text-align:right;">${sym}${Number(it.total).toFixed(2)}</td>
     </tr>`
     )
     .join("");
