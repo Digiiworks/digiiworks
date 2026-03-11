@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon } from 'lucide-react';
+import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3 } from 'lucide-react';
 
 const PAGE_KEY = 'payment_settings';
 
@@ -40,6 +40,10 @@ interface BankingInfo {
     yoco_payment_link: string;
     wise_payment_link: string;
   };
+  tracking: {
+    google_pixel_id: string;
+    meta_pixel_id: string;
+  };
 }
 
 const defaultData: BankingInfo = {
@@ -47,6 +51,7 @@ const defaultData: BankingInfo = {
   thai: { bank_name: '', account_name: '', account_number: '', branch: '', currency: 'THB', reference_note: '' },
   south_africa: { bank_name: '', account_name: '', account_number: '', branch_code: '', account_type: 'Cheque', currency: 'ZAR', reference_note: '' },
   payment_links: { yoco_payment_link: '', wise_payment_link: '' },
+  tracking: { google_pixel_id: '', meta_pixel_id: '' },
 };
 
 const SettingsPage = () => {
@@ -161,6 +166,7 @@ const SettingsPage = () => {
           <TabsTrigger value="thai" className="gap-1.5 font-mono text-xs">🇹🇭 Thailand (THB)</TabsTrigger>
           <TabsTrigger value="south_africa" className="gap-1.5 font-mono text-xs">🇿🇦 South Africa (ZAR)</TabsTrigger>
           <TabsTrigger value="links" className="gap-1.5 font-mono text-xs"><LinkIcon className="h-3.5 w-3.5" /> Payment Links</TabsTrigger>
+          <TabsTrigger value="tracking" className="gap-1.5 font-mono text-xs"><BarChart3 className="h-3.5 w-3.5" /> Tracking Pixels</TabsTrigger>
         </TabsList>
 
         <TabsContent value="global">
@@ -233,6 +239,22 @@ const SettingsPage = () => {
               <Field label="Yoco Payment Link" path={['payment_links', 'yoco_payment_link']} placeholder="https://pay.yoco.com/your-link" />
               <Separator />
               <Field label="Wise Payment Link" path={['payment_links', 'wise_payment_link']} placeholder="https://wise.com/pay/your-link" />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tracking">
+          <Card className="border-border bg-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-mono text-base">
+                <BarChart3 className="h-4 w-4 text-primary" /> Tracking Pixels
+              </CardTitle>
+              <CardDescription>Google Analytics / Ads and Meta (Facebook) pixel IDs injected into the site</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Field label="Google Pixel / GA4 Measurement ID" path={['tracking', 'google_pixel_id']} placeholder="G-XXXXXXXXXX or AW-XXXXXXXXX" />
+              <Separator />
+              <Field label="Meta (Facebook) Pixel ID" path={['tracking', 'meta_pixel_id']} placeholder="123456789012345" />
             </CardContent>
           </Card>
         </TabsContent>
