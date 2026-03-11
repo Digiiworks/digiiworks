@@ -349,7 +349,8 @@ Deno.serve(async (req) => {
             .select("*")
             .eq("invoice_id", inv.id);
 
-          const html = buildEmailHTML(inv, items || [], client, dashboardBaseUrl, companyCurrency, paymentSettings);
+          const pdfToken = await hmacSign(inv.id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+          const html = buildEmailHTML(inv, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings);
           await sendEmail(client.email, "Invoice " + inv.invoice_number + " from DigiiWorks", html);
 
           await supabase.from("invoice_emails").insert({
