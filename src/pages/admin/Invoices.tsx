@@ -834,30 +834,35 @@ export default function Invoices() {
               <Label className="font-mono text-xs mb-2 block">Line Items</Label>
               <div className="space-y-2">
                 {lineItems.map((li, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-4">
-                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Product / Description</span>}
+                  <div key={idx} className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-12 sm:gap-2 sm:items-end border-b border-border/30 pb-2 sm:border-0 sm:pb-0">
+                    <div className="sm:col-span-4">
+                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Product</span>}
                       <ProductCombobox products={products} value={li.product_id} onSelect={(p) => pickProduct(idx, p.id)} placeholder="Search products..." />
                     </div>
-                    <div className="col-span-3">
-                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Description</span>}
-                      <Input value={li.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} className="h-9 text-xs bg-background border-border" placeholder="Custom desc" />
+                    <div className="sm:col-span-3">
+                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground hidden sm:block">Description</span>}
+                      <Input value={li.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} className="h-9 text-xs bg-background border-border" placeholder="Description" />
                     </div>
-                    <div className="col-span-1">
-                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Qty</span>}
-                      <Input type="number" min={1} value={li.quantity} onChange={e => updateLineItem(idx, 'quantity', +e.target.value)} className="h-9 text-xs bg-background border-border" />
-                    </div>
-                    <div className="col-span-2">
-                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Price</span>}
-                      <Input type="number" min={0} step={0.01} value={li.unit_price} onChange={e => updateLineItem(idx, 'unit_price', +e.target.value)} className="h-9 text-xs bg-background border-border" />
-                    </div>
-                    <div className="col-span-1 text-right font-mono text-xs text-muted-foreground pt-1">{fmtCurrency(li.total, profiles.find(p => p.user_id === form.client_id)?.currency)}</div>
-                    <div className="col-span-1">
-                      {lineItems.length > 1 && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
+                    <div className="grid grid-cols-3 gap-2 sm:contents">
+                      <div className="sm:col-span-1">
+                        <span className="text-[10px] font-mono text-muted-foreground sm:hidden">Qty</span>
+                        {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground hidden sm:block">Qty</span>}
+                        <Input type="number" min={1} value={li.quantity} onChange={e => updateLineItem(idx, 'quantity', +e.target.value)} className="h-9 text-xs bg-background border-border" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="text-[10px] font-mono text-muted-foreground sm:hidden">Price</span>
+                        {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground hidden sm:block">Price</span>}
+                        <Input type="number" min={0} step={0.01} value={li.unit_price} onChange={e => updateLineItem(idx, 'unit_price', +e.target.value)} className="h-9 text-xs bg-background border-border" />
+                      </div>
+                      <div className="flex items-end justify-between sm:col-span-1">
+                        <span className="font-mono text-xs text-muted-foreground pb-2 sm:hidden">{fmtCurrency(li.total, profiles.find(p => p.user_id === form.client_id)?.currency)}</span>
+                        <span className="hidden sm:block sm:text-right font-mono text-xs text-muted-foreground pt-1 w-full">{fmtCurrency(li.total, profiles.find(p => p.user_id === form.client_id)?.currency)}</span>
+                        {lineItems.length > 1 && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
