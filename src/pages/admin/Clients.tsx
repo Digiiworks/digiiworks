@@ -431,11 +431,11 @@ export default function Clients() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editClient} onOpenChange={() => setEditClient(null)}>
-        <DialogContent className="max-w-md bg-card border-border max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-md bg-card border-border max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="font-mono">Edit Client</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-1">
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><Mail className="h-3 w-3" /> Email</Label>
               <Input value={form.email} disabled className="bg-muted border-border opacity-60" />
@@ -484,11 +484,11 @@ export default function Clients() {
 
       {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-md bg-card border-border max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-md bg-card border-border max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="font-mono">Onboard New Client</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-1">
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><User className="h-3 w-3" /> Contact Name *</Label>
               <Input value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} className="bg-background border-border" placeholder="John Doe" />
