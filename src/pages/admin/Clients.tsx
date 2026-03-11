@@ -217,6 +217,7 @@ export default function Clients() {
           product_id: s.product_id,
           quantity: s.quantity,
           active: s.active,
+          unit_price_override: s.price_override,
         }))
       );
     }
