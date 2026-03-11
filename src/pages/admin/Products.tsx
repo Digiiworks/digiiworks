@@ -256,15 +256,23 @@ export default function Products() {
         <Label className="font-mono text-xs">Description</Label>
         <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="bg-background border-border" rows={3} placeholder="Brief description of the product/service" />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         <div>
           <Label className="font-mono text-xs">Price (USD)</Label>
           <Input type="number" min={0} step={0.01} value={form.price_usd} onChange={e => setForm(f => ({ ...f, price_usd: +e.target.value }))} className="bg-background border-border" />
         </div>
-        <div className="flex items-center gap-3 pt-5">
-          <Switch checked={form.active} onCheckedChange={v => setForm(f => ({ ...f, active: v }))} />
-          <Label className="font-mono text-xs">{form.active ? 'Active' : 'Inactive'}</Label>
+        <div>
+          <Label className="font-mono text-xs">Price (ZAR)</Label>
+          <Input type="number" min={0} step={0.01} value={form.price_zar} onChange={e => setForm(f => ({ ...f, price_zar: +e.target.value }))} className="bg-background border-border" />
         </div>
+        <div>
+          <Label className="font-mono text-xs">Price (THB)</Label>
+          <Input type="number" min={0} step={0.01} value={form.price_thb} onChange={e => setForm(f => ({ ...f, price_thb: +e.target.value }))} className="bg-background border-border" />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 pt-2">
+        <Switch checked={form.active} onCheckedChange={v => setForm(f => ({ ...f, active: v }))} />
+        <Label className="font-mono text-xs">{form.active ? 'Active' : 'Inactive'}</Label>
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={() => { setShowCreate(false); setEditProduct(null); }}>Cancel</Button>
