@@ -235,6 +235,8 @@ export default function Clients() {
     setForm(f => ({ ...f, email: '', display_name: '' }));
   };
 
+  const [originalRecurringIds, setOriginalRecurringIds] = useState<Set<string>>(new Set());
+
   const openEdit = async (client: ClientCompany) => {
     setEditClient(client);
     setForm({
@@ -269,21 +271,22 @@ export default function Clients() {
       const productMap = new Map((products ?? []).map((p: any) => [p.id, p]));
       setBillingCycle(data[0]?.billing_cycle ?? 'monthly');
       setStartDate(data[0]?.start_date ?? null);
-      setRecurringServices(
-        data.map((d: any) => ({
-          id: d.id,
-          product_id: d.product_id,
-          product_name: productMap.get(d.product_id)?.name ?? 'Unknown',
-          quantity: d.quantity,
-          price: productMap.get(d.product_id) ? getPrice(productMap.get(d.product_id)) : 0,
-          price_override: d.unit_price_override ?? null,
-          active: d.active,
-        }))
-      );
+      const mapped = data.map((d: any) => ({
+        id: d.id,
+        product_id: d.product_id,
+        product_name: productMap.get(d.product_id)?.name ?? 'Unknown',
+        quantity: d.quantity,
+        price: productMap.get(d.product_id) ? getPrice(productMap.get(d.product_id)) : 0,
+        price_override: d.unit_price_override ?? null,
+        active: d.active,
+      }));
+      setRecurringServices(mapped);
+      setOriginalRecurringIds(new Set(data.filter((d: any) => d.active).map((d: any) => d.product_id)));
     } else {
       setRecurringServices([]);
       setBillingCycle('monthly');
       setStartDate(null);
+      setOriginalRecurringIds(new Set());
     }
   };
 
