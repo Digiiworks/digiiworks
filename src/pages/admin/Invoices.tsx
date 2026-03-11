@@ -863,16 +863,18 @@ export default function Invoices() {
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label className="font-mono text-xs">Client</Label>
-                <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v }))}>
-                  <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select client" /></SelectTrigger>
+                <Label className="font-mono text-xs">Client Company</Label>
+                <Select value={form.client_company_id} onValueChange={v => {
+                  const cc = clientCompanies.find(c => c.id === v);
+                  setForm(f => ({ ...f, client_company_id: v, client_id: cc?.user_id ?? '' }));
+                }}>
+                  <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select company" /></SelectTrigger>
                   <SelectContent>
-                    {profiles.map(p => {
-                      const label = p.company
-                        ? `${p.company} / ${(p.display_name ?? p.email ?? '').split(' ')[0]}`
-                        : p.display_name || p.email;
-                      return <SelectItem key={p.user_id} value={p.user_id}>{label}</SelectItem>;
-                    })}
+                    {clientCompanies.map(cc => (
+                      <SelectItem key={cc.id} value={cc.id}>
+                        {cc.company_name} — {cc.display_name ?? cc.email}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
