@@ -38,16 +38,33 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Group by client
-    const clientMap = new Map<string, { product_id: string; quantity: number; unit_price_override: number | null; billing_cycle: string; start_date: string | null }[]>();
+    // Group by client — billing_cycle and start_date are invoice-level (same for all items of a client)
+    const clientMap = new Map<string, { product_id: string; quantity: number; unit_price_override: number | null }[]>();
+    const clientBilling = new Map<string, { billing_cycle: string; start_date: string | null }>();
+
     for (const s of services) {
-      // Check if this service should be invoiced this month based on billing_cycle
-      const cycle = s.billing_cycle || 'monthly';
-      const startDate = s.start_date ? new Date(s.start_date) : null;
+      // Store billing info from first row per client (all rows share same values)
+      if (!clientBilling.has(s.client_id)) {
+        clientBilling.set(s.client_id, {
+          billing_cycle: s.billing_cycle || 'monthly',
+          start_date: s.start_date ?? null,
+        });
+      }
+
+      const list = clientMap.get(s.client_id) ?? [];
+      list.push({ product_id: s.product_id, quantity: s.quantity, unit_price_override: s.unit_price_override });
+      clientMap.set(s.client_id, list);
+    }
+
+    // Filter clients based on their billing cycle
+    const eligibleClients: string[] = [];
+    for (const [clientId, billing] of clientBilling) {
+      const cycle = billing.billing_cycle;
+      const startDate = billing.start_date ? new Date(billing.start_date) : null;
 
       let shouldInvoice = false;
       if (cycle === 'weekly') {
-        shouldInvoice = true; // weekly handled separately or always included
+        shouldInvoice = true;
       } else if (cycle === 'monthly') {
         shouldInvoice = true;
       } else if (cycle === 'quarterly') {
@@ -55,30 +72,31 @@ Deno.serve(async (req) => {
           const monthsDiff = (year - startDate.getFullYear()) * 12 + (month - startDate.getMonth());
           shouldInvoice = monthsDiff >= 0 && monthsDiff % 3 === 0;
         } else {
-          shouldInvoice = month % 3 === 0; // Jan, Apr, Jul, Oct
+          shouldInvoice = month % 3 === 0;
         }
       } else if (cycle === 'yearly') {
         if (startDate) {
           shouldInvoice = month === startDate.getMonth();
         } else {
-          shouldInvoice = month === 0; // January
+          shouldInvoice = month === 0;
         }
       }
 
-      if (!shouldInvoice) continue;
-
-      const list = clientMap.get(s.client_id) ?? [];
-      list.push({ product_id: s.product_id, quantity: s.quantity, unit_price_override: s.unit_price_override, billing_cycle: cycle, start_date: s.start_date });
-      clientMap.set(s.client_id, list);
+      if (shouldInvoice) eligibleClients.push(clientId);
     }
 
-    const clientIds = Array.from(clientMap.keys());
+    if (eligibleClients.length === 0) {
+      return new Response(
+        JSON.stringify({ message: "No clients due for invoicing this period", generated: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Check existing invoices for this month for these clients
     const { data: existingInvoices } = await supabase
       .from("invoices")
       .select("client_id")
-      .in("client_id", clientIds)
+      .in("client_id", eligibleClients)
       .gte("created_at", `${monthStart}T00:00:00Z`)
       .lte("created_at", `${monthEnd}T23:59:59Z`);
 
@@ -97,7 +115,7 @@ Deno.serve(async (req) => {
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, currency, display_name, company")
-      .in("user_id", clientIds);
+      .in("user_id", eligibleClients);
 
     const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
 
@@ -116,10 +134,14 @@ Deno.serve(async (req) => {
 
     const generated: string[] = [];
 
-    for (const [clientId, items] of clientMap) {
+    for (const clientId of eligibleClients) {
       if (alreadyInvoiced.has(clientId)) continue;
 
+      const items = clientMap.get(clientId);
+      if (!items || items.length === 0) continue;
+
       const profile = profileMap.get(clientId);
+      const currency = profile?.currency ?? 'USD';
       lastNum++;
       const invoiceNumber = `INV-${String(lastNum).padStart(4, "0")}`;
 
