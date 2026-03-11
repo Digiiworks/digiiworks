@@ -14,10 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_companies: {
+        Row: {
+          active: boolean
+          address: string | null
+          company_name: string
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          company_name: string
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          company_name?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_recurring_services: {
         Row: {
           active: boolean
           billing_cycle: string
+          client_company_id: string | null
           client_id: string
           created_at: string
           id: string
@@ -30,6 +70,7 @@ export type Database = {
         Insert: {
           active?: boolean
           billing_cycle?: string
+          client_company_id?: string | null
           client_id: string
           created_at?: string
           id?: string
@@ -42,6 +83,7 @@ export type Database = {
         Update: {
           active?: boolean
           billing_cycle?: string
+          client_company_id?: string | null
           client_id?: string
           created_at?: string
           id?: string
@@ -52,6 +94,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "client_recurring_services_client_company_id_fkey"
+            columns: ["client_company_id"]
+            isOneToOne: false
+            referencedRelation: "client_companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "client_recurring_services_product_id_fkey"
             columns: ["product_id"]
@@ -152,6 +201,7 @@ export type Database = {
       }
       invoices: {
         Row: {
+          client_company_id: string | null
           client_id: string
           created_at: string
           due_date: string | null
@@ -169,6 +219,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          client_company_id?: string | null
           client_id: string
           created_at?: string
           due_date?: string | null
@@ -186,6 +237,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          client_company_id?: string | null
           client_id?: string
           created_at?: string
           due_date?: string | null
@@ -202,7 +254,15 @@ export type Database = {
           total?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_company_id_fkey"
+            columns: ["client_company_id"]
+            isOneToOne: false
+            referencedRelation: "client_companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leads: {
         Row: {
