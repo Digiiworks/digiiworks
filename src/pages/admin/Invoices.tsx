@@ -72,7 +72,7 @@ type InvoiceEmail = {
   created_at: string;
 };
 
-type Profile = { user_id: string; display_name: string | null; email: string | null; company: string | null };
+type Profile = { user_id: string; display_name: string | null; email: string | null; company: string | null; currency?: string };
 type Product = { id: string; name: string; price_usd: number; description?: string | null; category?: string | null };
 
 const STATUS_COLORS: Record<string, string> = {
