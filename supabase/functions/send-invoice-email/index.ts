@@ -13,7 +13,40 @@ interface InvoiceItem {
   total: number;
 }
 
-function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string) {
+function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string) {
+  if (!bankInfo) return '';
+  
+  const fields: string[] = [];
+  if (bankInfo.bank_name) fields.push(`<strong>Bank:</strong> ${bankInfo.bank_name}`);
+  if (bankInfo.account_name) fields.push(`<strong>Account Name:</strong> ${bankInfo.account_name}`);
+  if (bankInfo.account_number) fields.push(`<strong>Account / IBAN:</strong> ${bankInfo.account_number}`);
+  if (bankInfo.swift_code) fields.push(`<strong>SWIFT:</strong> ${bankInfo.swift_code}`);
+  if (bankInfo.branch_code) fields.push(`<strong>Branch Code:</strong> ${bankInfo.branch_code}`);
+  if (bankInfo.branch) fields.push(`<strong>Branch:</strong> ${bankInfo.branch}`);
+  if (bankInfo.account_type) fields.push(`<strong>Account Type:</strong> ${bankInfo.account_type}`);
+  if (bankInfo.reference_note) fields.push(`<em style="color:#888;">${bankInfo.reference_note}</em>`);
+
+  if (fields.length === 0) return '';
+
+  const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
+
+  let linksHTML = '';
+  if (paymentLinks?.yoco_payment_link && currency === 'ZAR') {
+    linksHTML += `<a href="${paymentLinks.yoco_payment_link}" style="display:inline-block;padding:10px 24px;background:#00c853;color:#fff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:8px;">Pay with Yoco</a>`;
+  }
+  if (paymentLinks?.wise_payment_link) {
+    linksHTML += `<a href="${paymentLinks.wise_payment_link}" style="display:inline-block;padding:10px 24px;background:#9fe870;color:#000;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;">Pay with Wise</a>`;
+  }
+
+  return `
+    <div style="margin-top:24px;padding:16px;background:#0a0a0a;border-radius:8px;border-left:3px solid #00e5ff;">
+      <p style="margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#00e5ff;font-weight:700;">Direct Deposit — ${regionLabel}</p>
+      ${fields.map(f => `<p style="margin:0 0 4px;font-size:13px;color:#ccc;">${f}</p>`).join('')}
+    </div>
+    ${linksHTML ? `<div style="text-align:center;margin:20px 0 0;">${linksHTML}</div>` : ''}`;
+}
+
+function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, paymentSettings?: any) {
   const itemRows = items
     .map(
       (it) => `
