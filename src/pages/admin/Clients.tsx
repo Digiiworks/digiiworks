@@ -409,6 +409,16 @@ export default function Clients() {
               <Label className="font-mono text-xs flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Address</Label>
               <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="bg-background border-border" placeholder="123 Main St, City" />
             </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5">🌍 Country / Region</Label>
+              <Select value={form.country} onValueChange={(v: 'global' | 'south_africa') => setForm(f => ({ ...f, country: v }))}>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Global (USD)</SelectItem>
+                  <SelectItem value="south_africa">South Africa (ZAR)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
