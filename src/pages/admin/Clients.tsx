@@ -67,6 +67,7 @@ export default function Clients() {
   const [form, setForm] = useState({
     email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa',
   });
+  const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
 
   const fetchClients = async () => {
     setLoading(true);
