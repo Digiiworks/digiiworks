@@ -185,6 +185,7 @@ export default function Clients() {
     }
     setSaving(true);
 
+    const currency = form.country === 'south_africa' ? 'ZAR' : 'USD';
     const { data, error } = await supabase.functions.invoke('create-client', {
       body: {
         email: form.email,
@@ -192,6 +193,7 @@ export default function Clients() {
         phone: form.phone,
         company: form.company,
         address: form.address,
+        currency,
       },
     });
 
