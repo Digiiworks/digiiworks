@@ -167,6 +167,21 @@ const ClientDashboard = () => {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        {/* Payment result banner */}
+        {paymentMessage && (
+          <div className={`mb-6 rounded-lg p-4 flex items-center justify-between ${
+            paymentMessage.type === 'success'
+              ? 'bg-primary/10 border border-primary/30 text-primary'
+              : 'bg-destructive/10 border border-destructive/30 text-destructive'
+          }`}>
+            <div className="flex items-center gap-2">
+              {paymentMessage.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+              <p className="text-sm font-medium">{paymentMessage.text}</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setPaymentMessage(null)}>✕</Button>
+          </div>
+        )}
+
         {/* Welcome */}
         <div className="mb-8">
           <h1 className="font-mono text-2xl font-bold text-foreground">
