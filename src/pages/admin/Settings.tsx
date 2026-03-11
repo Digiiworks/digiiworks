@@ -20,6 +20,7 @@ interface BankingInfo {
     account_name: string;
     account_number: string;
     swift_code: string;
+    routing_number: string;
     currency: string;
     reference_note: string;
   };
