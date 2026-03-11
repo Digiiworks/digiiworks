@@ -457,6 +457,7 @@ export default function Clients() {
               <Label className="font-mono text-xs flex items-center gap-1.5"><FileText className="h-3 w-3" /> Notes</Label>
               <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="bg-background border-border" rows={3} />
             </div>
+            <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditClient(null)}>Cancel</Button>
