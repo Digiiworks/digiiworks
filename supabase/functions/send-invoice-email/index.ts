@@ -121,15 +121,15 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
       <table style="width:100%;max-width:250px;margin-left:auto;">
         <tr>
           <td style="padding:4px 0;font-size:13px;color:#888;">Subtotal</td>
-          <td style="padding:4px 0;font-size:13px;color:#ccc;text-align:right;font-family:monospace;">$${Number(invoice.subtotal).toFixed(2)}</td>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;text-align:right;font-family:monospace;">${sym}${Number(invoice.subtotal).toFixed(2)}</td>
         </tr>
         <tr>
           <td style="padding:4px 0;font-size:13px;color:#888;">Tax (${invoice.tax_rate}%)</td>
-          <td style="padding:4px 0;font-size:13px;color:#ccc;text-align:right;font-family:monospace;">$${taxAmount.toFixed(2)}</td>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;text-align:right;font-family:monospace;">${sym}${taxAmount.toFixed(2)}</td>
         </tr>
         <tr>
           <td style="padding:8px 0 0;font-size:18px;font-weight:700;color:#fff;">Total</td>
-          <td style="padding:8px 0 0;font-size:18px;font-weight:700;color:#00e5ff;text-align:right;font-family:monospace;">$${Number(invoice.total).toFixed(2)}</td>
+          <td style="padding:8px 0 0;font-size:18px;font-weight:700;color:#00e5ff;text-align:right;font-family:monospace;">${sym}${Number(invoice.total).toFixed(2)}</td>
         </tr>
       </table>
     </div>
