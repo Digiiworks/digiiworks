@@ -696,9 +696,9 @@ export default function Invoices() {
                 </Table>
               )}
               <div className="text-right space-y-1 border-t border-border/50 pt-3">
-                <p className="font-mono text-xs text-muted-foreground">Subtotal: ${showDetail.subtotal.toFixed(2)}</p>
-                <p className="font-mono text-xs text-muted-foreground">Tax ({showDetail.tax_rate}%): ${(showDetail.subtotal * showDetail.tax_rate / 100).toFixed(2)}</p>
-                <p className="font-mono text-sm font-bold text-foreground">Total: ${showDetail.total.toFixed(2)}</p>
+                <p className="font-mono text-xs text-muted-foreground">Subtotal: {fmtCurrency(showDetail.subtotal, showDetail.currency)}</p>
+                <p className="font-mono text-xs text-muted-foreground">Tax ({showDetail.tax_rate}%): {fmtCurrency(showDetail.subtotal * showDetail.tax_rate / 100, showDetail.currency)}</p>
+                <p className="font-mono text-sm font-bold text-foreground">Total: {fmtCurrency(showDetail.total, showDetail.currency)}</p>
               </div>
 
               {/* Email Actions */}
