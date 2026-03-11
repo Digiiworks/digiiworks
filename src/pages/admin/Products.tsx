@@ -384,7 +384,7 @@ export default function Products() {
       <Dialog open={!!editProduct} onOpenChange={() => setEditProduct(null)}>
         <DialogContent className="max-w-md bg-card border-border">
           <DialogHeader><DialogTitle className="font-mono">Edit Product</DialogTitle></DialogHeader>
-          <ProductForm onSubmit={handleUpdate} submitLabel="Save Changes" />
+          {renderProductForm(handleUpdate, "Save Changes")}
         </DialogContent>
       </Dialog>
 
