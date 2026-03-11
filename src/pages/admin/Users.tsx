@@ -103,16 +103,23 @@ const UsersAdmin = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Select onValueChange={(role) => addRole.mutate({ userId: profile.user_id, role })}>
-                        <SelectTrigger className="w-28 border-border bg-background/50 font-mono text-[10px]">
-                          <SelectValue placeholder="Add role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ROLES.map((r) => (
-                            <SelectItem key={r} value={r} className="font-mono text-xs capitalize">{r}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {(() => {
+                        const existingRoles = roles.map((r: any) => r.role);
+                        const availableRoles = ROLES.filter(r => !existingRoles.includes(r));
+                        if (availableRoles.length === 0) return <span className="font-mono text-[10px] text-muted-foreground">All roles assigned</span>;
+                        return (
+                          <Select onValueChange={(role) => addRole.mutate({ userId: profile.user_id, role })}>
+                            <SelectTrigger className="w-28 border-border bg-background/50 font-mono text-[10px]">
+                              <SelectValue placeholder="Add role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableRoles.map((r) => (
+                                <SelectItem key={r} value={r} className="font-mono text-xs capitalize">{r}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        );
+                      })()}
                     </td>
                   </tr>
                 );
