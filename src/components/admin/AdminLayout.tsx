@@ -109,16 +109,23 @@ const AdminLayout = () => {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col">
-        {/* Mobile header with burger */}
-        <header className="flex items-center justify-between border-b border-border/50 bg-card/50 backdrop-blur-xl px-4 py-3 md:hidden">
-          <button onClick={() => setMobileOpen(true)} className="text-foreground hover:text-primary transition-colors">
-            <Menu className="h-5 w-5" />
-          </button>
-          <Link to="/">
-            <img src="/logo.svg" alt="Digiiworks" style={{ width: 100 }} />
-          </Link>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] text-muted-foreground uppercase">{roleLabel}</span>
+        {/* Mobile header - matches frontend navbar */}
+        <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl md:hidden">
+          <div className="flex items-center justify-between px-6 py-4">
+            <Link to="/">
+              <img src="/logo.svg" alt="Digiiworks" style={{ width: 175 }} />
+            </Link>
+            <span className="font-mono text-xs uppercase tracking-widest text-primary">{roleLabel}</span>
+            <button
+              className="flex flex-col gap-1.5"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
+            >
+              <span className={`block h-0.5 w-5 bg-foreground transition-transform duration-300 ${mobileOpen ? 'translate-y-2 rotate-45' : ''}`} />
+              <span className={`block h-0.5 w-5 bg-foreground transition-opacity duration-300 ${mobileOpen ? 'opacity-0' : ''}`} />
+              <span className={`block h-0.5 w-5 bg-foreground transition-transform duration-300 ${mobileOpen ? '-translate-y-2 -rotate-45' : ''}`} />
+            </button>
           </div>
         </header>
 
