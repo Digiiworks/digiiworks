@@ -76,7 +76,7 @@ export default function Products() {
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
   const [categoryForm, setCategoryForm] = useState({ name: '', color: 'gray', sort_order: 0 });
 
-  const [form, setForm] = useState({ name: '', description: '', category: '', price_usd: 0, active: true });
+  const [form, setForm] = useState({ name: '', description: '', category: '', price_usd: 0, price_zar: 0, price_thb: 0, active: true });
 
   const fetchData = async () => {
     setLoading(true);
