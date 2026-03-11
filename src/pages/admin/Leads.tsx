@@ -151,14 +151,14 @@ const Leads = () => {
                     </div>
                   )}
 
-                  <div className="flex flex-wrap items-end gap-4">
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-4">
                     <div>
                       <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Status</p>
                       <Select
                         value={lead.status}
                         onValueChange={(val) => updateLead.mutate({ id: lead.id, updates: { status: val } })}
                       >
-                        <SelectTrigger className="w-36 border-border bg-background/50 font-mono text-xs">
+                        <SelectTrigger className="w-full sm:w-36 border-border bg-background/50 font-mono text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -169,7 +169,7 @@ const Leads = () => {
                       </Select>
                     </div>
 
-                    <div className="flex-1 min-w-[200px]">
+                    <div className="flex-1">
                       <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Internal Notes</p>
                       <Textarea
                         defaultValue={lead.notes ?? ''}
