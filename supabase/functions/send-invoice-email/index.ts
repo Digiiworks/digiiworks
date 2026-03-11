@@ -160,28 +160,27 @@ async function sendEmail(to: string, subject: string, html: string) {
   const smtpUser = Deno.env.get("SMTP_USER")!;
   const smtpPass = Deno.env.get("SMTP_PASS")!;
 
-  // Use Resend-style API if SMTP_HOST contains resend, otherwise use generic SMTP via fetch
-  // For simplicity, we'll use the Resend API directly since SMTP via Deno is complex
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${smtpPass}`,
-      "Content-Type": "application/json",
+  const client = new SMTPClient({
+    connection: {
+      hostname: smtpHost,
+      port: 465,
+      tls: true,
+      auth: {
+        username: smtpUser,
+        password: smtpPass,
+      },
     },
-    body: JSON.stringify({
-      from: `DigiiWorks Billing <${smtpUser}>`,
-      to: [to],
-      subject,
-      html,
-    }),
   });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Email send failed: ${response.status} - ${errText}`);
-  }
-  
-  await response.text();
+  await client.send({
+    from: `DigiiWorks Billing <${smtpUser}>`,
+    to: to,
+    subject,
+    content: "Please view this email in an HTML-capable client.",
+    html,
+  });
+
+  await client.close();
 }
 
 Deno.serve(async (req) => {
