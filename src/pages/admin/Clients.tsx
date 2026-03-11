@@ -157,7 +157,7 @@ export default function Clients() {
       company: client.company ?? '',
       address: client.address ?? '',
       notes: client.notes ?? '',
-      country: 'global',
+      country: (client as any).currency === 'ZAR' ? 'south_africa' : (client as any).currency === 'THB' ? 'thailand' : 'global',
     });
     // Load existing recurring services
     const { data } = await supabase
