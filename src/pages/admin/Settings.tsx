@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon } from 'lucide-react';
+import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3 } from 'lucide-react';
 
 const PAGE_KEY = 'payment_settings';
 
