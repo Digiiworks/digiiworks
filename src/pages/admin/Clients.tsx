@@ -26,6 +26,7 @@ import AdminPagination from '@/components/admin/AdminPagination';
 import EmptyState from '@/components/admin/EmptyState';
 import PageLoader from '@/components/admin/PageLoader';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import RecurringServicesSelector, { type RecurringService } from '@/components/admin/RecurringServicesSelector';
 
 type Client = {
   id: string;
@@ -43,6 +44,7 @@ type Client = {
   invoice_count?: number;
   outstanding?: number;
   role?: string;
+  recurring_count?: number;
 };
 
 const PAGE_SIZE = 10;
@@ -65,6 +67,7 @@ export default function Clients() {
   const [form, setForm] = useState({
     email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa',
   });
+  const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
 
   const fetchClients = async () => {
     setLoading(true);
@@ -104,10 +107,22 @@ export default function Clients() {
       invoiceMap.set(inv.client_id, existing);
     });
 
+    // Get recurring service counts per client
+    const { data: recurringData } = await supabase
+      .from('client_recurring_services')
+      .select('client_id')
+      .eq('active', true);
+
+    const recurringMap = new Map<string, number>();
+    (recurringData ?? []).forEach((r: any) => {
+      recurringMap.set(r.client_id, (recurringMap.get(r.client_id) ?? 0) + 1);
+    });
+
     const enriched: Client[] = (profileData ?? []).map(p => ({
       ...p,
       invoice_count: invoiceMap.get(p.user_id)?.count ?? 0,
       outstanding: invoiceMap.get(p.user_id)?.outstanding ?? 0,
+      recurring_count: recurringMap.get(p.user_id) ?? 0,
       role: 'client',
     }));
 
@@ -133,7 +148,7 @@ export default function Clients() {
 
   useEffect(() => { setPage(1); }, [search]);
 
-  const openEdit = (client: Client) => {
+  const openEdit = async (client: Client) => {
     setEditClient(client);
     setForm({
       email: client.email ?? '',
@@ -144,11 +159,58 @@ export default function Clients() {
       notes: client.notes ?? '',
       country: 'global',
     });
+    // Load existing recurring services
+    const { data } = await supabase
+      .from('client_recurring_services')
+      .select('id, product_id, quantity, active')
+      .eq('client_id', client.user_id);
+
+    if (data && data.length > 0) {
+      const productIds = data.map((d: any) => d.product_id);
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, name, price_usd')
+        .in('id', productIds);
+
+      const productMap = new Map((products ?? []).map((p: any) => [p.id, p]));
+      setRecurringServices(
+        data.map((d: any) => ({
+          id: d.id,
+          product_id: d.product_id,
+          product_name: productMap.get(d.product_id)?.name ?? 'Unknown',
+          quantity: d.quantity,
+          price: productMap.get(d.product_id)?.price_usd ?? 0,
+          active: d.active,
+        }))
+      );
+    } else {
+      setRecurringServices([]);
+    }
   };
 
   const openCreate = () => {
     setShowCreate(true);
     setForm({ email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' });
+    setRecurringServices([]);
+  };
+
+  const saveRecurringServices = async (clientId: string) => {
+    // Delete existing and re-insert
+    await supabase
+      .from('client_recurring_services')
+      .delete()
+      .eq('client_id', clientId);
+
+    if (recurringServices.length > 0) {
+      await supabase.from('client_recurring_services').insert(
+        recurringServices.map(s => ({
+          client_id: clientId,
+          product_id: s.product_id,
+          quantity: s.quantity,
+          active: s.active,
+        }))
+      );
+    }
   };
 
   const handleUpdate = async () => {
@@ -168,6 +230,7 @@ export default function Clients() {
     if (error) {
       toast({ title: 'Error updating client', description: error.message, variant: 'destructive' });
     } else {
+      await saveRecurringServices(editClient.user_id);
       toast({ title: 'Client updated' });
       setEditClient(null);
       fetchClients();
@@ -201,6 +264,17 @@ export default function Clients() {
     if (error || data?.error) {
       toast({ title: 'Error creating client', description: data?.error || error?.message, variant: 'destructive' });
     } else {
+      // Save recurring services for the new client
+      if (data?.user_id && recurringServices.length > 0) {
+        await supabase.from('client_recurring_services').insert(
+          recurringServices.map(s => ({
+            client_id: data.user_id,
+            product_id: s.product_id,
+            quantity: s.quantity,
+            active: s.active,
+          }))
+        );
+      }
       const resetMsg = data?.reset_email_sent 
         ? 'A password reset email has been sent so they can set their password.' 
         : 'Client created, but the reset email could not be sent.';
@@ -270,6 +344,7 @@ export default function Clients() {
                   <TableHead className="font-mono text-xs">Contact</TableHead>
                   <TableHead className="font-mono text-xs">Company</TableHead>
                   <TableHead className="font-mono text-xs text-center">Invoices</TableHead>
+                  <TableHead className="font-mono text-xs text-center">Recurring</TableHead>
                   <TableHead className="font-mono text-xs text-right">Outstanding</TableHead>
                   <TableHead className="font-mono text-xs">Joined</TableHead>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
@@ -311,6 +386,15 @@ export default function Clients() {
                       <Badge variant="outline" className="font-mono text-xs">
                         {client.invoice_count}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {(client.recurring_count ?? 0) > 0 ? (
+                        <Badge variant="secondary" className="font-mono text-xs">
+                          {client.recurring_count}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
                       {(client.outstanding ?? 0) > 0 ? (
@@ -373,6 +457,7 @@ export default function Clients() {
               <Label className="font-mono text-xs flex items-center gap-1.5"><FileText className="h-3 w-3" /> Notes</Label>
               <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="bg-background border-border" rows={3} />
             </div>
+            <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditClient(null)}>Cancel</Button>
@@ -420,6 +505,7 @@ export default function Clients() {
                 </SelectContent>
               </Select>
             </div>
+            <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
