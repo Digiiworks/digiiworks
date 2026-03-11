@@ -18,7 +18,7 @@ function currencySymbol(currency: string) {
   return currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
 }
 
-function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string) {
+function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, invoiceTotal?: number) {
   if (!bankInfo) return '';
 
   const fields: string[] = [];
@@ -36,7 +36,8 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string) {
 
   let linksHTML = '';
   if (paymentLinks?.yoco_payment_link && currency === 'ZAR') {
-    linksHTML += '<a href="' + paymentLinks.yoco_payment_link + '" style="display:inline-block;padding:11px 28px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:10px;letter-spacing:0.5px;">Pay with Yoco</a>';
+    const yocoUrl = paymentLinks.yoco_payment_link + (paymentLinks.yoco_payment_link.includes('?') ? '&' : '?') + 'amount=' + Math.round(Number(invoiceTotal || 0) * 100);
+    linksHTML += '<a href="' + yocoUrl + '" style="display:inline-block;padding:11px 28px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:10px;letter-spacing:0.5px;">Pay with Yoco</a>';
   }
   if (paymentLinks?.wise_payment_link) {
     linksHTML += '<a href="' + paymentLinks.wise_payment_link + '" style="display:inline-block;padding:11px 28px;background:#9fe870;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;letter-spacing:0.5px;">Pay with Wise</a>';
@@ -89,7 +90,7 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
   let bankingBlock = '';
   if (paymentSettings) {
     const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
-    bankingBlock = buildBankingHTML(paymentSettings[bankKey], paymentSettings.payment_links, currency);
+    bankingBlock = buildBankingHTML(paymentSettings[bankKey], paymentSettings.payment_links, currency, invoice.total);
   }
 
   return '<!DOCTYPE html>' +
