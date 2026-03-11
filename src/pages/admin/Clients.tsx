@@ -402,6 +402,7 @@ export default function Clients() {
       toast({ title: 'Error creating client', description: data.error, variant: 'destructive' });
     } else {
       // Save recurring services
+      const activeServices = recurringServices.filter(s => s.active);
       if (data?.user_id && data?.client_company_id && recurringServices.length > 0) {
         await supabase.from('client_recurring_services').insert(
           recurringServices.map(s => ({
@@ -424,6 +425,32 @@ export default function Clients() {
           : 'Client created, but the reset email could not be sent.';
       toast({ title: 'Client created successfully', description: resetMsg });
       setShowCreate(false);
+
+      // Check if we should prompt for invoice generation
+      const today = new Date();
+      if (activeServices.length > 0 && today.getDate() >= 3 && data?.client_company_id) {
+        const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
+        const nextMonthStart = format(startOfMonth(addMonths(today, 1)), 'yyyy-MM-dd');
+        const { data: existingInvoices } = await supabase
+          .from('invoices')
+          .select('id')
+          .eq('client_company_id', data.client_company_id)
+          .gte('created_at', monthStart)
+          .lt('created_at', nextMonthStart)
+          .limit(1);
+
+        if (!existingInvoices || existingInvoices.length === 0) {
+          setPendingInvoiceData({
+            user_id: data.user_id,
+            client_company_id: data.client_company_id,
+            currency: countryToCurrency(form.country),
+            company_name: form.company,
+            services: activeServices,
+          });
+          setShowInvoicePrompt(true);
+        }
+      }
+
       fetchClients();
     }
     setSaving(false);
