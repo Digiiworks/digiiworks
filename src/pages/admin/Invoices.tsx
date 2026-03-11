@@ -515,7 +515,6 @@ export default function Invoices() {
                         <SelectItem key={p.user_id} value={p.user_id}>{label}</SelectItem>
                       );
                     })}
-                    ))}
                   </SelectContent>
                 </Select>
               </div>
