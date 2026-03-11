@@ -431,7 +431,7 @@ export default function Clients() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editClient} onOpenChange={() => setEditClient(null)}>
-        <DialogContent className="max-w-md bg-card border-border max-h-[85vh] flex flex-col">
+        <DialogContent className="w-[95vw] max-w-lg bg-card border-border max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="font-mono">Edit Client</DialogTitle>
           </DialogHeader>
@@ -484,7 +484,7 @@ export default function Clients() {
 
       {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-md bg-card border-border max-h-[85vh] flex flex-col">
+        <DialogContent className="w-[95vw] max-w-lg bg-card border-border max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="font-mono">Onboard New Client</DialogTitle>
           </DialogHeader>
