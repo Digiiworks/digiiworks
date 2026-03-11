@@ -231,12 +231,12 @@ export default function Products() {
       </div>
       <div>
         <Label className="font-mono text-xs">Category</Label>
-        <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
+        <Select value={form.category || '__none__'} onValueChange={v => setForm(f => ({ ...f, category: v === '__none__' ? '' : v }))}>
           <SelectTrigger className="bg-background border-border">
             <SelectValue placeholder="Select category..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No category</SelectItem>
+            <SelectItem value="__none__">No category</SelectItem>
             {categories.map(cat => (
               <SelectItem key={cat.id} value={cat.name}>
                 <span className="flex items-center gap-2">
