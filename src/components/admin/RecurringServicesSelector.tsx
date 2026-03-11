@@ -115,7 +115,7 @@ export default function RecurringServicesSelector({ services, onChange, currency
 
   const effectivePrice = (s: RecurringService) => s.price_override ?? s.price;
 
-  const needsStartDate = (cycle: string) => cycle === 'quarterly' || cycle === 'yearly';
+  const needsStartDate = (cycle: string) => cycle === 'monthly' || cycle === 'quarterly' || cycle === 'yearly';
 
   if (loading) {
     return (
