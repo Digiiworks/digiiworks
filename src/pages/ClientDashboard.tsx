@@ -55,6 +55,7 @@ const ClientDashboard = () => {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [yocoLoading, setYocoLoading] = useState(false);
+  const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [paymentMessage, setPaymentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Handle Yoco redirect back
