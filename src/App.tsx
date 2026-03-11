@@ -39,6 +39,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
+const InvoicePrint = lazy(() => import("./pages/InvoicePrint"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
