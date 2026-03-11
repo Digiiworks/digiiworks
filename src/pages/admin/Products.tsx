@@ -339,7 +339,9 @@ export default function Products() {
                   <TableHead className="font-mono text-xs">Name</TableHead>
                   <TableHead className="font-mono text-xs">Category</TableHead>
                   <TableHead className="font-mono text-xs">Description</TableHead>
-                  <TableHead className="font-mono text-xs text-right">Price</TableHead>
+                  <TableHead className="font-mono text-xs text-right">USD</TableHead>
+                  <TableHead className="font-mono text-xs text-right">ZAR</TableHead>
+                  <TableHead className="font-mono text-xs text-right">THB</TableHead>
                   <TableHead className="font-mono text-xs text-center">Status</TableHead>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
                 </TableRow>
