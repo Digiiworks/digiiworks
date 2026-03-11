@@ -404,9 +404,9 @@ export default function Clients() {
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
                       {(client.outstanding ?? 0) > 0 ? (
-                        <span className="text-orange-400 font-medium">{fmt(client.outstanding!)}</span>
+                        <span className="text-orange-400 font-medium">{fmtCurrency(client.outstanding!, client.currency)}</span>
                       ) : (
-                        <span className="text-muted-foreground">{fmt(0)}</span>
+                        <span className="text-muted-foreground">{fmtCurrency(0, client.currency)}</span>
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
