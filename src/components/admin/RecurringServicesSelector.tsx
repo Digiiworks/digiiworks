@@ -32,8 +32,6 @@ const BILLING_CYCLES = [
   { value: 'yearly', label: 'Yearly' },
 ] as const;
 
-const cycleLabel = (cycle: string) => BILLING_CYCLES.find(c => c.value === cycle)?.label ?? cycle;
-
 export type RecurringService = {
   id?: string;
   product_id: string;
@@ -43,17 +41,22 @@ export type RecurringService = {
   /** null = use standard product price; number = client-specific override */
   price_override: number | null;
   active: boolean;
-  billing_cycle: string;
-  start_date: string | null;
 };
 
 interface RecurringServicesSelectorProps {
   services: RecurringService[];
   onChange: (services: RecurringService[]) => void;
   currency?: string;
+  billingCycle: string;
+  onBillingCycleChange: (cycle: string) => void;
+  startDate: string | null;
+  onStartDateChange: (date: string | null) => void;
 }
 
-export default function RecurringServicesSelector({ services, onChange, currency = 'USD' }: RecurringServicesSelectorProps) {
+export default function RecurringServicesSelector({
+  services, onChange, currency = 'USD',
+  billingCycle, onBillingCycleChange, startDate, onStartDateChange,
+}: RecurringServicesSelectorProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -98,8 +101,6 @@ export default function RecurringServicesSelector({ services, onChange, currency
         price,
         price_override: null,
         active: true,
-        billing_cycle: 'monthly',
-        start_date: null,
       },
     ]);
   };
@@ -115,8 +116,6 @@ export default function RecurringServicesSelector({ services, onChange, currency
 
   const effectivePrice = (s: RecurringService) => s.price_override ?? s.price;
 
-  const needsStartDate = (cycle: string) => cycle === 'monthly' || cycle === 'quarterly' || cycle === 'yearly';
-
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
@@ -130,6 +129,55 @@ export default function RecurringServicesSelector({ services, onChange, currency
       <Label className="font-mono text-xs flex items-center gap-1.5">
         <RefreshCw className="h-3 w-3" /> Recurring Services
       </Label>
+
+      {/* Invoice-level billing cycle & start date */}
+      <div className="rounded-md border border-border bg-card/50 p-2 space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Billing Cycle</Label>
+          <Select value={billingCycle} onValueChange={onBillingCycleChange}>
+            <SelectTrigger className="h-7 text-xs bg-card border-border w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {BILLING_CYCLES.map(c => (
+                <SelectItem key={c.value} value={c.value} className="text-xs">
+                  {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Label className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">Start Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  "h-7 text-xs px-2 bg-card border-border font-mono",
+                  !startDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="h-3 w-3 mr-1" />
+                {startDate
+                  ? format(new Date(startDate), 'dd MMM yyyy')
+                  : 'Pick date'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={startDate ? new Date(startDate) : undefined}
+                onSelect={date =>
+                  onStartDateChange(date ? format(date, 'yyyy-MM-dd') : null)
+                }
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
 
       {services.length > 0 && (
         <div className="space-y-2">
@@ -176,68 +224,7 @@ export default function RecurringServicesSelector({ services, onChange, currency
                   </Button>
                 </div>
 
-                {/* Row 2: Billing cycle + start date */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Cycle</Label>
-                  <Select
-                    value={service.billing_cycle}
-                    onValueChange={val => {
-                      const updates: Partial<RecurringService> = { billing_cycle: val };
-                      // Clear start_date if not needed
-                      if (!needsStartDate(val)) updates.start_date = null;
-                      updateService(idx, updates);
-                    }}
-                  >
-                    <SelectTrigger className="h-7 text-xs bg-card border-border w-[110px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BILLING_CYCLES.map(c => (
-                        <SelectItem key={c.value} value={c.value} className="text-xs">
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {needsStartDate(service.billing_cycle) && (
-                    <>
-                      <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Start</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className={cn(
-                              "h-7 text-xs px-2 bg-card border-border font-mono",
-                              !service.start_date && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="h-3 w-3 mr-1" />
-                            {service.start_date
-                              ? format(new Date(service.start_date), 'dd MMM yyyy')
-                              : 'Pick date'}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={service.start_date ? new Date(service.start_date) : undefined}
-                            onSelect={date =>
-                              updateService(idx, {
-                                start_date: date ? format(date, 'yyyy-MM-dd') : null,
-                              })
-                            }
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </>
-                  )}
-                </div>
-
-                {/* Row 3: Price override */}
+                {/* Row 2: Price override */}
                 <div className="flex items-center gap-2">
                   <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Client Price</Label>
                   <Input

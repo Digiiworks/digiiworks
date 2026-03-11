@@ -69,6 +69,8 @@ export default function Clients() {
     email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa' | 'thailand',
   });
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
+  const [billingCycle, setBillingCycle] = useState('monthly');
+  const [startDate, setStartDate] = useState<string | null>(null);
 
   const fetchClients = async () => {
     setLoading(true);
@@ -181,6 +183,9 @@ export default function Clients() {
       };
 
       const productMap = new Map((products ?? []).map((p: any) => [p.id, p]));
+      // Use billing_cycle and start_date from the first item (invoice-level)
+      setBillingCycle(data[0]?.billing_cycle ?? 'monthly');
+      setStartDate(data[0]?.start_date ?? null);
       setRecurringServices(
         data.map((d: any) => ({
           id: d.id,
@@ -190,12 +195,12 @@ export default function Clients() {
           price: productMap.get(d.product_id) ? getPrice(productMap.get(d.product_id)) : 0,
           price_override: d.unit_price_override ?? null,
           active: d.active,
-          billing_cycle: d.billing_cycle ?? 'monthly',
-          start_date: d.start_date ?? null,
         }))
       );
     } else {
       setRecurringServices([]);
+      setBillingCycle('monthly');
+      setStartDate(null);
     }
   };
 
@@ -203,6 +208,8 @@ export default function Clients() {
     setShowCreate(true);
     setForm({ email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' });
     setRecurringServices([]);
+    setBillingCycle('monthly');
+    setStartDate(null);
   };
 
   const saveRecurringServices = async (clientId: string) => {
@@ -220,8 +227,8 @@ export default function Clients() {
           quantity: s.quantity,
           active: s.active,
           unit_price_override: s.price_override,
-          billing_cycle: s.billing_cycle,
-          start_date: s.start_date,
+          billing_cycle: billingCycle,
+          start_date: startDate,
         }))
       );
     }
@@ -290,8 +297,8 @@ export default function Clients() {
             quantity: s.quantity,
             active: s.active,
             unit_price_override: s.price_override,
-            billing_cycle: s.billing_cycle,
-            start_date: s.start_date,
+            billing_cycle: billingCycle,
+            start_date: startDate,
           }))
         );
       }
@@ -554,7 +561,7 @@ export default function Clients() {
                 </SelectContent>
               </Select>
             </div>
-            <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} currency={countryToCurrency(form.country)} />
+            <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} currency={countryToCurrency(form.country)} billingCycle={billingCycle} onBillingCycleChange={setBillingCycle} startDate={startDate} onStartDateChange={setStartDate} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditClient(null)}>Cancel</Button>
@@ -603,7 +610,7 @@ export default function Clients() {
                 </SelectContent>
               </Select>
             </div>
-            <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} currency={countryToCurrency(form.country)} />
+            <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} currency={countryToCurrency(form.country)} billingCycle={billingCycle} onBillingCycleChange={setBillingCycle} startDate={startDate} onStartDateChange={setStartDate} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
