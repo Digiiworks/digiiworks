@@ -160,27 +160,23 @@ async function sendEmail(to: string, subject: string, html: string) {
   const smtpUser = Deno.env.get("SMTP_USER")!;
   const smtpPass = Deno.env.get("SMTP_PASS")!;
 
-  const client = new SMTPClient({
-    connection: {
-      hostname: smtpHost,
-      port: 587,
-      tls: false,
-      auth: {
-        username: smtpUser,
-        password: smtpPass,
-      },
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: 465,
+    secure: true,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
     },
   });
 
-  await client.send({
-    from: `DigiiWorks Billing <${smtpUser}>`,
-    to: to,
+  await transporter.sendMail({
+    from: `"DigiiWorks Billing" <${smtpUser}>`,
+    to,
     subject,
-    content: "Please view this email in an HTML-capable client.",
+    text: "Please view this email in an HTML-capable client.",
     html,
   });
-
-  await client.close();
 }
 
 Deno.serve(async (req) => {
