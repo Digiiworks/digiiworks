@@ -484,7 +484,7 @@ export default function Clients() {
 
       {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-md bg-card border-border">
+        <DialogContent className="max-w-md bg-card border-border max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-mono">Onboard New Client</DialogTitle>
           </DialogHeader>
