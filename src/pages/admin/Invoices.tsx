@@ -400,7 +400,7 @@ export default function Invoices() {
   return (
     <div className="space-y-6">
       {/* Summary cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
         <StatCard
           label="Outstanding"
           value={fmtCurrency(outstandingTotal)}
