@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
@@ -48,10 +48,49 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 const ClientDashboard = () => {
   const { user, profile, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [yocoLoading, setYocoLoading] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Handle Yoco redirect back
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    const invoiceNum = searchParams.get('invoice');
+    if (payment) {
+      if (payment === 'success') {
+        setPaymentMessage({ type: 'success', text: `Payment for invoice #${invoiceNum} was successful! It may take a moment to update.` });
+      } else if (payment === 'failed') {
+        setPaymentMessage({ type: 'error', text: `Payment for invoice #${invoiceNum} failed. Please try again.` });
+      } else if (payment === 'cancelled') {
+        setPaymentMessage({ type: 'error', text: `Payment for invoice #${invoiceNum} was cancelled.` });
+      }
+      // Clear query params
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
+  const handleYocoPayment = async (invoiceId: string) => {
+    setYocoLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-yoco-checkout', {
+        body: { invoice_id: invoiceId },
+      });
+      if (error) throw error;
+      if (data?.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        throw new Error('No redirect URL received');
+      }
+    } catch (err: any) {
+      console.error('Yoco payment error:', err);
+      alert(err.message || 'Failed to initiate payment');
+      setYocoLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -128,6 +167,21 @@ const ClientDashboard = () => {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        {/* Payment result banner */}
+        {paymentMessage && (
+          <div className={`mb-6 rounded-lg p-4 flex items-center justify-between ${
+            paymentMessage.type === 'success'
+              ? 'bg-primary/10 border border-primary/30 text-primary'
+              : 'bg-destructive/10 border border-destructive/30 text-destructive'
+          }`}>
+            <div className="flex items-center gap-2">
+              {paymentMessage.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+              <p className="text-sm font-medium">{paymentMessage.text}</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setPaymentMessage(null)}>✕</Button>
+          </div>
+        )}
+
         {/* Welcome */}
         <div className="mb-8">
           <h1 className="font-mono text-2xl font-bold text-foreground">
@@ -244,8 +298,13 @@ const ClientDashboard = () => {
                   <Button className="font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90">
                     Pay with Stripe
                   </Button>
-                  <Button variant="outline" className="font-mono border-secondary text-secondary hover:bg-secondary/10">
-                    Pay with Yoco
+                  <Button
+                    variant="outline"
+                    className="font-mono border-secondary text-secondary hover:bg-secondary/10"
+                    disabled={yocoLoading}
+                    onClick={() => handleYocoPayment(selectedInvoice.id)}
+                  >
+                    {yocoLoading ? 'Redirecting…' : 'Pay with Yoco'}
                   </Button>
                 </div>
               )}
