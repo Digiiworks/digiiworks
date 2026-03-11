@@ -346,6 +346,7 @@ export default function Invoices() {
     setEditingInvoice(inv);
     setForm({
       client_id: inv.client_id,
+      client_company_id: inv.client_company_id ?? '',
       due_date: inv.due_date ?? '',
       notes: inv.notes ?? '',
       tax_rate: inv.tax_rate,
