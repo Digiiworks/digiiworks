@@ -124,7 +124,7 @@ export default function Invoices() {
   const [sending, setSending] = useState(false);
 
   // Create form
-  const [form, setForm] = useState({ client_id: '', due_date: '', notes: '', tax_rate: 0 });
+  const [form, setForm] = useState({ client_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
   const [sendDate, setSendDate] = useState<Date | undefined>(getFirstOfNextMonth());
   const [lineItems, setLineItems] = useState<InvoiceItem[]>([
     { description: '', quantity: 1, unit_price: 0, total: 0, product_id: null },
@@ -258,7 +258,7 @@ export default function Invoices() {
   };
 
   const resetForm = () => {
-    setForm({ client_id: '', due_date: '', notes: '', tax_rate: 0 });
+    setForm({ client_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
     setSendDate(getFirstOfNextMonth());
     setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }]);
   };
@@ -520,7 +520,29 @@ export default function Invoices() {
               </div>
               <div>
                 <Label className="font-mono text-xs">Due Date</Label>
-                <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} className="bg-background border-border" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-background border-border",
+                        !form.due_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.due_date ? format(new Date(form.due_date + 'T00:00:00'), 'MMM d, yyyy') : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.due_date ? new Date(form.due_date + 'T00:00:00') : undefined}
+                      onSelect={(date) => setForm(f => ({ ...f, due_date: date ? format(date, 'yyyy-MM-dd') : '' }))}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
