@@ -107,10 +107,22 @@ export default function Clients() {
       invoiceMap.set(inv.client_id, existing);
     });
 
+    // Get recurring service counts per client
+    const { data: recurringData } = await supabase
+      .from('client_recurring_services')
+      .select('client_id')
+      .eq('active', true);
+
+    const recurringMap = new Map<string, number>();
+    (recurringData ?? []).forEach((r: any) => {
+      recurringMap.set(r.client_id, (recurringMap.get(r.client_id) ?? 0) + 1);
+    });
+
     const enriched: Client[] = (profileData ?? []).map(p => ({
       ...p,
       invoice_count: invoiceMap.get(p.user_id)?.count ?? 0,
       outstanding: invoiceMap.get(p.user_id)?.outstanding ?? 0,
+      recurring_count: recurringMap.get(p.user_id) ?? 0,
       role: 'client',
     }));
 
