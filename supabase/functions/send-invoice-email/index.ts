@@ -311,12 +311,23 @@ Deno.serve(async (req) => {
       .single();
     if (!client?.email) throw new Error("Client has no email address");
 
+    // Get company currency
+    let companyCurrency = 'USD';
+    if (invoice.client_company_id) {
+      const { data: company } = await supabase
+        .from("client_companies")
+        .select("currency")
+        .eq("id", invoice.client_company_id)
+        .single();
+      if (company?.currency) companyCurrency = company.currency;
+    }
+
     const { data: items } = await supabase
       .from("invoice_items")
       .select("*")
       .eq("invoice_id", invoice_id);
 
-    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, paymentSettings);
+    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, companyCurrency, paymentSettings);
     await sendEmail(client.email, `Invoice ${invoice.invoice_number} from DigiiWorks`, html);
 
     await supabase.from("invoice_emails").insert({
