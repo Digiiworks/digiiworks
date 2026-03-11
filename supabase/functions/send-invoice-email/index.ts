@@ -199,6 +199,14 @@ Deno.serve(async (req) => {
     const dashboardBaseUrl = "https://digiiworks.lovable.app/dashboard";
     const results: { invoice_id: string; status: string; error?: string }[] = [];
 
+    // Fetch payment settings once
+    const { data: settingsRow } = await supabase
+      .from("page_content")
+      .select("content")
+      .eq("page_key", "payment_settings")
+      .single();
+    const paymentSettings = settingsRow?.content as any ?? null;
+
     if (mode === "scheduled") {
       // Process all invoices with send_date <= today that haven't been emailed yet
       const today = new Date().toISOString().split("T")[0];
