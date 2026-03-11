@@ -56,7 +56,22 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
     (linksHTML ? '<div style="text-align:center;margin:24px 0 0;">' + linksHTML + '<p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">Don\'t have a Wise account? <a href="https://wise.com/invite/dic/justind507" style="color:#0d9488;text-decoration:underline;">Sign up today</a> for fee-free transfers.</p></div>' : '');
 }
 
-function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, currency: string, paymentSettings?: any) {
+async function hmacSign(invoiceId: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(invoiceId));
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, currency: string, pdfToken: string, paymentSettings?: any) {
   const sym = currencySymbol(currency);
 
   const itemRows = items.map(function (it) {
