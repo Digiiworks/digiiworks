@@ -426,7 +426,7 @@ export default function Products() {
 
       {/* Create Product Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-md bg-card border-border">
+        <DialogContent className="w-[95vw] max-w-md bg-card border-border">
           <DialogHeader><DialogTitle className="font-mono">New Product / Service</DialogTitle></DialogHeader>
           {renderProductForm(handleCreate, "Create")}
         </DialogContent>
