@@ -321,11 +321,26 @@ export default function Clients() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-        <StatCard label="Total Clients" value={clients.length} />
-        <StatCard label="With Outstanding" value={clients.filter(c => (c.outstanding ?? 0) > 0).length} />
-        <StatCard label="Total Outstanding" value={fmtCurrency(clients.reduce((s, c) => s + (c.outstanding ?? 0), 0))} valueColor="text-orange-400" />
-      </div>
+      {(() => {
+        const byCurrency: Record<string, number> = {};
+        clients.forEach(c => {
+          if ((c.outstanding ?? 0) > 0) {
+            const cur = c.currency ?? 'USD';
+            byCurrency[cur] = (byCurrency[cur] ?? 0) + (c.outstanding ?? 0);
+          }
+        });
+        // Ensure all 3 currencies show
+        ['USD', 'ZAR', 'THB'].forEach(c => { if (!(c in byCurrency)) byCurrency[c] = 0; });
+        return (
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+            <StatCard label="Total Clients" value={clients.length} />
+            <StatCard label="With Outstanding" value={clients.filter(c => (c.outstanding ?? 0) > 0).length} />
+            {Object.entries(byCurrency).map(([cur, total]) => (
+              <StatCard key={cur} label={`Outstanding (${cur})`} value={fmtCurrency(total, cur)} valueColor="text-orange-400" />
+            ))}
+          </div>
+        );
+      })()}
 
       <AdminToolbar title="Clients">
         <div className="relative">
