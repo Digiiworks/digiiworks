@@ -74,7 +74,7 @@ type InvoiceEmail = {
 };
 
 type Profile = { user_id: string; display_name: string | null; email: string | null; company: string | null; currency?: string };
-type Product = { id: string; name: string; price_usd: number; description?: string | null; category?: string | null };
+type Product = { id: string; name: string; price_usd: number; price_zar: number; price_thb: number; description?: string | null; category?: string | null };
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -94,7 +94,7 @@ const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
 
 const fmtCurrency = (amount: number, currency: string = 'USD') => {
-  const symbol = currency === 'ZAR' ? 'R' : '$';
+  const symbol = currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
   return `${symbol}${amount.toFixed(2)}`;
 };
 
@@ -143,7 +143,7 @@ export default function Invoices() {
     const [invRes, profRes, prodRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('user_id, display_name, email, company, currency'),
-      supabase.from('products').select('id, name, price_usd, description, category').eq('active', true),
+      supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
     ]);
     const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
     const enriched = (invRes.data ?? []).map(inv => ({
@@ -221,12 +221,20 @@ export default function Invoices() {
     });
   };
 
+  const getProductPrice = (p: Product, currency: string = 'USD') => {
+    if (currency === 'ZAR') return p.price_zar || p.price_usd;
+    if (currency === 'THB') return p.price_thb || p.price_usd;
+    return p.price_usd;
+  };
+
   const pickProduct = (idx: number, productId: string) => {
     const p = products.find(pr => pr.id === productId);
     if (!p) return;
+    const clientCurrency = profiles.find(pr => pr.user_id === form.client_id)?.currency ?? 'USD';
+    const unitPrice = getProductPrice(p, clientCurrency);
     setLineItems(prev => {
       const next = [...prev];
-      next[idx] = { ...next[idx], product_id: productId, description: p.name, unit_price: p.price_usd, total: next[idx].quantity * p.price_usd };
+      next[idx] = { ...next[idx], product_id: productId, description: p.name, unit_price: unitPrice, total: next[idx].quantity * unitPrice };
       return next;
     });
   };
