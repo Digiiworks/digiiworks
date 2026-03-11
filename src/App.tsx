@@ -126,6 +126,11 @@ const App = () => (
                       <ProductsAdmin />
                     </ProtectedRoute>
                   } />
+                  <Route path="settings" element={
+                    <ProtectedRoute requiredRoles={['admin']}>
+                      <SettingsAdmin />
+                    </ProtectedRoute>
+                  } />
                 </Route>
 
                 <Route path="*" element={<Layout />}>
