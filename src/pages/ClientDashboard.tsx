@@ -56,6 +56,7 @@ const ClientDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [yocoLoading, setYocoLoading] = useState(false);
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
+  const [clientCurrency, setClientCurrency] = useState('USD');
   const [paymentMessage, setPaymentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Handle Yoco redirect back
