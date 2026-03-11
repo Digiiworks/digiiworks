@@ -62,7 +62,7 @@ const StatsBar = () => (
         key={stat.label}
         className="glass-card flex flex-col items-center gap-1 p-4 text-center md:p-5"
       >
-        <AnimatedNumber value={stat.value} suffix={stat.suffix} />
+        <AnimatedNumber value={stat.value} suffix={stat.suffix} live={stat.label === 'Automations Running'} />
         <span className="text-xs text-muted-foreground font-mono uppercase tracking-wider">
           {stat.label}
         </span>
