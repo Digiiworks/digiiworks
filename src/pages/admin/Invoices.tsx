@@ -135,7 +135,7 @@ export default function Invoices() {
     setLoading(true);
     const [invRes, profRes, prodRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('user_id, display_name, email, company'),
+      supabase.from('profiles').select('user_id, display_name, email, company, currency'),
       supabase.from('products').select('id, name, price_usd, description, category').eq('active', true),
     ]);
     const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
