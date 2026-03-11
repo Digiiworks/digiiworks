@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // Get all active recurring services grouped by client
     const { data: services, error: svcErr } = await supabase
       .from("client_recurring_services")
-      .select("client_id, product_id, quantity, unit_price_override")
+      .select("client_id, product_id, quantity, unit_price_override, billing_cycle, start_date")
       .eq("active", true);
 
     if (svcErr) throw svcErr;
