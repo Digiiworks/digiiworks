@@ -40,6 +40,10 @@ interface BankingInfo {
     yoco_payment_link: string;
     wise_payment_link: string;
   };
+  tracking: {
+    google_pixel_id: string;
+    meta_pixel_id: string;
+  };
 }
 
 const defaultData: BankingInfo = {
