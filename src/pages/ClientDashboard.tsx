@@ -102,15 +102,16 @@ const ClientDashboard = () => {
 
   useEffect(() => {
     if (!user) return;
-    const fetchInvoices = async () => {
-      const { data } = await supabase
-        .from('invoices')
-        .select('*')
-        .order('created_at', { ascending: false });
-      setInvoices((data as any[]) ?? []);
+    const fetchData = async () => {
+      const [invoicesRes, settingsRes] = await Promise.all([
+        supabase.from('invoices').select('*').order('created_at', { ascending: false }),
+        supabase.from('page_content').select('content').eq('page_key', 'payment_settings').single(),
+      ]);
+      setInvoices((invoicesRes.data as any[]) ?? []);
+      if (settingsRes.data) setPaymentSettings(settingsRes.data.content);
       setLoading(false);
     };
-    fetchInvoices();
+    fetchData();
   }, [user]);
 
   const fetchItems = async (invoiceId: string) => {
