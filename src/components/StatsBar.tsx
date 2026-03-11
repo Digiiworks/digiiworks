@@ -2,11 +2,13 @@ import { motion, useInView } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import { STATS } from '@/lib/constants';
 
-const AnimatedNumber = ({ value, suffix }: { value: number; suffix: string }) => {
+const AnimatedNumber = ({ value, suffix, live }: { value: number; suffix: string; live?: boolean }) => {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true });
   const [display, setDisplay] = useState(0);
+  const [doneCountUp, setDoneCountUp] = useState(false);
 
+  // Initial count-up
   useEffect(() => {
     if (!inView) return;
     const duration = 1500;
@@ -18,12 +20,27 @@ const AnimatedNumber = ({ value, suffix }: { value: number; suffix: string }) =>
       if (current >= value) {
         setDisplay(value);
         clearInterval(interval);
+        setDoneCountUp(true);
       } else {
         setDisplay(Number(current.toFixed(value % 1 !== 0 ? 1 : 0)));
       }
     }, duration / steps);
     return () => clearInterval(interval);
   }, [inView, value]);
+
+  // Live fluctuation after count-up
+  useEffect(() => {
+    if (!live || !doneCountUp) return;
+    const interval = setInterval(() => {
+      setDisplay((prev) => {
+        const delta = Math.random() < 0.5 ? -1 : 1;
+        const next = prev + delta;
+        // Keep within ±5 of base value
+        return Math.max(value - 5, Math.min(value + 5, next));
+      });
+    }, 2000 + Math.random() * 3000);
+    return () => clearInterval(interval);
+  }, [live, doneCountUp, value]);
 
   return (
     <span ref={ref} className="text-2xl font-bold text-foreground md:text-3xl font-mono">
