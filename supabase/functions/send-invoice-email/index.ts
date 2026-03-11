@@ -303,7 +303,7 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("invoice_id", invoice_id);
 
-    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl);
+    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, paymentSettings);
     await sendEmail(client.email, `Invoice ${invoice.invoice_number} from DigiiWorks`, html);
 
     await supabase.from("invoice_emails").insert({
