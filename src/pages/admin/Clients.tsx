@@ -342,7 +342,56 @@ export default function Clients() {
         <EmptyState icon={User} message="No clients found." />
       ) : (
         <>
-          <div className="rounded-lg border border-border bg-card/50 overflow-x-auto">
+          {/* Mobile card view */}
+          <div className="space-y-3 md:hidden">
+            {paginated.map(client => (
+              <div key={client.id} className="rounded-lg border border-border bg-card/50 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-mono text-sm font-bold shrink-0">
+                      {(client.display_name ?? client.email ?? '?')[0].toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{client.display_name ?? '—'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{client.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(client)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(client.user_id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {client.company && (
+                    <div className="col-span-3 flex items-center gap-1 text-muted-foreground">
+                      <Building2 className="h-3 w-3" /> {client.company}
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-muted-foreground block">Invoices</span>
+                    <Badge variant="outline" className="font-mono text-xs mt-0.5">{client.invoice_count}</Badge>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block">Recurring</span>
+                    <span className="font-mono">{client.recurring_count ?? 0}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-muted-foreground block">Outstanding</span>
+                    <span className={`font-mono font-medium ${(client.outstanding ?? 0) > 0 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+                      {fmtCurrency(client.outstanding ?? 0, client.currency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table view */}
+          <div className="rounded-lg border border-border bg-card/50 overflow-x-auto hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow className="border-border/50">

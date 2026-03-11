@@ -54,7 +54,7 @@ const StatCard = ({
           {label}
         </p>
       )}
-      <p className={cn('font-mono text-2xl font-bold', valueColor || 'text-foreground')}>{value}</p>
+      <p className={cn('font-mono text-xl sm:text-2xl font-bold truncate', valueColor || 'text-foreground')}>{value}</p>
       {subtitle && (
         <p className={cn(
           'font-mono text-xs mt-1',
