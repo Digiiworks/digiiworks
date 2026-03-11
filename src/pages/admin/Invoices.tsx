@@ -94,7 +94,7 @@ const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
 
 const fmtCurrency = (amount: number, currency: string = 'USD') => {
-  const symbol = currency === 'ZAR' ? 'R' : '$';
+  const symbol = currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
   return `${symbol}${amount.toFixed(2)}`;
 };
 
