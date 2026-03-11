@@ -47,15 +47,20 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string) {
     ${linksHTML ? `<div style="text-align:center;margin:20px 0 0;">${linksHTML}</div>` : ''}`;
 }
 
-function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, paymentSettings?: any) {
+function currencySymbol(currency: string) {
+  return currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
+}
+
+function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, currency: string, paymentSettings?: any) {
+  const sym = currencySymbol(currency);
   const itemRows = items
     .map(
       (it) => `
     <tr>
       <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;">${it.description}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;text-align:center;">${it.quantity}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;text-align:right;">$${Number(it.unit_price).toFixed(2)}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;text-align:right;">$${Number(it.total).toFixed(2)}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;text-align:right;">${sym}${Number(it.unit_price).toFixed(2)}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ccc;font-size:14px;text-align:right;">${sym}${Number(it.total).toFixed(2)}</td>
     </tr>`
     )
     .join("");
@@ -116,15 +121,15 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
       <table style="width:100%;max-width:250px;margin-left:auto;">
         <tr>
           <td style="padding:4px 0;font-size:13px;color:#888;">Subtotal</td>
-          <td style="padding:4px 0;font-size:13px;color:#ccc;text-align:right;font-family:monospace;">$${Number(invoice.subtotal).toFixed(2)}</td>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;text-align:right;font-family:monospace;">${sym}${Number(invoice.subtotal).toFixed(2)}</td>
         </tr>
         <tr>
           <td style="padding:4px 0;font-size:13px;color:#888;">Tax (${invoice.tax_rate}%)</td>
-          <td style="padding:4px 0;font-size:13px;color:#ccc;text-align:right;font-family:monospace;">$${taxAmount.toFixed(2)}</td>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;text-align:right;font-family:monospace;">${sym}${taxAmount.toFixed(2)}</td>
         </tr>
         <tr>
           <td style="padding:8px 0 0;font-size:18px;font-weight:700;color:#fff;">Total</td>
-          <td style="padding:8px 0 0;font-size:18px;font-weight:700;color:#00e5ff;text-align:right;font-family:monospace;">$${Number(invoice.total).toFixed(2)}</td>
+          <td style="padding:8px 0 0;font-size:18px;font-weight:700;color:#00e5ff;text-align:right;font-family:monospace;">${sym}${Number(invoice.total).toFixed(2)}</td>
         </tr>
       </table>
     </div>
@@ -139,7 +144,6 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
     </div>
     ${(() => {
       if (!paymentSettings) return '';
-      const currency = client.currency || 'USD';
       const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
       return buildBankingHTML(paymentSettings[bankKey], paymentSettings.payment_links, currency);
     })()}
@@ -236,12 +240,23 @@ Deno.serve(async (req) => {
             .single();
           if (!client?.email) throw new Error("No client email");
 
+          // Get company currency
+          let companyCurrency = 'USD';
+          if (inv.client_company_id) {
+            const { data: company } = await supabase
+              .from("client_companies")
+              .select("currency")
+              .eq("id", inv.client_company_id)
+              .single();
+            if (company?.currency) companyCurrency = company.currency;
+          }
+
           const { data: items } = await supabase
             .from("invoice_items")
             .select("*")
             .eq("invoice_id", inv.id);
 
-          const html = buildEmailHTML(inv, items || [], client, dashboardBaseUrl, paymentSettings);
+          const html = buildEmailHTML(inv, items || [], client, dashboardBaseUrl, companyCurrency, paymentSettings);
           await sendEmail(client.email, `Invoice ${inv.invoice_number} from DigiiWorks`, html);
 
           await supabase.from("invoice_emails").insert({
@@ -296,12 +311,23 @@ Deno.serve(async (req) => {
       .single();
     if (!client?.email) throw new Error("Client has no email address");
 
+    // Get company currency
+    let companyCurrency = 'USD';
+    if (invoice.client_company_id) {
+      const { data: company } = await supabase
+        .from("client_companies")
+        .select("currency")
+        .eq("id", invoice.client_company_id)
+        .single();
+      if (company?.currency) companyCurrency = company.currency;
+    }
+
     const { data: items } = await supabase
       .from("invoice_items")
       .select("*")
       .eq("invoice_id", invoice_id);
 
-    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, paymentSettings);
+    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, companyCurrency, paymentSettings);
     await sendEmail(client.email, `Invoice ${invoice.invoice_number} from DigiiWorks`, html);
 
     await supabase.from("invoice_emails").insert({
