@@ -101,7 +101,7 @@ const Dashboard = () => {
     <div className="space-y-6">
       <AdminToolbar title="Dashboard" subtitle="Overview of your agency operations" />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Leads" value={leadCount ?? 0} icon={Mail} iconColor="text-neon-blue" />
         <StatCard label="New Leads" value={newLeads ?? 0} icon={TrendingUp} iconColor="text-neon-mint" />
         {!isClient && (
