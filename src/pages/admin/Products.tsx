@@ -376,7 +376,7 @@ export default function Products() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-md bg-card border-border">
           <DialogHeader><DialogTitle className="font-mono">New Product / Service</DialogTitle></DialogHeader>
-          <ProductForm onSubmit={handleCreate} submitLabel="Create" />
+          {renderProductForm(handleCreate, "Create")}
         </DialogContent>
       </Dialog>
 
