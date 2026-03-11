@@ -170,8 +170,15 @@ export default function Clients() {
       const productIds = data.map((d: any) => d.product_id);
       const { data: products } = await supabase
         .from('products')
-        .select('id, name, price_usd')
+        .select('id, name, price_usd, price_zar, price_thb')
         .in('id', productIds);
+
+      const clientCurrency = client.currency ?? 'USD';
+      const getPrice = (p: any) => {
+        if (clientCurrency === 'ZAR') return p.price_zar || p.price_usd;
+        if (clientCurrency === 'THB') return p.price_thb || p.price_usd;
+        return p.price_usd;
+      };
 
       const productMap = new Map((products ?? []).map((p: any) => [p.id, p]));
       setRecurringServices(
@@ -180,7 +187,7 @@ export default function Clients() {
           product_id: d.product_id,
           product_name: productMap.get(d.product_id)?.name ?? 'Unknown',
           quantity: d.quantity,
-          price: productMap.get(d.product_id)?.price_usd ?? 0,
+          price: productMap.get(d.product_id) ? getPrice(productMap.get(d.product_id)) : 0,
           active: d.active,
         }))
       );
