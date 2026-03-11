@@ -26,6 +26,7 @@ import AdminPagination from '@/components/admin/AdminPagination';
 import EmptyState from '@/components/admin/EmptyState';
 import PageLoader from '@/components/admin/PageLoader';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import RecurringServicesSelector, { type RecurringService } from '@/components/admin/RecurringServicesSelector';
 
 type Client = {
   id: string;
@@ -43,6 +44,7 @@ type Client = {
   invoice_count?: number;
   outstanding?: number;
   role?: string;
+  recurring_count?: number;
 };
 
 const PAGE_SIZE = 10;
