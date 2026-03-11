@@ -285,7 +285,7 @@ export default function Products() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         <StatCard label="Total Products" value={products.length} />
         <StatCard label="Active" value={products.filter(p => p.active).length} valueColor="text-green-400" />
         <StatCard label="Inactive" value={products.filter(p => !p.active).length} valueColor="text-muted-foreground" />
