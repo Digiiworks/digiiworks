@@ -507,8 +507,14 @@ export default function Invoices() {
                 <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v }))}>
                   <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select client" /></SelectTrigger>
                   <SelectContent>
-                    {profiles.map(p => (
-                      <SelectItem key={p.user_id} value={p.user_id}>{p.display_name || p.email}</SelectItem>
+                    {profiles.map(p => {
+                      const label = p.company
+                        ? `${p.company} / ${(p.display_name ?? p.email ?? '').split(' ')[0]}`
+                        : p.display_name || p.email;
+                      return (
+                        <SelectItem key={p.user_id} value={p.user_id}>{label}</SelectItem>
+                      );
+                    })}
                     ))}
                   </SelectContent>
                 </Select>
