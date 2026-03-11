@@ -270,6 +270,61 @@ export default function Invoices() {
     setForm({ client_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
     setSendDate(getFirstOfNextMonth());
     setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }]);
+    setEditingInvoice(null);
+  };
+
+  const openEdit = async (inv: Invoice) => {
+    setEditingInvoice(inv);
+    setForm({
+      client_id: inv.client_id,
+      due_date: inv.due_date ?? '',
+      notes: inv.notes ?? '',
+      tax_rate: inv.tax_rate,
+    });
+    setSendDate(inv.send_date ? new Date(inv.send_date + 'T00:00:00') : undefined);
+    const { data: items } = await supabase.from('invoice_items').select('*').eq('invoice_id', inv.id);
+    setLineItems(
+      (items && items.length > 0)
+        ? items.map(it => ({ id: it.id, description: it.description, quantity: it.quantity, unit_price: it.unit_price, total: it.total, product_id: it.product_id }))
+        : [{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }]
+    );
+    setShowEdit(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editingInvoice) return;
+    if (!form.client_id || lineItems.every(li => !li.description)) {
+      toast({ title: 'Fill in client and at least one line item', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from('invoices').update({
+      client_id: form.client_id,
+      due_date: form.due_date || null,
+      notes: form.notes || null,
+      tax_rate: form.tax_rate,
+      subtotal,
+      total: grandTotal,
+      send_date: sendDate ? format(sendDate, 'yyyy-MM-dd') : null,
+    }).eq('id', editingInvoice.id);
+
+    if (error) {
+      toast({ title: 'Error updating invoice', description: error.message, variant: 'destructive' });
+      setSaving(false); return;
+    }
+
+    // Replace line items: delete old, insert new
+    await supabase.from('invoice_items').delete().eq('invoice_id', editingInvoice.id);
+    const items = lineItems.filter(li => li.description).map(li => ({
+      invoice_id: editingInvoice.id, description: li.description, quantity: li.quantity,
+      unit_price: li.unit_price, total: li.total, product_id: li.product_id,
+    }));
+    if (items.length) {
+      const { error: itemErr } = await supabase.from('invoice_items').insert(items);
+      if (itemErr) toast({ title: 'Error updating line items', description: itemErr.message, variant: 'destructive' });
+    }
+    toast({ title: `Invoice ${editingInvoice.invoice_number} updated` });
+    setSaving(false); setShowEdit(false); resetForm(); fetchAll();
   };
 
   const updateStatus = async (id: string, status: string) => {
