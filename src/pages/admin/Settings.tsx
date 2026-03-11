@@ -108,8 +108,26 @@ const SettingsPage = () => {
       return next;
     });
   };
+  const getVal = (obj: any, path: string[]) => {
+    let v = obj;
+    for (const k of path) v = v?.[k] ?? '';
+    return v;
+  };
 
-  if (loading) {
+  const Field = ({ label, path, placeholder }: { label: string; path: string[]; placeholder?: string }) => (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">{label}</Label>
+      <Input
+        defaultValue={getVal(data, path)}
+        key={path.join('.')}
+        onChange={(e) => update(path, e.target.value)}
+        placeholder={placeholder}
+        className="font-mono text-sm bg-background border-border"
+      />
+    </div>
+  );
+
+
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
