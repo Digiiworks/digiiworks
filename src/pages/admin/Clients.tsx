@@ -147,7 +147,7 @@ export default function Clients() {
 
   const openCreate = () => {
     setShowCreate(true);
-    setForm({ email: '', display_name: '', phone: '', company: '', address: '', notes: '' });
+    setForm({ email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' });
   };
 
   const handleUpdate = async () => {
