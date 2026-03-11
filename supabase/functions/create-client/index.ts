@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
         company: company || null,
         address: address || null,
         display_name: display_name || null,
+        currency: currency || "USD",
       })
       .eq("user_id", userId);
 

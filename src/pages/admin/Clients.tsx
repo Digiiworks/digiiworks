@@ -142,6 +142,7 @@ export default function Clients() {
       company: client.company ?? '',
       address: client.address ?? '',
       notes: client.notes ?? '',
+      country: 'global',
     });
   };
 
