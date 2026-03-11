@@ -148,7 +148,7 @@ export default function Clients() {
 
   useEffect(() => { setPage(1); }, [search]);
 
-  const openEdit = (client: Client) => {
+  const openEdit = async (client: Client) => {
     setEditClient(client);
     setForm({
       email: client.email ?? '',
@@ -159,11 +159,58 @@ export default function Clients() {
       notes: client.notes ?? '',
       country: 'global',
     });
+    // Load existing recurring services
+    const { data } = await supabase
+      .from('client_recurring_services')
+      .select('id, product_id, quantity, active')
+      .eq('client_id', client.user_id);
+
+    if (data && data.length > 0) {
+      const productIds = data.map((d: any) => d.product_id);
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, name, price_usd')
+        .in('id', productIds);
+
+      const productMap = new Map((products ?? []).map((p: any) => [p.id, p]));
+      setRecurringServices(
+        data.map((d: any) => ({
+          id: d.id,
+          product_id: d.product_id,
+          product_name: productMap.get(d.product_id)?.name ?? 'Unknown',
+          quantity: d.quantity,
+          price: productMap.get(d.product_id)?.price_usd ?? 0,
+          active: d.active,
+        }))
+      );
+    } else {
+      setRecurringServices([]);
+    }
   };
 
   const openCreate = () => {
     setShowCreate(true);
     setForm({ email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' });
+    setRecurringServices([]);
+  };
+
+  const saveRecurringServices = async (clientId: string) => {
+    // Delete existing and re-insert
+    await supabase
+      .from('client_recurring_services')
+      .delete()
+      .eq('client_id', clientId);
+
+    if (recurringServices.length > 0) {
+      await supabase.from('client_recurring_services').insert(
+        recurringServices.map(s => ({
+          client_id: clientId,
+          product_id: s.product_id,
+          quantity: s.quantity,
+          active: s.active,
+        }))
+      );
+    }
   };
 
   const handleUpdate = async () => {
@@ -183,6 +230,7 @@ export default function Clients() {
     if (error) {
       toast({ title: 'Error updating client', description: error.message, variant: 'destructive' });
     } else {
+      await saveRecurringServices(editClient.user_id);
       toast({ title: 'Client updated' });
       setEditClient(null);
       fetchClients();
@@ -216,6 +264,17 @@ export default function Clients() {
     if (error || data?.error) {
       toast({ title: 'Error creating client', description: data?.error || error?.message, variant: 'destructive' });
     } else {
+      // Save recurring services for the new client
+      if (data?.user_id && recurringServices.length > 0) {
+        await supabase.from('client_recurring_services').insert(
+          recurringServices.map(s => ({
+            client_id: data.user_id,
+            product_id: s.product_id,
+            quantity: s.quantity,
+            active: s.active,
+          }))
+        );
+      }
       const resetMsg = data?.reset_email_sent 
         ? 'A password reset email has been sent so they can set their password.' 
         : 'Client created, but the reset email could not be sent.';
