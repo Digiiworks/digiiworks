@@ -223,7 +223,7 @@ export default function Products() {
 
   const fmt = (n: number) => `$${n.toFixed(2)}`;
 
-  const ProductForm = ({ onSubmit, submitLabel }: { onSubmit: () => void; submitLabel: string }) => (
+  const renderProductForm = (onSubmit: () => void, submitLabel: string) => (
     <div className="space-y-4">
       <div>
         <Label className="font-mono text-xs">Name *</Label>
@@ -376,7 +376,7 @@ export default function Products() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-md bg-card border-border">
           <DialogHeader><DialogTitle className="font-mono">New Product / Service</DialogTitle></DialogHeader>
-          <ProductForm onSubmit={handleCreate} submitLabel="Create" />
+          {renderProductForm(handleCreate, "Create")}
         </DialogContent>
       </Dialog>
 
@@ -384,7 +384,7 @@ export default function Products() {
       <Dialog open={!!editProduct} onOpenChange={() => setEditProduct(null)}>
         <DialogContent className="max-w-md bg-card border-border">
           <DialogHeader><DialogTitle className="font-mono">Edit Product</DialogTitle></DialogHeader>
-          <ProductForm onSubmit={handleUpdate} submitLabel="Save Changes" />
+          {renderProductForm(handleUpdate, "Save Changes")}
         </DialogContent>
       </Dialog>
 
