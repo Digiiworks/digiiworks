@@ -1,0 +1,1 @@
+ALTER TABLE public.invoices ALTER COLUMN send_date SET DEFAULT (date_trunc('month', now()) + interval '24 days')::date;

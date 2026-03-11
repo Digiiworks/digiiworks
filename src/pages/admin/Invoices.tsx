@@ -106,6 +106,11 @@ function getFirstOfNextMonth(): Date {
   return new Date(now.getFullYear(), now.getMonth() + 1, 1);
 }
 
+function get25thOfCurrentMonth(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 25);
+}
+
 export default function Invoices() {
   const { toast } = useToast();
   const { isAdmin } = useAuth();
@@ -133,7 +138,7 @@ export default function Invoices() {
 
   // Create/Edit form
   const [form, setForm] = useState({ client_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
-  const [sendDate, setSendDate] = useState<Date | undefined>(getFirstOfNextMonth());
+  const [sendDate, setSendDate] = useState<Date | undefined>(get25thOfCurrentMonth());
   const [lineItems, setLineItems] = useState<InvoiceItem[]>([
     { description: '', quantity: 1, unit_price: 0, total: 0, product_id: null },
   ]);
@@ -276,7 +281,7 @@ export default function Invoices() {
 
   const resetForm = () => {
     setForm({ client_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
-    setSendDate(getFirstOfNextMonth());
+    setSendDate(get25thOfCurrentMonth());
     setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }]);
     setEditingInvoice(null);
   };
@@ -678,7 +683,7 @@ export default function Invoices() {
             {/* Send Date Picker */}
             <div>
               <Label className="font-mono text-xs">Email Send Date</Label>
-              <p className="text-[10px] text-muted-foreground mb-1">Invoice will be emailed to the client on this date (defaults to 1st of next month)</p>
+              <p className="text-[10px] text-muted-foreground mb-1">Invoice will be emailed to the client on this date (defaults to 25th of current month)</p>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
