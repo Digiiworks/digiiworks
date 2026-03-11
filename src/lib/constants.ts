@@ -121,7 +121,7 @@ export const PILLARS = [
 export const STATS = [
   { label: 'Projects Delivered', value: 50, suffix: '+' },
   { label: 'Uptime', value: 99.9, suffix: '%' },
-  { label: 'AI Agents', value: 4, suffix: '' },
+  { label: 'AI Agents', value: 77, suffix: '' },
   { label: 'Automations Running', value: 120, suffix: '+' },
 ] as const;
 
