@@ -204,12 +204,39 @@ export default function Invoices() {
 
   useEffect(() => { setPage(1); }, [filterStatus, search, sortField, sortDir]);
 
-  const outstandingTotal = invoices
-    .filter(i => ['draft', 'sent', 'overdue'].includes(i.status))
-    .reduce((s, i) => s + i.total, 0);
-  const paidTotal = invoices
-    .filter(i => i.status === 'paid')
-    .reduce((s, i) => s + i.total, 0);
+  const outstandingByCurrency = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).forEach(i => {
+      const c = i.currency ?? 'USD';
+      if (!map[c]) map[c] = { total: 0, count: 0 };
+      map[c].total += i.total;
+      map[c].count++;
+    });
+    return map;
+  }, [invoices]);
+
+  const paidByCurrency = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    invoices.filter(i => i.status === 'paid').forEach(i => {
+      const c = i.currency ?? 'USD';
+      if (!map[c]) map[c] = { total: 0, count: 0 };
+      map[c].total += i.total;
+      map[c].count++;
+    });
+    return map;
+  }, [invoices]);
+
+  const overdueByCurrency = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    invoices.filter(i => i.status === 'overdue').forEach(i => {
+      const c = i.currency ?? 'USD';
+      if (!map[c]) map[c] = { total: 0, count: 0 };
+      map[c].total += i.total;
+      map[c].count++;
+    });
+    return map;
+  }, [invoices]);
+
   const overdueCount = invoices.filter(i => i.status === 'overdue').length;
 
   const toggleSort = (field: SortField) => {
