@@ -629,9 +629,11 @@ export default function Invoices() {
                 <Input type="number" min={0} step={0.5} value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: +e.target.value }))} className="bg-background border-border" />
               </div>
               <div className="text-right space-y-1 pt-4">
-                <p className="font-mono text-xs text-muted-foreground">Subtotal: ${subtotal.toFixed(2)}</p>
-                <p className="font-mono text-xs text-muted-foreground">Tax: ${taxAmount.toFixed(2)}</p>
-                <p className="font-mono text-sm font-bold text-foreground">Total: ${grandTotal.toFixed(2)}</p>
+                {(() => { const c = profiles.find(p => p.user_id === form.client_id)?.currency; return (<>
+                  <p className="font-mono text-xs text-muted-foreground">Subtotal: {fmtCurrency(subtotal, c)}</p>
+                  <p className="font-mono text-xs text-muted-foreground">Tax: {fmtCurrency(taxAmount, c)}</p>
+                  <p className="font-mono text-sm font-bold text-foreground">Total: {fmtCurrency(grandTotal, c)}</p>
+                </>); })()}
               </div>
             </div>
             <div>
