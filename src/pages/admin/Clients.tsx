@@ -511,11 +511,12 @@ export default function Clients() {
             </div>
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5">🌍 Country / Region</Label>
-              <Select value={form.country} onValueChange={(v: 'global' | 'south_africa') => setForm(f => ({ ...f, country: v }))}>
+              <Select value={form.country} onValueChange={(v: 'global' | 'south_africa' | 'thailand') => setForm(f => ({ ...f, country: v }))}>
                 <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="global">Global (USD)</SelectItem>
                   <SelectItem value="south_africa">South Africa (ZAR)</SelectItem>
+                  <SelectItem value="thailand">Thailand (THB)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
