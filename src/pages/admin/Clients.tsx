@@ -289,6 +289,9 @@ export default function Clients() {
             product_id: s.product_id,
             quantity: s.quantity,
             active: s.active,
+            unit_price_override: s.price_override,
+            billing_cycle: s.billing_cycle,
+            start_date: s.start_date,
           }))
         );
       }
