@@ -101,28 +101,12 @@ const SettingsPage = () => {
       for (let i = 0; i < path.length - 1; i++) obj = obj[path[i]];
       obj[path[path.length - 1]] = value;
 
-      // Auto-save with debounce
+      // Auto-save with 5s debounce
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => persist(next), 600);
+      debounceRef.current = setTimeout(() => persist(next), 5000);
 
       return next;
     });
-  };
-
-  const Field = ({ label, path, placeholder }: { label: string; path: string[]; placeholder?: string }) => {
-    let value = data as any;
-    for (const k of path) value = value?.[k] ?? '';
-    return (
-      <div className="space-y-1.5">
-        <Label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">{label}</Label>
-        <Input
-          value={value}
-          onChange={(e) => update(path, e.target.value)}
-          placeholder={placeholder}
-          className="font-mono text-sm bg-background border-border"
-        />
-      </div>
-    );
   };
 
   if (loading) {
