@@ -48,11 +48,30 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 const ClientDashboard = () => {
   const { user, profile, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [yocoLoading, setYocoLoading] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Handle Yoco redirect back
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    const invoiceNum = searchParams.get('invoice');
+    if (payment) {
+      if (payment === 'success') {
+        setPaymentMessage({ type: 'success', text: `Payment for invoice #${invoiceNum} was successful! It may take a moment to update.` });
+      } else if (payment === 'failed') {
+        setPaymentMessage({ type: 'error', text: `Payment for invoice #${invoiceNum} failed. Please try again.` });
+      } else if (payment === 'cancelled') {
+        setPaymentMessage({ type: 'error', text: `Payment for invoice #${invoiceNum} was cancelled.` });
+      }
+      // Clear query params
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleYocoPayment = async (invoiceId: string) => {
     setYocoLoading(true);
