@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronRight,
   User,
+  Landmark,
 } from 'lucide-react';
 
 interface InvoiceRow {
