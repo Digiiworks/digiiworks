@@ -221,12 +221,20 @@ export default function Invoices() {
     });
   };
 
+  const getProductPrice = (p: Product, currency: string = 'USD') => {
+    if (currency === 'ZAR') return p.price_zar || p.price_usd;
+    if (currency === 'THB') return p.price_thb || p.price_usd;
+    return p.price_usd;
+  };
+
   const pickProduct = (idx: number, productId: string) => {
     const p = products.find(pr => pr.id === productId);
     if (!p) return;
+    const clientCurrency = profiles.find(pr => pr.user_id === form.client_id)?.currency ?? 'USD';
+    const unitPrice = getProductPrice(p, clientCurrency);
     setLineItems(prev => {
       const next = [...prev];
-      next[idx] = { ...next[idx], product_id: productId, description: p.name, unit_price: p.price_usd, total: next[idx].quantity * p.price_usd };
+      next[idx] = { ...next[idx], product_id: productId, description: p.name, unit_price: unitPrice, total: next[idx].quantity * unitPrice };
       return next;
     });
   };
