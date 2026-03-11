@@ -38,6 +38,7 @@ type Client = {
   address: string | null;
   notes: string | null;
   avatar_url: string | null;
+  currency: string;
   created_at: string;
   updated_at: string;
   // enriched
