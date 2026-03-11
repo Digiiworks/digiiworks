@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronRight,
   User,
+  Landmark,
 } from 'lucide-react';
 
 interface InvoiceRow {
@@ -54,6 +55,8 @@ const ClientDashboard = () => {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [yocoLoading, setYocoLoading] = useState(false);
+  const [paymentSettings, setPaymentSettings] = useState<any>(null);
+  const [clientCurrency, setClientCurrency] = useState('USD');
   const [paymentMessage, setPaymentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Handle Yoco redirect back
@@ -100,15 +103,18 @@ const ClientDashboard = () => {
 
   useEffect(() => {
     if (!user) return;
-    const fetchInvoices = async () => {
-      const { data } = await supabase
-        .from('invoices')
-        .select('*')
-        .order('created_at', { ascending: false });
-      setInvoices((data as any[]) ?? []);
+    const fetchData = async () => {
+      const [invoicesRes, settingsRes, profileRes] = await Promise.all([
+        supabase.from('invoices').select('*').order('created_at', { ascending: false }),
+        supabase.from('page_content').select('content').eq('page_key', 'payment_settings').single(),
+        supabase.from('profiles').select('currency').eq('user_id', user.id).single(),
+      ]);
+      setInvoices((invoicesRes.data as any[]) ?? []);
+      if (settingsRes.data) setPaymentSettings(settingsRes.data.content);
+      if (profileRes.data) setClientCurrency(profileRes.data.currency || 'USD');
       setLoading(false);
     };
-    fetchInvoices();
+    fetchData();
   }, [user]);
 
   const fetchItems = async (invoiceId: string) => {
@@ -293,8 +299,36 @@ const ClientDashboard = () => {
                 )}
               </div>
 
+              {/* Banking Details */}
+              {paymentSettings && (selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue') && (() => {
+                const currency = clientCurrency;
+                const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
+                const bank = paymentSettings[bankKey];
+                const links = paymentSettings.payment_links;
+                if (!bank?.bank_name) return null;
+                const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
+                return (
+                  <>
+                    <Separator />
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1.5">
+                      <p className="font-mono text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
+                        <Landmark className="h-3.5 w-3.5" /> Direct Deposit — {regionLabel}
+                      </p>
+                      {bank.bank_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Bank:</span> {bank.bank_name}</p>}
+                      {bank.account_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account Name:</span> {bank.account_name}</p>}
+                      {bank.account_number && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account:</span> {bank.account_number}</p>}
+                      {bank.swift_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">SWIFT:</span> {bank.swift_code}</p>}
+                      {bank.branch_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch Code:</span> {bank.branch_code}</p>}
+                      {bank.branch && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch:</span> {bank.branch}</p>}
+                      {bank.account_type && <p className="text-sm text-foreground"><span className="text-muted-foreground">Type:</span> {bank.account_type}</p>}
+                      {bank.reference_note && <p className="text-xs text-muted-foreground italic mt-2">{bank.reference_note}</p>}
+                    </div>
+                  </>
+                );
+              })()}
+
               {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue') && (
-                <div className="flex gap-3 pt-2">
+                <div className="flex flex-wrap gap-3 pt-2">
                   <Button className="font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90">
                     Pay with Stripe
                   </Button>
@@ -306,6 +340,17 @@ const ClientDashboard = () => {
                   >
                     {yocoLoading ? 'Redirecting…' : 'Pay with Yoco'}
                   </Button>
+                  {paymentSettings?.payment_links?.wise_payment_link && (
+                    <Button
+                      variant="outline"
+                      className="font-mono"
+                      asChild
+                    >
+                      <a href={paymentSettings.payment_links.wise_payment_link} target="_blank" rel="noopener noreferrer">
+                        Pay with Wise
+                      </a>
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
