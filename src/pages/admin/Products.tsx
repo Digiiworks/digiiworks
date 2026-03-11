@@ -358,7 +358,9 @@ export default function Products() {
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-xs truncate">{p.description ?? '—'}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">{fmt(p.price_usd)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">${p.price_usd.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">R{((p as any).price_zar ?? 0).toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">฿{((p as any).price_thb ?? 0).toFixed(2)}</TableCell>
                     <TableCell className="text-center">
                       <button onClick={() => toggleActive(p)}>
                         <Badge className={`border-0 cursor-pointer ${p.active ? 'bg-green-500/20 text-green-400' : 'bg-muted text-muted-foreground'}`}>
