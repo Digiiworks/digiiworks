@@ -2,13 +2,23 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, RefreshCw, Tag } from 'lucide-react';
+import { Trash2, RefreshCw } from 'lucide-react';
 import ProductCombobox from './ProductCombobox';
 
-type Product = { id: string; name: string; price_usd: number; description?: string | null; category?: string | null };
+type Product = { id: string; name: string; price_usd: number; price_zar: number; price_thb: number; description?: string | null; category?: string | null };
+
+const getProductPrice = (p: Product, currency: string) => {
+  if (currency === 'ZAR') return p.price_zar || p.price_usd;
+  if (currency === 'THB') return p.price_thb || p.price_usd;
+  return p.price_usd;
+};
+
+const fmtCurrency = (n: number, currency: string = 'USD') => {
+  const symbol = currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
+  return `${symbol}${n.toFixed(2)}`;
+};
 
 export type RecurringService = {
   id?: string;
@@ -22,16 +32,17 @@ export type RecurringService = {
 interface RecurringServicesSelectorProps {
   services: RecurringService[];
   onChange: (services: RecurringService[]) => void;
+  currency?: string;
 }
 
-export default function RecurringServicesSelector({ services, onChange }: RecurringServicesSelectorProps) {
+export default function RecurringServicesSelector({ services, onChange, currency = 'USD' }: RecurringServicesSelectorProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase
       .from('products')
-      .select('id, name, price_usd, description, category')
+      .select('id, name, price_usd, price_zar, price_thb, description, category')
       .eq('active', true)
       .order('name')
       .then(({ data }) => {
@@ -45,13 +56,14 @@ export default function RecurringServicesSelector({ services, onChange }: Recurr
   );
 
   const addService = (product: Product) => {
+    const price = getProductPrice(product, currency);
     onChange([
       ...services,
       {
         product_id: product.id,
         product_name: product.name,
         quantity: 1,
-        price: product.price_usd,
+        price,
         active: true,
       },
     ]);
@@ -90,7 +102,7 @@ export default function RecurringServicesSelector({ services, onChange }: Recurr
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate">{service.product_name}</p>
                 <p className="text-[10px] text-muted-foreground font-mono">
-                  ${service.price.toFixed(2)} / unit
+                  {fmtCurrency(service.price, currency)} / unit
                 </p>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -143,10 +155,12 @@ export default function RecurringServicesSelector({ services, onChange }: Recurr
             {services.filter(s => s.active).length} active service(s)
           </span>
           <span className="font-mono font-medium text-foreground">
-            ${services
-              .filter(s => s.active)
-              .reduce((sum, s) => sum + s.price * s.quantity, 0)
-              .toFixed(2)}
+            {fmtCurrency(
+              services
+                .filter(s => s.active)
+                .reduce((sum, s) => sum + s.price * s.quantity, 0),
+              currency
+            )}
             /month
           </span>
         </div>
