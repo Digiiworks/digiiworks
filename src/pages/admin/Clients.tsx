@@ -63,7 +63,7 @@ export default function Clients() {
 
   // Form
   const [form, setForm] = useState({
-    email: '', display_name: '', phone: '', company: '', address: '', notes: '',
+    email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa',
   });
 
   const fetchClients = async () => {
