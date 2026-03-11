@@ -107,8 +107,8 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
 
 // Header
 '<tr><td style="background:#0a0a0a;padding:28px 32px;text-align:center;">' +
-'<h1 style="margin:0;font-size:22px;font-weight:800;letter-spacing:3px;color:#00e5ff;font-family:Courier New,monospace;">DIGIIWORKS</h1>' +
-'<p style="margin:6px 0 0;font-size:10px;color:#9ca3af;letter-spacing:4px;text-transform:uppercase;">Digital Agency</p>' +
+'<img src="https://digiiworks.lovable.app/logo.svg" alt="Digiiworks" width="175" style="display:inline-block;width:175px;height:auto;" />' +
+'<p style="margin:10px 0 0;font-size:10px;color:#9ca3af;letter-spacing:4px;text-transform:uppercase;">Digital Agency</p>' +
 '</td></tr>' +
 
 // Gradient line
