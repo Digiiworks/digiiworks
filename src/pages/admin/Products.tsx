@@ -155,6 +155,8 @@ export default function Products() {
       description: form.description.trim() || null,
       category: form.category.trim() || null,
       price_usd: form.price_usd,
+      price_zar: form.price_zar,
+      price_thb: form.price_thb,
       active: form.active,
     }).eq('id', editProduct.id);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
