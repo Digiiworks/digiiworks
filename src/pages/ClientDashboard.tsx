@@ -104,12 +104,14 @@ const ClientDashboard = () => {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [invoicesRes, settingsRes] = await Promise.all([
+      const [invoicesRes, settingsRes, profileRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').single(),
+        supabase.from('profiles').select('currency').eq('user_id', user.id).single(),
       ]);
       setInvoices((invoicesRes.data as any[]) ?? []);
       if (settingsRes.data) setPaymentSettings(settingsRes.data.content);
+      if (profileRes.data) setClientCurrency(profileRes.data.currency || 'USD');
       setLoading(false);
     };
     fetchData();
