@@ -265,6 +265,7 @@ const SettingsPage = () => {
               <Field label="Account Name" path={['global', 'account_name']} placeholder="DigiiWorks LLC" />
               <Field label="Account Number / IBAN" path={['global', 'account_number']} placeholder="GB12 XXXX …" />
               <Field label="SWIFT / BIC Code" path={['global', 'swift_code']} placeholder="TRWIGB2L" />
+              <Field label="Routing Number" path={['global', 'routing_number']} placeholder="021000021" />
               <Field label="Currency" path={['global', 'currency']} placeholder="USD" />
               <Field label="Reference Note" path={['global', 'reference_note']} placeholder="Use invoice number as reference" />
             </CardContent>
