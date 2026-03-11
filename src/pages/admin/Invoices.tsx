@@ -93,6 +93,11 @@ const EMAIL_STATUS_ICON: Record<string, React.ReactNode> = {
 const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
 
+const fmtCurrency = (amount: number, currency: string = 'USD') => {
+  const symbol = currency === 'ZAR' ? 'R' : '$';
+  return `${symbol}${amount.toFixed(2)}`;
+};
+
 type SortField = 'invoice_number' | 'total' | 'due_date' | 'created_at' | 'status';
 type SortDir = 'asc' | 'desc';
 
