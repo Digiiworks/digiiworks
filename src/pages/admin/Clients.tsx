@@ -344,6 +344,7 @@ export default function Clients() {
                   <TableHead className="font-mono text-xs">Contact</TableHead>
                   <TableHead className="font-mono text-xs">Company</TableHead>
                   <TableHead className="font-mono text-xs text-center">Invoices</TableHead>
+                  <TableHead className="font-mono text-xs text-center">Recurring</TableHead>
                   <TableHead className="font-mono text-xs text-right">Outstanding</TableHead>
                   <TableHead className="font-mono text-xs">Joined</TableHead>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
