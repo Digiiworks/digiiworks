@@ -141,7 +141,7 @@ export default function Invoices() {
   const [sending, setSending] = useState(false);
 
   // Create/Edit form
-  const [form, setForm] = useState({ client_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
+  const [form, setForm] = useState({ client_id: '', client_company_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
   const [sendDate, setSendDate] = useState<Date | undefined>(get25thOfCurrentMonth());
   const [lineItems, setLineItems] = useState<InvoiceItem[]>([
     { description: '', quantity: 1, unit_price: 0, total: 0, product_id: null },
