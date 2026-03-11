@@ -163,7 +163,7 @@ export default function Clients() {
     // Load existing recurring services
     const { data } = await supabase
       .from('client_recurring_services')
-      .select('id, product_id, quantity, active, unit_price_override')
+      .select('id, product_id, quantity, active, unit_price_override, billing_cycle, start_date')
       .eq('client_id', client.user_id);
 
     if (data && data.length > 0) {
