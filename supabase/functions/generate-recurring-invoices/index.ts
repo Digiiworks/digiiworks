@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // Get all active recurring services grouped by client
     const { data: services, error: svcErr } = await supabase
       .from("client_recurring_services")
-      .select("client_id, product_id, quantity")
+      .select("client_id, product_id, quantity, unit_price_override")
       .eq("active", true);
 
     if (svcErr) throw svcErr;
@@ -39,10 +39,10 @@ Deno.serve(async (req) => {
     }
 
     // Group by client
-    const clientMap = new Map<string, { product_id: string; quantity: number }[]>();
+    const clientMap = new Map<string, { product_id: string; quantity: number; unit_price_override: number | null }[]>();
     for (const s of services) {
       const list = clientMap.get(s.client_id) ?? [];
-      list.push({ product_id: s.product_id, quantity: s.quantity });
+      list.push({ product_id: s.product_id, quantity: s.quantity, unit_price_override: s.unit_price_override });
       clientMap.set(s.client_id, list);
     }
 
