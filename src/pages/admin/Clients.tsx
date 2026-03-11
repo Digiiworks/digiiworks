@@ -38,6 +38,7 @@ type Client = {
   address: string | null;
   notes: string | null;
   avatar_url: string | null;
+  currency: string;
   created_at: string;
   updated_at: string;
   // enriched
@@ -306,15 +307,17 @@ export default function Clients() {
     setDeleteId(null);
   };
 
-  const fmt = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  const fmtCurrency = (n: number, currency: string = 'USD') => {
+    const symbol = currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
+    return `${symbol}${n.toFixed(2)}`;
+  };
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Total Clients" value={clients.length} />
         <StatCard label="With Outstanding" value={clients.filter(c => (c.outstanding ?? 0) > 0).length} />
-        <StatCard label="Total Outstanding" value={fmt(clients.reduce((s, c) => s + (c.outstanding ?? 0), 0))} valueColor="text-orange-400" />
+        <StatCard label="Total Outstanding" value={fmtCurrency(clients.reduce((s, c) => s + (c.outstanding ?? 0), 0))} valueColor="text-orange-400" />
       </div>
 
       <AdminToolbar title="Clients">
@@ -401,9 +404,9 @@ export default function Clients() {
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
                       {(client.outstanding ?? 0) > 0 ? (
-                        <span className="text-orange-400 font-medium">{fmt(client.outstanding!)}</span>
+                        <span className="text-orange-400 font-medium">{fmtCurrency(client.outstanding!, client.currency)}</span>
                       ) : (
-                        <span className="text-muted-foreground">{fmt(0)}</span>
+                        <span className="text-muted-foreground">{fmtCurrency(0, client.currency)}</span>
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
