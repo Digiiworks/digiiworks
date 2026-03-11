@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     const allProductIds = [...new Set(services.map(s => s.product_id))];
     const { data: products } = await supabase
       .from("products")
-      .select("id, name, price_usd, description")
+      .select("id, name, price_usd, price_zar, price_thb, description")
       .in("id", allProductIds);
 
     const productMap = new Map((products ?? []).map((p: any) => [p.id, p]));
