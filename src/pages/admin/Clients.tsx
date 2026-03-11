@@ -828,6 +828,85 @@ export default function Clients() {
         confirmLabel="Deactivate"
         onConfirm={handleDelete}
       />
+
+      <ConfirmDialog
+        open={showInvoicePrompt}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowInvoicePrompt(false);
+            setPendingInvoiceData(null);
+          }
+        }}
+        title="Generate Invoice for This Month?"
+        description={`No invoice exists for ${pendingInvoiceData?.company_name ?? 'this company'} this month. Would you like to generate a draft invoice now from the recurring services?`}
+        confirmLabel={generatingInvoice ? 'Generating...' : 'Generate Invoice'}
+        cancelLabel="Skip"
+        variant="default"
+        onConfirm={async () => {
+          if (!pendingInvoiceData || generatingInvoice) return;
+          setGeneratingInvoice(true);
+          try {
+            // Get next invoice number
+            const { data: lastInvoice } = await supabase
+              .from('invoices')
+              .select('invoice_number')
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            const lastNum = lastInvoice?.[0]?.invoice_number;
+            const nextNum = lastNum
+              ? `INV-${String(parseInt(lastNum.replace('INV-', '')) + 1).padStart(4, '0')}`
+              : 'INV-0001';
+
+            const today = new Date();
+            const dueDate = format(startOfMonth(addMonths(today, 1)), 'yyyy-MM-dd');
+            const sendDate = format(new Date(today.getFullYear(), today.getMonth(), 25), 'yyyy-MM-dd');
+
+            // Calculate totals
+            const items = pendingInvoiceData.services.map(s => ({
+              description: s.product_name,
+              product_id: s.product_id,
+              quantity: s.quantity,
+              unit_price: s.price_override ?? s.price,
+              total: (s.price_override ?? s.price) * s.quantity,
+            }));
+            const subtotal = items.reduce((sum, i) => sum + i.total, 0);
+
+            // Insert invoice
+            const { data: inv, error: invError } = await supabase
+              .from('invoices')
+              .insert({
+                client_id: pendingInvoiceData.user_id,
+                client_company_id: pendingInvoiceData.client_company_id,
+                invoice_number: nextNum,
+                status: 'draft',
+                subtotal,
+                total: subtotal,
+                tax_rate: 0,
+                due_date: dueDate,
+                send_date: sendDate,
+              })
+              .select('id')
+              .single();
+
+            if (invError) throw invError;
+
+            // Insert line items
+            await supabase.from('invoice_items').insert(
+              items.map(i => ({ ...i, invoice_id: inv.id }))
+            );
+
+            toast({ title: 'Draft invoice generated', description: `${nextNum} created for ${pendingInvoiceData.company_name}` });
+            fetchClients();
+          } catch (err: any) {
+            toast({ title: 'Error generating invoice', description: err.message, variant: 'destructive' });
+          } finally {
+            setGeneratingInvoice(false);
+            setShowInvoicePrompt(false);
+            setPendingInvoiceData(null);
+          }
+        }}
+      />
     </div>
   );
 }
