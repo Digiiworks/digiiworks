@@ -39,6 +39,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
+const InvoicePrint = lazy(() => import("./pages/InvoicePrint"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,6 +86,11 @@ const App = () => (
                 <Route path="/client" element={
                   <ProtectedRoute requiredRoles={['client']}>
                     <Suspense fallback={<PageLoader />}><ClientDashboard /></Suspense>
+                  </ProtectedRoute>
+                } />
+                <Route path="/invoice/:id" element={
+                  <ProtectedRoute requiredRoles={['client', 'admin']}>
+                    <Suspense fallback={<PageLoader />}><InvoicePrint /></Suspense>
                   </ProtectedRoute>
                 } />
 

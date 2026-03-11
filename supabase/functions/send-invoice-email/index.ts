@@ -163,9 +163,14 @@ taxRow +
 // Notes
 notesBlock +
 
-// CTA
+// CTA buttons
 '<tr><td style="padding:32px 32px 0;text-align:center;">' +
 '<a href="' + dashboardUrl + '" style="display:inline-block;padding:16px 48px;background:#0a0a0a;color:#00e5ff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;letter-spacing:1.5px;font-family:Courier New,monospace;">VIEW &amp; PAY INVOICE</a>' +
+'</td></tr>' +
+
+// Download PDF button
+'<tr><td style="padding:12px 32px 0;text-align:center;">' +
+'<a href="https://digiiworks.lovable.app/invoice/' + invoice.id + '" style="display:inline-block;padding:12px 36px;background:#ffffff;color:#0891b2;text-decoration:none;font-weight:700;font-size:13px;border-radius:8px;letter-spacing:1px;font-family:Courier New,monospace;border:2px solid #0891b2;">&#128196; DOWNLOAD PDF</a>' +
 '</td></tr>' +
 
 // Banking
