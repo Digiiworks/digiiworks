@@ -244,8 +244,13 @@ const ClientDashboard = () => {
                   <Button className="font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90">
                     Pay with Stripe
                   </Button>
-                  <Button variant="outline" className="font-mono border-secondary text-secondary hover:bg-secondary/10">
-                    Pay with Yoco
+                  <Button
+                    variant="outline"
+                    className="font-mono border-secondary text-secondary hover:bg-secondary/10"
+                    disabled={yocoLoading}
+                    onClick={() => handleYocoPayment(selectedInvoice.id)}
+                  >
+                    {yocoLoading ? 'Redirecting…' : 'Pay with Yoco'}
                   </Button>
                 </div>
               )}
