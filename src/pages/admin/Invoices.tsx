@@ -608,7 +608,7 @@ export default function Invoices() {
                       {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Price</span>}
                       <Input type="number" min={0} step={0.01} value={li.unit_price} onChange={e => updateLineItem(idx, 'unit_price', +e.target.value)} className="h-9 text-xs bg-background border-border" />
                     </div>
-                    <div className="col-span-1 text-right font-mono text-xs text-muted-foreground pt-1">${li.total.toFixed(2)}</div>
+                    <div className="col-span-1 text-right font-mono text-xs text-muted-foreground pt-1">{fmtCurrency(li.total, profiles.find(p => p.user_id === form.client_id)?.currency)}</div>
                     <div className="col-span-1">
                       {lineItems.length > 1 && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}>
