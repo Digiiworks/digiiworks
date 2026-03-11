@@ -317,7 +317,7 @@ export default function Invoices() {
   };
 
   const handlePayClick = (inv: Invoice) => {
-    toast({ title: 'Payment', description: `Payment link for ${inv.invoice_number} ($${inv.total.toFixed(2)}) coming soon.` });
+    toast({ title: 'Payment', description: `Payment link for ${inv.invoice_number} (${fmtCurrency(inv.total, inv.currency)}) coming soon.` });
   };
 
   const SortHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
