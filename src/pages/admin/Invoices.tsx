@@ -438,7 +438,7 @@ export default function Invoices() {
                         )}
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>${inv.total.toFixed(2)}</span>
+                        <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>{fmtCurrency(inv.total, inv.currency)}</span>
                       </TableCell>
                       <TableCell className={`text-sm ${isOverdue ? 'text-orange-400' : 'text-muted-foreground'}`}>
                         {inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—'}
