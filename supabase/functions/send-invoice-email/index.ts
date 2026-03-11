@@ -160,7 +160,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   const smtpUser = Deno.env.get("SMTP_USER")!.trim();
   const smtpPass = Deno.env.get("SMTP_PASS")!.trim();
 
-  console.log("SMTP config:", { host: smtpHost, user: smtpUser, passLength: smtpPass?.length });
+  
 
   const transporter = nodemailer.createTransport({
     host: smtpHost,
