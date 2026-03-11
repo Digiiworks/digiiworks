@@ -296,8 +296,36 @@ const ClientDashboard = () => {
                 )}
               </div>
 
+              {/* Banking Details */}
+              {paymentSettings && (selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue') && (() => {
+                const currency = profile?.currency || 'USD';
+                const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
+                const bank = paymentSettings[bankKey];
+                const links = paymentSettings.payment_links;
+                if (!bank?.bank_name) return null;
+                const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
+                return (
+                  <>
+                    <Separator />
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1.5">
+                      <p className="font-mono text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
+                        <Landmark className="h-3.5 w-3.5" /> Direct Deposit — {regionLabel}
+                      </p>
+                      {bank.bank_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Bank:</span> {bank.bank_name}</p>}
+                      {bank.account_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account Name:</span> {bank.account_name}</p>}
+                      {bank.account_number && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account:</span> {bank.account_number}</p>}
+                      {bank.swift_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">SWIFT:</span> {bank.swift_code}</p>}
+                      {bank.branch_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch Code:</span> {bank.branch_code}</p>}
+                      {bank.branch && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch:</span> {bank.branch}</p>}
+                      {bank.account_type && <p className="text-sm text-foreground"><span className="text-muted-foreground">Type:</span> {bank.account_type}</p>}
+                      {bank.reference_note && <p className="text-xs text-muted-foreground italic mt-2">{bank.reference_note}</p>}
+                    </div>
+                  </>
+                );
+              })()}
+
               {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue') && (
-                <div className="flex gap-3 pt-2">
+                <div className="flex flex-wrap gap-3 pt-2">
                   <Button className="font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90">
                     Pay with Stripe
                   </Button>
@@ -309,6 +337,17 @@ const ClientDashboard = () => {
                   >
                     {yocoLoading ? 'Redirecting…' : 'Pay with Yoco'}
                   </Button>
+                  {paymentSettings?.payment_links?.wise_payment_link && (
+                    <Button
+                      variant="outline"
+                      className="font-mono"
+                      asChild
+                    >
+                      <a href={paymentSettings.payment_links.wise_payment_link} target="_blank" rel="noopener noreferrer">
+                        Pay with Wise
+                      </a>
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
