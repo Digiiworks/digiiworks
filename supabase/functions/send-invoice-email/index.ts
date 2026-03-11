@@ -156,11 +156,11 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const smtpHost = Deno.env.get("SMTP_HOST")!;
-  const smtpUser = Deno.env.get("SMTP_USER")!;
-  const smtpPass = Deno.env.get("SMTP_PASS")!;
+  const smtpHost = Deno.env.get("SMTP_HOST")!.trim();
+  const smtpUser = Deno.env.get("SMTP_USER")!.trim();
+  const smtpPass = Deno.env.get("SMTP_PASS")!.trim();
 
-  console.log("SMTP config:", { host: smtpHost, user: smtpUser, passLength: smtpPass?.length });
+  
 
   const transporter = nodemailer.createTransport({
     host: smtpHost,
@@ -170,9 +170,6 @@ async function sendEmail(to: string, subject: string, html: string) {
       user: smtpUser,
       pass: smtpPass,
     },
-    authMethod: "LOGIN",
-    debug: true,
-    logger: true,
   });
 
   await transporter.sendMail({
