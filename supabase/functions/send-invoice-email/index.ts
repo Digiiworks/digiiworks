@@ -18,7 +18,7 @@ function currencySymbol(currency: string) {
   return currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
 }
 
-function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string) {
+function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, invoiceTotal?: number) {
   if (!bankInfo) return '';
 
   const fields: string[] = [];
