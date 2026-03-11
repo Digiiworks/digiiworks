@@ -458,7 +458,18 @@ export default function Clients() {
             </div>
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><FileText className="h-3 w-3" /> Notes</Label>
-              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="bg-background border-border" rows={3} />
+              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="bg-background border-border" rows={2} />
+            </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5">🌍 Country / Region</Label>
+              <Select value={form.country} onValueChange={(v: 'global' | 'south_africa' | 'thailand') => setForm(f => ({ ...f, country: v }))}>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Global (USD)</SelectItem>
+                  <SelectItem value="south_africa">South Africa (ZAR)</SelectItem>
+                  <SelectItem value="thailand">Thailand (THB)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} />
           </div>
