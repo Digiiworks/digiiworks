@@ -683,7 +683,7 @@ export default function Invoices() {
             {/* Send Date Picker */}
             <div>
               <Label className="font-mono text-xs">Email Send Date</Label>
-              <p className="text-[10px] text-muted-foreground mb-1">Invoice will be emailed to the client on this date (defaults to 1st of next month)</p>
+              <p className="text-[10px] text-muted-foreground mb-1">Invoice will be emailed to the client on this date (defaults to 25th of current month)</p>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
