@@ -16,12 +16,6 @@ const InvoicePrint = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-  const [items, setItems] = useState<InvoiceItem[]>([]);
-  const [client, setClient] = useState<any>(null);
-  const [currency, setCurrency] = useState('USD');
-  const [paymentSettings, setPaymentSettings] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   const [invoice, setInvoice] = useState<any>(null);
   const [items, setItems] = useState<InvoiceItem[]>([]);
