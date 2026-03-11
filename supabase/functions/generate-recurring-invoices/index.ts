@@ -104,7 +104,8 @@ Deno.serve(async (req) => {
       for (const item of items) {
         const product = productMap.get(item.product_id);
         if (!product) continue;
-        const unitPrice = product.price_usd;
+        const currency = profile?.currency ?? "USD";
+        const unitPrice = currency === "ZAR" ? (product.price_zar || product.price_usd) : currency === "THB" ? (product.price_thb || product.price_usd) : product.price_usd;
         const total = unitPrice * item.quantity;
         subtotal += total;
         lineItems.push({
