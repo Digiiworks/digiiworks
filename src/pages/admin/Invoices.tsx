@@ -106,6 +106,11 @@ function getFirstOfNextMonth(): Date {
   return new Date(now.getFullYear(), now.getMonth() + 1, 1);
 }
 
+function get25thOfCurrentMonth(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 25);
+}
+
 export default function Invoices() {
   const { toast } = useToast();
   const { isAdmin } = useAuth();
