@@ -338,7 +338,7 @@ export default function Invoices() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Outstanding"
-          value={`$${outstandingTotal.toFixed(2)}`}
+          value={fmtCurrency(outstandingTotal)}
           subtitle={`${invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).length} invoice(s)`}
         />
         <StatCard
