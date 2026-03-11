@@ -234,19 +234,24 @@ Deno.serve(async (req) => {
       if (!send_to) throw new Error("send_to email required for test mode");
 
       const testCurrency = currency || 'USD';
-      const priceCol = testCurrency === 'ZAR' ? 'price_zar' : testCurrency === 'THB' ? 'price_thb' : 'price_usd';
 
       const { data: products } = await supabase
         .from("products")
-        .select("name, " + priceCol)
+        .select("name, price_usd, price_zar, price_thb")
         .eq("active", true)
         .limit(4);
+
+      const getPrice = (p: any) => {
+        if (testCurrency === 'ZAR') return Number(p.price_zar) || 0;
+        if (testCurrency === 'THB') return Number(p.price_thb) || 0;
+        return Number(p.price_usd) || 0;
+      };
 
       const items: InvoiceItem[] = (products || []).map((p: any) => ({
         description: p.name,
         quantity: 1,
-        unit_price: Number(p[priceCol]) || 0,
-        total: Number(p[priceCol]) || 0,
+        unit_price: getPrice(p),
+        total: getPrice(p),
       }));
 
       if (items.length === 0) {
