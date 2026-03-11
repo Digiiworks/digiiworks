@@ -30,10 +30,9 @@ const AgencyPulse = () => {
         return [];
       }
     },
-    staleTime: 60 * 60 * 1000, // 1 hour — table doesn't exist yet, avoid polling
+    staleTime: 60 * 60 * 1000,
     refetchInterval: false,
     retry: false,
-    refetchInterval: 15000,
   });
 
   const displayLogs: readonly { id: string; agent: string; message: string }[] =
