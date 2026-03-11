@@ -343,7 +343,7 @@ export default function Invoices() {
         />
         <StatCard
           label="Paid"
-          value={`$${paidTotal.toFixed(2)}`}
+          value={fmtCurrency(paidTotal)}
           valueColor="text-green-400"
           subtitle={`${invoices.filter(i => i.status === 'paid').length} invoice(s)`}
         />
