@@ -223,7 +223,7 @@ export default function Products() {
 
   const fmt = (n: number) => `$${n.toFixed(2)}`;
 
-  const ProductForm = ({ onSubmit, submitLabel }: { onSubmit: () => void; submitLabel: string }) => (
+  const renderProductForm = (onSubmit: () => void, submitLabel: string) => (
     <div className="space-y-4">
       <div>
         <Label className="font-mono text-xs">Name *</Label>
