@@ -13,7 +13,40 @@ interface InvoiceItem {
   total: number;
 }
 
-function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string) {
+function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string) {
+  if (!bankInfo) return '';
+  
+  const fields: string[] = [];
+  if (bankInfo.bank_name) fields.push(`<strong>Bank:</strong> ${bankInfo.bank_name}`);
+  if (bankInfo.account_name) fields.push(`<strong>Account Name:</strong> ${bankInfo.account_name}`);
+  if (bankInfo.account_number) fields.push(`<strong>Account / IBAN:</strong> ${bankInfo.account_number}`);
+  if (bankInfo.swift_code) fields.push(`<strong>SWIFT:</strong> ${bankInfo.swift_code}`);
+  if (bankInfo.branch_code) fields.push(`<strong>Branch Code:</strong> ${bankInfo.branch_code}`);
+  if (bankInfo.branch) fields.push(`<strong>Branch:</strong> ${bankInfo.branch}`);
+  if (bankInfo.account_type) fields.push(`<strong>Account Type:</strong> ${bankInfo.account_type}`);
+  if (bankInfo.reference_note) fields.push(`<em style="color:#888;">${bankInfo.reference_note}</em>`);
+
+  if (fields.length === 0) return '';
+
+  const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
+
+  let linksHTML = '';
+  if (paymentLinks?.yoco_payment_link && currency === 'ZAR') {
+    linksHTML += `<a href="${paymentLinks.yoco_payment_link}" style="display:inline-block;padding:10px 24px;background:#00c853;color:#fff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:8px;">Pay with Yoco</a>`;
+  }
+  if (paymentLinks?.wise_payment_link) {
+    linksHTML += `<a href="${paymentLinks.wise_payment_link}" style="display:inline-block;padding:10px 24px;background:#9fe870;color:#000;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;">Pay with Wise</a>`;
+  }
+
+  return `
+    <div style="margin-top:24px;padding:16px;background:#0a0a0a;border-radius:8px;border-left:3px solid #00e5ff;">
+      <p style="margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#00e5ff;font-weight:700;">Direct Deposit — ${regionLabel}</p>
+      ${fields.map(f => `<p style="margin:0 0 4px;font-size:13px;color:#ccc;">${f}</p>`).join('')}
+    </div>
+    ${linksHTML ? `<div style="text-align:center;margin:20px 0 0;">${linksHTML}</div>` : ''}`;
+}
+
+function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, paymentSettings?: any) {
   const itemRows = items
     .map(
       (it) => `
@@ -103,10 +136,12 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
         VIEW &amp; PAY INVOICE
       </a>
     </div>
-    ${client.currency === 'ZAR' ? `
-    <div style="text-align:center;margin:0 0 24px;">
-      <p style="font-size:12px;color:#888;margin:0 0 8px;">South African clients can pay instantly via Yoco</p>
-    </div>` : ''}
+    ${(() => {
+      if (!paymentSettings) return '';
+      const currency = client.currency || 'USD';
+      const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
+      return buildBankingHTML(paymentSettings[bankKey], paymentSettings.payment_links, currency);
+    })()}
   </div>
 
   <!-- Footer -->
@@ -164,6 +199,14 @@ Deno.serve(async (req) => {
     const dashboardBaseUrl = "https://digiiworks.lovable.app/dashboard";
     const results: { invoice_id: string; status: string; error?: string }[] = [];
 
+    // Fetch payment settings once
+    const { data: settingsRow } = await supabase
+      .from("page_content")
+      .select("content")
+      .eq("page_key", "payment_settings")
+      .single();
+    const paymentSettings = settingsRow?.content as any ?? null;
+
     if (mode === "scheduled") {
       // Process all invoices with send_date <= today that haven't been emailed yet
       const today = new Date().toISOString().split("T")[0];
@@ -200,7 +243,7 @@ Deno.serve(async (req) => {
             .select("*")
             .eq("invoice_id", inv.id);
 
-          const html = buildEmailHTML(inv, items || [], client, dashboardBaseUrl);
+          const html = buildEmailHTML(inv, items || [], client, dashboardBaseUrl, paymentSettings);
           await sendEmail(client.email, `Invoice ${inv.invoice_number} from DigiiWorks`, html);
 
           await supabase.from("invoice_emails").insert({
@@ -260,7 +303,7 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("invoice_id", invoice_id);
 
-    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl);
+    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, paymentSettings);
     await sendEmail(client.email, `Invoice ${invoice.invoice_number} from DigiiWorks`, html);
 
     await supabase.from("invoice_emails").insert({
