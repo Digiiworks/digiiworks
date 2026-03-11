@@ -122,6 +122,8 @@ export default function Invoices() {
 
   // Dialog state
   const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [showDetail, setShowDetail] = useState<Invoice | null>(null);
   const [detailItems, setDetailItems] = useState<InvoiceItem[]>([]);
   const [detailEmails, setDetailEmails] = useState<InvoiceEmail[]>([]);
@@ -129,7 +131,7 @@ export default function Invoices() {
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
 
-  // Create form
+  // Create/Edit form
   const [form, setForm] = useState({ client_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
   const [sendDate, setSendDate] = useState<Date | undefined>(getFirstOfNextMonth());
   const [lineItems, setLineItems] = useState<InvoiceItem[]>([
