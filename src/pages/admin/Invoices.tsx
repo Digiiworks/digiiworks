@@ -120,6 +120,7 @@ export default function Invoices() {
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [clientCompanies, setClientCompanies] = useState<ClientCompanyOption[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
