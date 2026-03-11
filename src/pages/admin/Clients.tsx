@@ -307,8 +307,10 @@ export default function Clients() {
     setDeleteId(null);
   };
 
-  const fmt = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  const fmtCurrency = (n: number, currency: string = 'USD') => {
+    const symbol = currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
+    return `${symbol}${n.toFixed(2)}`;
+  };
 
   return (
     <div className="space-y-6">
