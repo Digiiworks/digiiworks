@@ -537,6 +537,11 @@ export default function Invoices() {
                               Pay {fmtCurrency(inv.total, inv.currency)}
                             </Button>
                           )}
+                          {isAdmin && inv.status === 'draft' && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(inv)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewDetail(inv)}>
                             <Eye className="h-4 w-4" />
                           </Button>
