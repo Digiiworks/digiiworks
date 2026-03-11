@@ -6,7 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail } from 'lucide-react';
+import { toast } from 'sonner';
 
 const PAGE_KEY = 'payment_settings';
 
@@ -62,6 +66,12 @@ const SettingsPage = () => {
   const [recordId, setRecordId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Test email state
+  const [testOpen, setTestOpen] = useState(false);
+  const [testCurrency, setTestCurrency] = useState<string>('USD');
+  const [testEmail, setTestEmail] = useState('');
+  const [testSending, setTestSending] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       const { data: row } = await supabase
@@ -73,6 +83,11 @@ const SettingsPage = () => {
         setRecordId(row.id);
         setData({ ...defaultData, ...(row.content as any) });
       }
+
+      // Pre-fill test email from current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) setTestEmail(user.email);
+
       setLoading(false);
     };
     load();
@@ -119,6 +134,26 @@ const SettingsPage = () => {
     return v;
   };
 
+  const sendTestEmail = async () => {
+    if (!testEmail) {
+      toast.error('Please enter an email address');
+      return;
+    }
+    setTestSending(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('send-invoice-email', {
+        body: { mode: 'test', currency: testCurrency, send_to: testEmail },
+      });
+      if (error) throw error;
+      toast.success(`Test email sent to ${result.sent_to} (${testCurrency})`);
+      setTestOpen(false);
+    } catch (err: any) {
+      toast.error('Failed to send test email: ' + (err.message || 'Unknown error'));
+    } finally {
+      setTestSending(false);
+    }
+  };
+
   const Field = ({ label, path, placeholder }: { label: string; path: string[]; placeholder?: string }) => (
     <div className="space-y-1.5">
       <Label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">{label}</Label>
@@ -157,8 +192,55 @@ const SettingsPage = () => {
               <CheckCircle2 className="h-3 w-3" /> Saved
             </Badge>
           )}
+          <Button variant="outline" size="sm" className="gap-1.5 font-mono text-xs" onClick={() => setTestOpen(true)}>
+            <Mail className="h-3.5 w-3.5" /> Send Test Email
+          </Button>
         </div>
       </div>
+
+      {/* Test Email Dialog */}
+      <Dialog open={testOpen} onOpenChange={setTestOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono">Send Test Invoice Email</DialogTitle>
+            <DialogDescription>
+              Sends a mock invoice using real products from your catalogue, priced in the selected currency.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Currency</Label>
+              <Select value={testCurrency} onValueChange={setTestCurrency}>
+                <SelectTrigger className="font-mono text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">🌍 USD — Global</SelectItem>
+                  <SelectItem value="ZAR">🇿🇦 ZAR — South Africa</SelectItem>
+                  <SelectItem value="THB">🇹🇭 THB — Thailand</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Send To</Label>
+              <Input
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder="you@example.com"
+                type="email"
+                className="font-mono text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setTestOpen(false)}>Cancel</Button>
+            <Button onClick={sendTestEmail} disabled={testSending} className="gap-1.5">
+              {testSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+              {testSending ? 'Sending…' : 'Send Test'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Tabs defaultValue="global" className="space-y-4">
         <TabsList className="bg-muted/50">

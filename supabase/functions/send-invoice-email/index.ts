@@ -228,6 +228,60 @@ Deno.serve(async (req) => {
       .single();
     const paymentSettings = settingsRow?.content as any ?? null;
 
+    // Test mode: generate a mock invoice with real products
+    if (mode === "test") {
+      const { currency, send_to } = body;
+      if (!send_to) throw new Error("send_to email required for test mode");
+
+      const testCurrency = currency || 'USD';
+      const priceCol = testCurrency === 'ZAR' ? 'price_zar' : testCurrency === 'THB' ? 'price_thb' : 'price_usd';
+
+      const { data: products } = await supabase
+        .from("products")
+        .select("name, " + priceCol)
+        .eq("active", true)
+        .limit(4);
+
+      const items: InvoiceItem[] = (products || []).map((p: any) => ({
+        description: p.name,
+        quantity: 1,
+        unit_price: Number(p[priceCol]) || 0,
+        total: Number(p[priceCol]) || 0,
+      }));
+
+      if (items.length === 0) {
+        items.push({ description: "Sample Service", quantity: 1, unit_price: 100, total: 100 });
+      }
+
+      const subtotal = items.reduce((s, i) => s + i.total, 0);
+      const taxRate = testCurrency === 'ZAR' ? 15 : testCurrency === 'THB' ? 7 : 0;
+      const total = subtotal + subtotal * (taxRate / 100);
+
+      const mockInvoice = {
+        invoice_number: "TEST-0001",
+        status: "sent",
+        due_date: new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
+        subtotal,
+        tax_rate: taxRate,
+        total,
+        notes: "This is a test invoice email — no payment required.",
+      };
+
+      const mockClient = {
+        display_name: "Test Client",
+        email: send_to,
+        company: "Test Company",
+      };
+
+      const html = buildEmailHTML(mockInvoice, items, mockClient, dashboardBaseUrl, testCurrency, paymentSettings);
+      await sendEmail(send_to, "[TEST] Invoice TEST-0001 from DigiiWorks (" + testCurrency + ")", html);
+
+      return new Response(
+        JSON.stringify({ success: true, sent_to: send_to, currency: testCurrency }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (mode === "scheduled") {
       const today = new Date().toISOString().split("T")[0];
       const { data: invoices, error: invErr } = await supabase
