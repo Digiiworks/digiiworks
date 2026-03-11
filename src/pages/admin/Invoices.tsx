@@ -50,6 +50,7 @@ type Invoice = {
   updated_at: string;
   client_name?: string;
   client_email?: string;
+  currency?: string;
 };
 
 type InvoiceItem = {
