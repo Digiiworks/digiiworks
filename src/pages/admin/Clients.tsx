@@ -505,6 +505,7 @@ export default function Clients() {
                 </SelectContent>
               </Select>
             </div>
+            <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
