@@ -89,9 +89,7 @@ const App = () => (
                   </ProtectedRoute>
                 } />
                 <Route path="/invoice/:id" element={
-                  <ProtectedRoute requiredRoles={['client', 'admin']}>
-                    <Suspense fallback={<PageLoader />}><InvoicePrint /></Suspense>
-                  </ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}><InvoicePrint /></Suspense>
                 } />
 
                 {/* Admin CRM */}
