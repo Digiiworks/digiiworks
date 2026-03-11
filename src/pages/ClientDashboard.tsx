@@ -301,7 +301,7 @@ const ClientDashboard = () => {
 
               {/* Banking Details */}
               {paymentSettings && (selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue') && (() => {
-                const currency = profile?.currency || 'USD';
+                const currency = clientCurrency;
                 const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
                 const bank = paymentSettings[bankKey];
                 const links = paymentSettings.payment_links;
