@@ -190,6 +190,8 @@ export default function Clients() {
           price: productMap.get(d.product_id) ? getPrice(productMap.get(d.product_id)) : 0,
           price_override: d.unit_price_override ?? null,
           active: d.active,
+          billing_cycle: d.billing_cycle ?? 'monthly',
+          start_date: d.start_date ?? null,
         }))
       );
     } else {
