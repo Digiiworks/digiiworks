@@ -76,7 +76,7 @@ export default function Products() {
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
   const [categoryForm, setCategoryForm] = useState({ name: '', color: 'gray', sort_order: 0 });
 
-  const [form, setForm] = useState({ name: '', description: '', category: '', price_usd: 0, active: true });
+  const [form, setForm] = useState({ name: '', description: '', category: '', price_usd: 0, price_zar: 0, price_thb: 0, active: true });
 
   const fetchData = async () => {
     setLoading(true);
@@ -121,13 +121,13 @@ export default function Products() {
   useEffect(() => { setPage(1); }, [search, showActive, categoryFilter]);
 
   const openCreate = () => {
-    setForm({ name: '', description: '', category: '', price_usd: 0, active: true });
+    setForm({ name: '', description: '', category: '', price_usd: 0, price_zar: 0, price_thb: 0, active: true });
     setShowCreate(true);
   };
 
   const openEdit = (p: Product) => {
     setEditProduct(p);
-    setForm({ name: p.name, description: p.description ?? '', category: p.category ?? '', price_usd: p.price_usd, active: p.active });
+    setForm({ name: p.name, description: p.description ?? '', category: p.category ?? '', price_usd: p.price_usd, price_zar: (p as any).price_zar ?? 0, price_thb: (p as any).price_thb ?? 0, active: p.active });
   };
 
   const handleCreate = async () => {
@@ -138,6 +138,8 @@ export default function Products() {
       description: form.description.trim() || null,
       category: form.category.trim() || null,
       price_usd: form.price_usd,
+      price_zar: form.price_zar,
+      price_thb: form.price_thb,
       active: form.active,
     });
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -153,6 +155,8 @@ export default function Products() {
       description: form.description.trim() || null,
       category: form.category.trim() || null,
       price_usd: form.price_usd,
+      price_zar: form.price_zar,
+      price_thb: form.price_thb,
       active: form.active,
     }).eq('id', editProduct.id);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -252,15 +256,23 @@ export default function Products() {
         <Label className="font-mono text-xs">Description</Label>
         <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="bg-background border-border" rows={3} placeholder="Brief description of the product/service" />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         <div>
           <Label className="font-mono text-xs">Price (USD)</Label>
           <Input type="number" min={0} step={0.01} value={form.price_usd} onChange={e => setForm(f => ({ ...f, price_usd: +e.target.value }))} className="bg-background border-border" />
         </div>
-        <div className="flex items-center gap-3 pt-5">
-          <Switch checked={form.active} onCheckedChange={v => setForm(f => ({ ...f, active: v }))} />
-          <Label className="font-mono text-xs">{form.active ? 'Active' : 'Inactive'}</Label>
+        <div>
+          <Label className="font-mono text-xs">Price (ZAR)</Label>
+          <Input type="number" min={0} step={0.01} value={form.price_zar} onChange={e => setForm(f => ({ ...f, price_zar: +e.target.value }))} className="bg-background border-border" />
         </div>
+        <div>
+          <Label className="font-mono text-xs">Price (THB)</Label>
+          <Input type="number" min={0} step={0.01} value={form.price_thb} onChange={e => setForm(f => ({ ...f, price_thb: +e.target.value }))} className="bg-background border-border" />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 pt-2">
+        <Switch checked={form.active} onCheckedChange={v => setForm(f => ({ ...f, active: v }))} />
+        <Label className="font-mono text-xs">{form.active ? 'Active' : 'Inactive'}</Label>
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={() => { setShowCreate(false); setEditProduct(null); }}>Cancel</Button>
@@ -327,7 +339,9 @@ export default function Products() {
                   <TableHead className="font-mono text-xs">Name</TableHead>
                   <TableHead className="font-mono text-xs">Category</TableHead>
                   <TableHead className="font-mono text-xs">Description</TableHead>
-                  <TableHead className="font-mono text-xs text-right">Price</TableHead>
+                  <TableHead className="font-mono text-xs text-right">USD</TableHead>
+                  <TableHead className="font-mono text-xs text-right">ZAR</TableHead>
+                  <TableHead className="font-mono text-xs text-right">THB</TableHead>
                   <TableHead className="font-mono text-xs text-center">Status</TableHead>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
                 </TableRow>
@@ -344,7 +358,9 @@ export default function Products() {
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-xs truncate">{p.description ?? '—'}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">{fmt(p.price_usd)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">${p.price_usd.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">R{((p as any).price_zar ?? 0).toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">฿{((p as any).price_thb ?? 0).toFixed(2)}</TableCell>
                     <TableCell className="text-center">
                       <button onClick={() => toggleActive(p)}>
                         <Badge className={`border-0 cursor-pointer ${p.active ? 'bg-green-500/20 text-green-400' : 'bg-muted text-muted-foreground'}`}>

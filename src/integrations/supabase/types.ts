@@ -353,7 +353,9 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          price_thb: number
           price_usd: number
+          price_zar: number
           updated_at: string
         }
         Insert: {
@@ -363,7 +365,9 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          price_thb?: number
           price_usd?: number
+          price_zar?: number
           updated_at?: string
         }
         Update: {
@@ -373,7 +377,9 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          price_thb?: number
           price_usd?: number
+          price_zar?: number
           updated_at?: string
         }
         Relationships: []
