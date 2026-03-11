@@ -241,21 +241,17 @@ Deno.serve(async (req) => {
         .eq("active", true)
         .limit(4);
 
-      const getPrice = (p: any) => {
-        if (testCurrency === 'ZAR') return Number(p.price_zar) || 0;
-        if (testCurrency === 'THB') return Number(p.price_thb) || 0;
-        return Number(p.price_usd) || 0;
-      };
+      const testLineAmount = 5;
 
       const items: InvoiceItem[] = (products || []).map((p: any) => ({
         description: p.name,
         quantity: 1,
-        unit_price: getPrice(p),
-        total: getPrice(p),
+        unit_price: testLineAmount,
+        total: testLineAmount,
       }));
 
       if (items.length === 0) {
-        items.push({ description: "Sample Service", quantity: 1, unit_price: 100, total: 100 });
+        items.push({ description: "Sample Service", quantity: 1, unit_price: testLineAmount, total: testLineAmount });
       }
 
       const subtotal = items.reduce((s, i) => s + i.total, 0);
