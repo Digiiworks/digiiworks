@@ -138,20 +138,20 @@ const Dashboard = () => {
           <div className="glass-card p-5">
             <h3 className="font-mono text-sm font-semibold mb-4">Lead Status</h3>
             {statusDist.length > 0 ? (
-              <div className="flex items-center gap-6">
-                <ResponsiveContainer width={160} height={160}>
+              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                <ResponsiveContainer width={140} height={140}>
                   <PieChart>
-                    <Pie data={statusDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} strokeWidth={0}>
+                    <Pie data={statusDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} strokeWidth={0}>
                       {statusDist.map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="space-y-2">
+                <div className="flex flex-wrap gap-x-4 gap-y-1.5 sm:flex-col sm:space-y-2 sm:gap-0 justify-center">
                   {statusDist.map((item, i) => (
                     <div key={item.name} className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
+                      <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
                       <span className="font-mono text-xs capitalize text-muted-foreground">{item.name}</span>
                       <span className="font-mono text-xs font-bold text-foreground">{item.value}</span>
                     </div>
