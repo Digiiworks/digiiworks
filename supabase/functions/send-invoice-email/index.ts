@@ -136,10 +136,12 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
         VIEW &amp; PAY INVOICE
       </a>
     </div>
-    ${client.currency === 'ZAR' ? `
-    <div style="text-align:center;margin:0 0 24px;">
-      <p style="font-size:12px;color:#888;margin:0 0 8px;">South African clients can pay instantly via Yoco</p>
-    </div>` : ''}
+    ${(() => {
+      if (!paymentSettings) return '';
+      const currency = client.currency || 'USD';
+      const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
+      return buildBankingHTML(paymentSettings[bankKey], paymentSettings.payment_links, currency);
+    })()}
   </div>
 
   <!-- Footer -->
