@@ -328,6 +328,15 @@ const ClientDashboard = () => {
                 );
               })()}
 
+              {/* Download PDF */}
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button variant="outline" className="font-mono" asChild>
+                  <Link to={`/invoice/${selectedInvoice.id}`} target="_blank">
+                    <Download className="h-4 w-4 mr-1" /> Download PDF
+                  </Link>
+                </Button>
+              </div>
+
               {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue') && (
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Button className="font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90">
