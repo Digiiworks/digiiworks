@@ -48,7 +48,7 @@ export default function ProductCombobox({ products, value, onSelect, placeholder
         />
       </div>
       {open && (
-        <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md">
+        <div className="absolute z-[100] bottom-full mb-1 w-full max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md">
           {filtered.length === 0 ? (
             <div className="px-3 py-2 text-xs text-muted-foreground">No products found</div>
           ) : (
