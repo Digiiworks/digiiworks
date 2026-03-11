@@ -121,13 +121,13 @@ export default function Products() {
   useEffect(() => { setPage(1); }, [search, showActive, categoryFilter]);
 
   const openCreate = () => {
-    setForm({ name: '', description: '', category: '', price_usd: 0, active: true });
+    setForm({ name: '', description: '', category: '', price_usd: 0, price_zar: 0, price_thb: 0, active: true });
     setShowCreate(true);
   };
 
   const openEdit = (p: Product) => {
     setEditProduct(p);
-    setForm({ name: p.name, description: p.description ?? '', category: p.category ?? '', price_usd: p.price_usd, active: p.active });
+    setForm({ name: p.name, description: p.description ?? '', category: p.category ?? '', price_usd: p.price_usd, price_zar: (p as any).price_zar ?? 0, price_thb: (p as any).price_thb ?? 0, active: p.active });
   };
 
   const handleCreate = async () => {
