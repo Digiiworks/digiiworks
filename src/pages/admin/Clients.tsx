@@ -387,6 +387,15 @@ export default function Clients() {
                         {client.invoice_count}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-center">
+                      {(client.recurring_count ?? 0) > 0 ? (
+                        <Badge variant="secondary" className="font-mono text-xs">
+                          {client.recurring_count}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right font-mono text-sm">
                       {(client.outstanding ?? 0) > 0 ? (
                         <span className="text-orange-400 font-medium">{fmt(client.outstanding!)}</span>
