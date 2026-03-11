@@ -235,6 +235,8 @@ export default function Clients() {
     setForm(f => ({ ...f, email: '', display_name: '' }));
   };
 
+  const [originalRecurringIds, setOriginalRecurringIds] = useState<Set<string>>(new Set());
+
   const openEdit = async (client: ClientCompany) => {
     setEditClient(client);
     setForm({
@@ -269,21 +271,22 @@ export default function Clients() {
       const productMap = new Map((products ?? []).map((p: any) => [p.id, p]));
       setBillingCycle(data[0]?.billing_cycle ?? 'monthly');
       setStartDate(data[0]?.start_date ?? null);
-      setRecurringServices(
-        data.map((d: any) => ({
-          id: d.id,
-          product_id: d.product_id,
-          product_name: productMap.get(d.product_id)?.name ?? 'Unknown',
-          quantity: d.quantity,
-          price: productMap.get(d.product_id) ? getPrice(productMap.get(d.product_id)) : 0,
-          price_override: d.unit_price_override ?? null,
-          active: d.active,
-        }))
-      );
+      const mapped = data.map((d: any) => ({
+        id: d.id,
+        product_id: d.product_id,
+        product_name: productMap.get(d.product_id)?.name ?? 'Unknown',
+        quantity: d.quantity,
+        price: productMap.get(d.product_id) ? getPrice(productMap.get(d.product_id)) : 0,
+        price_override: d.unit_price_override ?? null,
+        active: d.active,
+      }));
+      setRecurringServices(mapped);
+      setOriginalRecurringIds(new Set(data.filter((d: any) => d.active).map((d: any) => d.product_id)));
     } else {
       setRecurringServices([]);
       setBillingCycle('monthly');
       setStartDate(null);
+      setOriginalRecurringIds(new Set());
     }
   };
 
@@ -349,6 +352,37 @@ export default function Clients() {
       await saveRecurringServices(editClient.user_id, editClient.id);
       toast({ title: 'Client updated' });
       setEditClient(null);
+
+      // Check if new active services were added that weren't there before
+      const currentActiveProductIds = new Set(
+        recurringServices.filter(s => s.active).map(s => s.product_id)
+      );
+      const hasNewServices = [...currentActiveProductIds].some(id => !originalRecurringIds.has(id));
+
+      if (hasNewServices && currentActiveProductIds.size > 0) {
+        const today = new Date();
+        const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
+        const nextMonthStart = format(startOfMonth(addMonths(today, 1)), 'yyyy-MM-dd');
+        const { data: existingInvoices } = await supabase
+          .from('invoices')
+          .select('id')
+          .eq('client_company_id', editClient.id)
+          .gte('created_at', monthStart)
+          .lt('created_at', nextMonthStart)
+          .limit(1);
+
+        if (!existingInvoices || existingInvoices.length === 0) {
+          setPendingInvoiceData({
+            user_id: editClient.user_id,
+            client_company_id: editClient.id,
+            currency: countryToCurrency(form.country),
+            company_name: form.company || editClient.company_name,
+            services: recurringServices.filter(s => s.active),
+          });
+          setShowInvoicePrompt(true);
+        }
+      }
+
       fetchClients();
     }
     setSaving(false);
