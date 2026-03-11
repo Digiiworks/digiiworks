@@ -39,10 +39,36 @@ Deno.serve(async (req) => {
     }
 
     // Group by client
-    const clientMap = new Map<string, { product_id: string; quantity: number; unit_price_override: number | null }[]>();
+    const clientMap = new Map<string, { product_id: string; quantity: number; unit_price_override: number | null; billing_cycle: string; start_date: string | null }[]>();
     for (const s of services) {
+      // Check if this service should be invoiced this month based on billing_cycle
+      const cycle = s.billing_cycle || 'monthly';
+      const startDate = s.start_date ? new Date(s.start_date) : null;
+
+      let shouldInvoice = false;
+      if (cycle === 'weekly') {
+        shouldInvoice = true; // weekly handled separately or always included
+      } else if (cycle === 'monthly') {
+        shouldInvoice = true;
+      } else if (cycle === 'quarterly') {
+        if (startDate) {
+          const monthsDiff = (year - startDate.getFullYear()) * 12 + (month - startDate.getMonth());
+          shouldInvoice = monthsDiff >= 0 && monthsDiff % 3 === 0;
+        } else {
+          shouldInvoice = month % 3 === 0; // Jan, Apr, Jul, Oct
+        }
+      } else if (cycle === 'yearly') {
+        if (startDate) {
+          shouldInvoice = month === startDate.getMonth();
+        } else {
+          shouldInvoice = month === 0; // January
+        }
+      }
+
+      if (!shouldInvoice) continue;
+
       const list = clientMap.get(s.client_id) ?? [];
-      list.push({ product_id: s.product_id, quantity: s.quantity, unit_price_override: s.unit_price_override });
+      list.push({ product_id: s.product_id, quantity: s.quantity, unit_price_override: s.unit_price_override, billing_cycle: cycle, start_date: s.start_date });
       clientMap.set(s.client_id, list);
     }
 
