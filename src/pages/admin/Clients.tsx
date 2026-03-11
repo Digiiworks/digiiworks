@@ -183,6 +183,9 @@ export default function Clients() {
       };
 
       const productMap = new Map((products ?? []).map((p: any) => [p.id, p]));
+      // Use billing_cycle and start_date from the first item (invoice-level)
+      setBillingCycle(data[0]?.billing_cycle ?? 'monthly');
+      setStartDate(data[0]?.start_date ?? null);
       setRecurringServices(
         data.map((d: any) => ({
           id: d.id,
@@ -192,12 +195,12 @@ export default function Clients() {
           price: productMap.get(d.product_id) ? getPrice(productMap.get(d.product_id)) : 0,
           price_override: d.unit_price_override ?? null,
           active: d.active,
-          billing_cycle: d.billing_cycle ?? 'monthly',
-          start_date: d.start_date ?? null,
         }))
       );
     } else {
       setRecurringServices([]);
+      setBillingCycle('monthly');
+      setStartDate(null);
     }
   };
 
