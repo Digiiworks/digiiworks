@@ -50,6 +50,7 @@ type Invoice = {
   updated_at: string;
   client_name?: string;
   client_email?: string;
+  currency?: string;
 };
 
 type InvoiceItem = {
@@ -72,7 +73,7 @@ type InvoiceEmail = {
   created_at: string;
 };
 
-type Profile = { user_id: string; display_name: string | null; email: string | null; company: string | null };
+type Profile = { user_id: string; display_name: string | null; email: string | null; company: string | null; currency?: string };
 type Product = { id: string; name: string; price_usd: number; description?: string | null; category?: string | null };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -91,6 +92,11 @@ const EMAIL_STATUS_ICON: Record<string, React.ReactNode> = {
 
 const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
+
+const fmtCurrency = (amount: number, currency: string = 'USD') => {
+  const symbol = currency === 'ZAR' ? 'R' : '$';
+  return `${symbol}${amount.toFixed(2)}`;
+};
 
 type SortField = 'invoice_number' | 'total' | 'due_date' | 'created_at' | 'status';
 type SortDir = 'asc' | 'desc';
@@ -134,7 +140,7 @@ export default function Invoices() {
     setLoading(true);
     const [invRes, profRes, prodRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('user_id, display_name, email, company'),
+      supabase.from('profiles').select('user_id, display_name, email, company, currency'),
       supabase.from('products').select('id, name, price_usd, description, category').eq('active', true),
     ]);
     const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
@@ -142,6 +148,7 @@ export default function Invoices() {
       ...inv,
       client_name: profileMap.get(inv.client_id)?.display_name ?? 'Unknown',
       client_email: profileMap.get(inv.client_id)?.email ?? '',
+      currency: profileMap.get(inv.client_id)?.currency ?? 'USD',
     }));
     setInvoices(enriched);
     setProfiles(profRes.data ?? []);
@@ -310,7 +317,7 @@ export default function Invoices() {
   };
 
   const handlePayClick = (inv: Invoice) => {
-    toast({ title: 'Payment', description: `Payment link for ${inv.invoice_number} ($${inv.total.toFixed(2)}) coming soon.` });
+    toast({ title: 'Payment', description: `Payment link for ${inv.invoice_number} (${fmtCurrency(inv.total, inv.currency)}) coming soon.` });
   };
 
   const SortHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
@@ -331,19 +338,19 @@ export default function Invoices() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Outstanding"
-          value={`$${outstandingTotal.toFixed(2)}`}
+          value={fmtCurrency(outstandingTotal)}
           subtitle={`${invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).length} invoice(s)`}
         />
         <StatCard
           label="Paid"
-          value={`$${paidTotal.toFixed(2)}`}
+          value={fmtCurrency(paidTotal)}
           valueColor="text-green-400"
           subtitle={`${invoices.filter(i => i.status === 'paid').length} invoice(s)`}
         />
         {overdueCount > 0 && (
           <StatCard
             label="Overdue"
-            value={`$${invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0).toFixed(2)}`}
+            value={fmtCurrency(invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0))}
             icon={AlertTriangle}
             iconColor="text-orange-400"
             valueColor="text-orange-400"
@@ -431,7 +438,7 @@ export default function Invoices() {
                         )}
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>${inv.total.toFixed(2)}</span>
+                        <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>{fmtCurrency(inv.total, inv.currency)}</span>
                       </TableCell>
                       <TableCell className={`text-sm ${isOverdue ? 'text-orange-400' : 'text-muted-foreground'}`}>
                         {inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—'}
@@ -470,7 +477,7 @@ export default function Invoices() {
                               onClick={() => handlePayClick(inv)}
                             >
                               <CreditCard className="h-3 w-3" />
-                              Pay ${inv.total.toFixed(2)}
+                              Pay {fmtCurrency(inv.total, inv.currency)}
                             </Button>
                           )}
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewDetail(inv)}>
@@ -601,7 +608,7 @@ export default function Invoices() {
                       {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Price</span>}
                       <Input type="number" min={0} step={0.01} value={li.unit_price} onChange={e => updateLineItem(idx, 'unit_price', +e.target.value)} className="h-9 text-xs bg-background border-border" />
                     </div>
-                    <div className="col-span-1 text-right font-mono text-xs text-muted-foreground pt-1">${li.total.toFixed(2)}</div>
+                    <div className="col-span-1 text-right font-mono text-xs text-muted-foreground pt-1">{fmtCurrency(li.total, profiles.find(p => p.user_id === form.client_id)?.currency)}</div>
                     <div className="col-span-1">
                       {lineItems.length > 1 && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}>
@@ -622,9 +629,11 @@ export default function Invoices() {
                 <Input type="number" min={0} step={0.5} value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: +e.target.value }))} className="bg-background border-border" />
               </div>
               <div className="text-right space-y-1 pt-4">
-                <p className="font-mono text-xs text-muted-foreground">Subtotal: ${subtotal.toFixed(2)}</p>
-                <p className="font-mono text-xs text-muted-foreground">Tax: ${taxAmount.toFixed(2)}</p>
-                <p className="font-mono text-sm font-bold text-foreground">Total: ${grandTotal.toFixed(2)}</p>
+                {(() => { const c = profiles.find(p => p.user_id === form.client_id)?.currency; return (<>
+                  <p className="font-mono text-xs text-muted-foreground">Subtotal: {fmtCurrency(subtotal, c)}</p>
+                  <p className="font-mono text-xs text-muted-foreground">Tax: {fmtCurrency(taxAmount, c)}</p>
+                  <p className="font-mono text-sm font-bold text-foreground">Total: {fmtCurrency(grandTotal, c)}</p>
+                </>); })()}
               </div>
             </div>
             <div>
@@ -679,17 +688,17 @@ export default function Invoices() {
                       <TableRow key={i} className="border-border/30">
                         <TableCell className="text-sm">{it.description}</TableCell>
                         <TableCell className="text-right text-sm">{it.quantity}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">${it.unit_price.toFixed(2)}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">${it.total.toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">{fmtCurrency(it.unit_price, showDetail?.currency)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">{fmtCurrency(it.total, showDetail?.currency)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               )}
               <div className="text-right space-y-1 border-t border-border/50 pt-3">
-                <p className="font-mono text-xs text-muted-foreground">Subtotal: ${showDetail.subtotal.toFixed(2)}</p>
-                <p className="font-mono text-xs text-muted-foreground">Tax ({showDetail.tax_rate}%): ${(showDetail.subtotal * showDetail.tax_rate / 100).toFixed(2)}</p>
-                <p className="font-mono text-sm font-bold text-foreground">Total: ${showDetail.total.toFixed(2)}</p>
+                <p className="font-mono text-xs text-muted-foreground">Subtotal: {fmtCurrency(showDetail.subtotal, showDetail.currency)}</p>
+                <p className="font-mono text-xs text-muted-foreground">Tax ({showDetail.tax_rate}%): {fmtCurrency(showDetail.subtotal * showDetail.tax_rate / 100, showDetail.currency)}</p>
+                <p className="font-mono text-sm font-bold text-foreground">Total: {fmtCurrency(showDetail.total, showDetail.currency)}</p>
               </div>
 
               {/* Email Actions */}
@@ -727,7 +736,7 @@ export default function Invoices() {
                   onClick={() => handlePayClick(showDetail)}
                 >
                   <CreditCard className="h-4 w-4" />
-                  Pay Now — ${showDetail.total.toFixed(2)}
+                  Pay Now — {fmtCurrency(showDetail.total, showDetail.currency)}
                 </Button>
               )}
 

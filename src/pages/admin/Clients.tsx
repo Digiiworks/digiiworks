@@ -63,7 +63,7 @@ export default function Clients() {
 
   // Form
   const [form, setForm] = useState({
-    email: '', display_name: '', phone: '', company: '', address: '', notes: '',
+    email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa',
   });
 
   const fetchClients = async () => {
@@ -142,12 +142,13 @@ export default function Clients() {
       company: client.company ?? '',
       address: client.address ?? '',
       notes: client.notes ?? '',
+      country: 'global',
     });
   };
 
   const openCreate = () => {
     setShowCreate(true);
-    setForm({ email: '', display_name: '', phone: '', company: '', address: '', notes: '' });
+    setForm({ email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' });
   };
 
   const handleUpdate = async () => {
@@ -185,6 +186,7 @@ export default function Clients() {
     }
     setSaving(true);
 
+    const currency = form.country === 'south_africa' ? 'ZAR' : 'USD';
     const { data, error } = await supabase.functions.invoke('create-client', {
       body: {
         email: form.email,
@@ -192,6 +194,7 @@ export default function Clients() {
         phone: form.phone,
         company: form.company,
         address: form.address,
+        currency,
       },
     });
 
@@ -406,6 +409,16 @@ export default function Clients() {
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Address</Label>
               <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="bg-background border-border" placeholder="123 Main St, City" />
+            </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5">🌍 Country / Region</Label>
+              <Select value={form.country} onValueChange={(v: 'global' | 'south_africa') => setForm(f => ({ ...f, country: v }))}>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Global (USD)</SelectItem>
+                  <SelectItem value="south_africa">South Africa (ZAR)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

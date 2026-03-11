@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, display_name, phone, company, address } = await req.json();
+    const { email, display_name, phone, company, address, currency } = await req.json();
 
     if (!email) {
       return new Response(JSON.stringify({ error: "Email is required" }), {
@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
         company: company || null,
         address: address || null,
         display_name: display_name || null,
+        currency: currency || "USD",
       })
       .eq("user_id", userId);
 
