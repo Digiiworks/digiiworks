@@ -117,7 +117,7 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
 
   if (paymentLinks?.wise_payment_link) {
     buttonRows.push(
-      '<tr><td style="padding:0;"><a href="' + paymentLinks.wise_payment_link + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#9fe870;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">&#8599;&#xFE0E; Pay with Wise</a></td></tr>'
+      '<tr><td style="padding:0;"><a href="' + paymentLinks.wise_payment_link + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#9fe870;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">Pay with Wise</a></td></tr>'
     );
   }
 
