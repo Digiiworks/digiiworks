@@ -537,6 +537,70 @@ export default function Invoices() {
     }
   };
 
+  // Bulk actions
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginated.length && paginated.every(i => selectedIds.has(i.id))) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginated.map(i => i.id)));
+    }
+  };
+
+  const selectedInvoices = invoices.filter(i => selectedIds.has(i.id));
+
+  const bulkMarkPaid = async () => {
+    const payable = selectedInvoices.filter(i => isPayableStatus(i.status));
+    if (!payable.length) { toast({ title: 'No unpaid invoices selected', variant: 'destructive' }); return; }
+    setBulkLoading('paid');
+    const now = new Date().toISOString();
+    for (const inv of payable) {
+      await supabase.from('invoices').update({ status: 'paid' as const, paid_at: now, payment_method: 'manual' as const }).eq('id', inv.id);
+    }
+    toast({ title: `${payable.length} invoice(s) marked as paid` });
+    setSelectedIds(new Set());
+    setBulkLoading(null);
+    fetchAll();
+  };
+
+  const bulkSendReminder = async () => {
+    const sendable = selectedInvoices.filter(i => !['paid', 'cancelled'].includes(i.status));
+    if (!sendable.length) { toast({ title: 'No sendable invoices selected', variant: 'destructive' }); return; }
+    setBulkLoading('send');
+    let sent = 0;
+    for (const inv of sendable) {
+      try {
+        await supabase.functions.invoke('send-invoice-email', { body: { invoice_id: inv.id, force_resend: true } });
+        sent++;
+      } catch { /* skip failed */ }
+    }
+    toast({ title: `${sent} reminder(s) sent` });
+    setSelectedIds(new Set());
+    setBulkLoading(null);
+    fetchAll();
+  };
+
+  const bulkUpdateStatus = async (newStatus: string) => {
+    if (!selectedIds.size) return;
+    setBulkLoading('status');
+    const extra: Record<string, unknown> = { status: newStatus };
+    if (newStatus === 'paid') extra.paid_at = new Date().toISOString();
+    for (const id of selectedIds) {
+      await supabase.from('invoices').update(extra as any).eq('id', id);
+    }
+    toast({ title: `${selectedIds.size} invoice(s) updated to ${newStatus}` });
+    setSelectedIds(new Set());
+    setBulkLoading(null);
+    fetchAll();
+  };
+
   const SortHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
     <TableHead
       className="font-mono text-xs cursor-pointer select-none hover:text-foreground transition-colors"
