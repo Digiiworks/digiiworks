@@ -161,14 +161,6 @@ const InvoicePrint = () => {
           </table>
         </div>
 
-        {/* Notes */}
-        {invoice.notes && (
-          <div style={{ padding: '24px 32px 0' }}>
-            <div style={{ padding: '14px 18px', background: '#f0f9ff', borderRadius: 8, borderLeft: '3px solid #0891b2' }}>
-              <p style={{ margin: 0, fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{invoice.notes}</p>
-            </div>
-          </div>
-        )}
 
         {/* Banking details */}
         {bank?.bank_name && (
