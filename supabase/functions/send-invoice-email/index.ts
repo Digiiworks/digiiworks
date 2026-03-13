@@ -81,7 +81,7 @@ function resolveRegionalBankInfo(paymentSettings: any, currency: string) {
   return null;
 }
 
-function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, invoiceTotal?: number, paymentMethods?: any, regionLabel?: string) {
+function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, invoiceTotal?: number, paymentMethods?: any, regionLabel?: string, stripeCheckoutUrl?: string) {
   const safeBankInfo = bankInfo && typeof bankInfo === 'object' ? bankInfo : {};
 
   const fields: string[] = [];
