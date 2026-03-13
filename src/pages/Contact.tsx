@@ -82,7 +82,7 @@ const Contact = () => {
         priority: isAI,
       }]);
       if (error) throw error;
-      toast({ title: isAI ? 'Consultation Initialized' : 'Transmission Sent', description: 'We will be in touch soon.' });
+      setSubmitted(true);
       setForm({ name: '', email: '', service_interest: '', message: '' });
       formLoadTime.current = Date.now();
     } catch (err: unknown) {
