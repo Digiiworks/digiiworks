@@ -676,7 +676,7 @@ export default function Invoices() {
               <TableBody>
                 {paginated.map(inv => {
                   const isOverdue = inv.status === 'overdue';
-                  const isUnpaid = ['sent', 'overdue'].includes(inv.status);
+                  const isUnpaid = isPayableStatus(inv.status);
                   return (
                     <TableRow
                       key={inv.id}
