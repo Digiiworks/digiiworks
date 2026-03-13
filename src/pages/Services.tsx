@@ -13,7 +13,7 @@ const getSlugForService = (name: string) => {
 
 const Services = () => {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [activePillar, setActivePillar] = useState(PILLARS[0].id);
+  const [activePillar, setActivePillar] = useState<string>(PILLARS[0].id);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   // Track which section is in view
