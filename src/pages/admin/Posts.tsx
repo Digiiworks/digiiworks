@@ -25,7 +25,7 @@ const Posts = () => {
   const [showEditor, setShowEditor] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: posts, isLoading } = useQuery({
+  const { data: posts, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-posts'],
     queryFn: async () => {
       const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
