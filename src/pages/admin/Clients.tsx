@@ -942,6 +942,27 @@ export default function Clients() {
               </div>
             )}
             <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5"><Upload className="h-3 w-3" /> Company Logo</Label>
+              <div className="flex items-center gap-3 mt-1.5">
+                {logoPreview ? (
+                  <div className="relative">
+                    <img src={logoPreview} alt="" className="h-12 w-12 rounded-lg object-cover border border-border" />
+                    <button type="button" onClick={clearLogo} className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="h-12 w-12 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                )}
+                <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => logoInputRef.current?.click()}>
+                  {logoPreview ? 'Change' : 'Upload'}
+                </Button>
+                <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
+              </div>
+            </div>
+            <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><Building2 className="h-3 w-3" /> Company Name *</Label>
               <Input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} className="bg-background border-border" placeholder="Acme Inc." />
             </div>
