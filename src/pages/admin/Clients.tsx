@@ -57,6 +57,9 @@ type ProfileMatch = {
   companies: string[];
 };
 
+type SortField = 'company' | 'contact' | 'invoices' | 'recurring' | 'outstanding' | 'created';
+type SortDir = 'asc' | 'desc';
+
 const PAGE_SIZE = 10;
 
 export default function Clients() {
