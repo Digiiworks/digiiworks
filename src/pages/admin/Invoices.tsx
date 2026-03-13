@@ -30,7 +30,7 @@ import StatCard from '@/components/admin/StatCard';
 import AdminToolbar from '@/components/admin/AdminToolbar';
 import AdminPagination from '@/components/admin/AdminPagination';
 import PageLoader from '@/components/admin/PageLoader';
-import EmptyState from '@/components/admin/EmptyState';
+import EmptyState, { ErrorState } from '@/components/admin/EmptyState';
 import ProductCombobox from '@/components/admin/ProductCombobox';
 
 type Invoice = {
@@ -126,6 +126,7 @@ export default function Invoices() {
   const [clientCompanies, setClientCompanies] = useState<ClientCompanyOption[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -160,46 +161,51 @@ export default function Invoices() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [invRes, profRes, prodRes, compRes, paySettingsRes] = await Promise.all([
-      supabase.from('invoices').select('*').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('user_id, display_name, email, company, currency'),
-      supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
-      supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
-      supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
-    ]);
-    if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
-    const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
-    const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
+    setFetchError(false);
+    try {
+      const [invRes, profRes, prodRes, compRes, paySettingsRes] = await Promise.all([
+        supabase.from('invoices').select('*').order('created_at', { ascending: false }),
+        supabase.from('profiles').select('user_id, display_name, email, company, currency'),
+        supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
+        supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
+        supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
+      ]);
+      if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
+      const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
+      const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
 
-    // Build client company options with profile info
-    const companyOptions: ClientCompanyOption[] = (compRes.data ?? []).map((c: any) => {
-      const profile = profileMap.get(c.user_id);
-      return {
-        id: c.id,
-        user_id: c.user_id,
-        company_name: c.company_name,
-        currency: c.currency,
-        display_name: profile?.display_name ?? null,
-        email: profile?.email ?? null,
-      };
-    });
+      const companyOptions: ClientCompanyOption[] = (compRes.data ?? []).map((c: any) => {
+        const profile = profileMap.get(c.user_id);
+        return {
+          id: c.id,
+          user_id: c.user_id,
+          company_name: c.company_name,
+          currency: c.currency,
+          display_name: profile?.display_name ?? null,
+          email: profile?.email ?? null,
+        };
+      });
 
-    const enriched = (invRes.data ?? []).map(inv => {
-      const company = inv.client_company_id ? companyMap.get(inv.client_company_id) : null;
-      const profile = profileMap.get(inv.client_id);
-      return {
-        ...inv,
-        client_name: company?.company_name ?? profile?.display_name ?? 'Unknown',
-        client_email: profile?.email ?? '',
-        currency: company?.currency ?? profile?.currency ?? 'USD',
-        company_name: company?.company_name ?? profile?.company ?? '',
-      };
-    });
-    setInvoices(enriched);
-    setProfiles(profRes.data ?? []);
-    setClientCompanies(companyOptions);
-    setProducts(prodRes.data ?? []);
-    setLoading(false);
+      const enriched = (invRes.data ?? []).map(inv => {
+        const company = inv.client_company_id ? companyMap.get(inv.client_company_id) : null;
+        const profile = profileMap.get(inv.client_id);
+        return {
+          ...inv,
+          client_name: company?.company_name ?? profile?.display_name ?? 'Unknown',
+          client_email: profile?.email ?? '',
+          currency: company?.currency ?? profile?.currency ?? 'USD',
+          company_name: company?.company_name ?? profile?.company ?? '',
+        };
+      });
+      setInvoices(enriched);
+      setProfiles(profRes.data ?? []);
+      setClientCompanies(companyOptions);
+      setProducts(prodRes.data ?? []);
+    } catch {
+      setFetchError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -792,6 +798,8 @@ export default function Invoices() {
       {/* Table */}
       {loading ? (
         <PageLoader />
+      ) : fetchError ? (
+        <ErrorState message="Failed to load invoices." onRetry={fetchAll} />
       ) : processed.length === 0 ? (
         <EmptyState message="No invoices found." />
       ) : (

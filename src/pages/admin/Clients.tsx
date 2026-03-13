@@ -23,7 +23,7 @@ import {
 import StatCard from '@/components/admin/StatCard';
 import AdminToolbar from '@/components/admin/AdminToolbar';
 import AdminPagination from '@/components/admin/AdminPagination';
-import EmptyState from '@/components/admin/EmptyState';
+import EmptyState, { ErrorState } from '@/components/admin/EmptyState';
 import PageLoader from '@/components/admin/PageLoader';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import RecurringServicesSelector, { type RecurringService } from '@/components/admin/RecurringServicesSelector';
@@ -69,6 +69,7 @@ export default function Clients() {
 
   const [clients, setClients] = useState<ClientCompany[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>('company');
@@ -111,65 +112,71 @@ export default function Clients() {
 
   const fetchClients = async () => {
     setLoading(true);
+    setFetchError(false);
 
-    // Get all client companies joined with profiles
-    const { data: companies } = await supabase
-      .from('client_companies')
-      .select('*')
-      .eq('active', true)
-      .order('created_at', { ascending: false });
+    try {
+      // Get all client companies joined with profiles
+      const { data: companies } = await supabase
+        .from('client_companies')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
 
-    if (!companies || companies.length === 0) {
-      setClients([]);
+      if (!companies || companies.length === 0) {
+        setClients([]);
+        setLoading(false);
+        return;
+      }
+
+      const userIds = [...new Set(companies.map(c => c.user_id))];
+
+      const [profileRes, invoiceRes, recurringRes] = await Promise.all([
+        supabase.from('profiles').select('user_id, email, display_name, avatar_url').in('user_id', userIds),
+        supabase.from('invoices').select('client_id, client_company_id, status, total'),
+        supabase.from('client_recurring_services').select('client_company_id').eq('active', true),
+      ]);
+
+      const profileMap = new Map((profileRes.data ?? []).map(p => [p.user_id, p]));
+
+      // Invoice stats per company
+      const invoiceMap = new Map<string, { count: number; outstanding: number }>();
+      (invoiceRes.data ?? []).forEach(inv => {
+        const key = inv.client_company_id || inv.client_id;
+        const existing = invoiceMap.get(key) ?? { count: 0, outstanding: 0 };
+        existing.count++;
+        if (['draft', 'sent', 'overdue'].includes(inv.status)) {
+          existing.outstanding += Number(inv.total);
+        }
+        invoiceMap.set(key, existing);
+      });
+
+      // Recurring service counts per company
+      const recurringMap = new Map<string, number>();
+      (recurringRes.data ?? []).forEach((r: any) => {
+        if (r.client_company_id) {
+          recurringMap.set(r.client_company_id, (recurringMap.get(r.client_company_id) ?? 0) + 1);
+        }
+      });
+
+      const enriched: ClientCompany[] = companies.map(c => {
+        const profile = profileMap.get(c.user_id);
+        return {
+          ...c,
+          email: profile?.email ?? null,
+          display_name: profile?.display_name ?? null,
+          avatar_url: profile?.avatar_url ?? null,
+          invoice_count: invoiceMap.get(c.id)?.count ?? invoiceMap.get(c.user_id)?.count ?? 0,
+          outstanding: invoiceMap.get(c.id)?.outstanding ?? invoiceMap.get(c.user_id)?.outstanding ?? 0,
+          recurring_count: recurringMap.get(c.id) ?? 0,
+        };
+      });
+
+      setClients(enriched);
+    } catch {
+      setFetchError(true);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const userIds = [...new Set(companies.map(c => c.user_id))];
-
-    const [profileRes, invoiceRes, recurringRes] = await Promise.all([
-      supabase.from('profiles').select('user_id, email, display_name, avatar_url').in('user_id', userIds),
-      supabase.from('invoices').select('client_id, client_company_id, status, total'),
-      supabase.from('client_recurring_services').select('client_company_id').eq('active', true),
-    ]);
-
-    const profileMap = new Map((profileRes.data ?? []).map(p => [p.user_id, p]));
-
-    // Invoice stats per company
-    const invoiceMap = new Map<string, { count: number; outstanding: number }>();
-    (invoiceRes.data ?? []).forEach(inv => {
-      const key = inv.client_company_id || inv.client_id;
-      const existing = invoiceMap.get(key) ?? { count: 0, outstanding: 0 };
-      existing.count++;
-      if (['draft', 'sent', 'overdue'].includes(inv.status)) {
-        existing.outstanding += Number(inv.total);
-      }
-      invoiceMap.set(key, existing);
-    });
-
-    // Recurring service counts per company
-    const recurringMap = new Map<string, number>();
-    (recurringRes.data ?? []).forEach((r: any) => {
-      if (r.client_company_id) {
-        recurringMap.set(r.client_company_id, (recurringMap.get(r.client_company_id) ?? 0) + 1);
-      }
-    });
-
-    const enriched: ClientCompany[] = companies.map(c => {
-      const profile = profileMap.get(c.user_id);
-      return {
-        ...c,
-        email: profile?.email ?? null,
-        display_name: profile?.display_name ?? null,
-        avatar_url: profile?.avatar_url ?? null,
-        invoice_count: invoiceMap.get(c.id)?.count ?? invoiceMap.get(c.user_id)?.count ?? 0,
-        outstanding: invoiceMap.get(c.id)?.outstanding ?? invoiceMap.get(c.user_id)?.outstanding ?? 0,
-        recurring_count: recurringMap.get(c.id) ?? 0,
-      };
-    });
-
-    setClients(enriched);
-    setLoading(false);
   };
 
   useEffect(() => { fetchClients(); }, []);
@@ -653,6 +660,8 @@ export default function Clients() {
 
       {loading ? (
         <PageLoader />
+      ) : fetchError ? (
+        <ErrorState message="Failed to load clients." onRetry={fetchClients} />
       ) : filtered.length === 0 ? (
         <EmptyState icon={User} message="No clients found." />
       ) : (

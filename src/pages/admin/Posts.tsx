@@ -15,7 +15,7 @@ import RichEditor from '@/components/admin/RichEditor';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import AdminToolbar from '@/components/admin/AdminToolbar';
 import PageLoader from '@/components/admin/PageLoader';
-import EmptyState from '@/components/admin/EmptyState';
+import EmptyState, { ErrorState } from '@/components/admin/EmptyState';
 
 const Posts = () => {
   const { toast } = useToast();
@@ -25,7 +25,7 @@ const Posts = () => {
   const [showEditor, setShowEditor] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: posts, isLoading } = useQuery({
+  const { data: posts, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-posts'],
     queryFn: async () => {
       const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
@@ -116,6 +116,7 @@ const Posts = () => {
       </AdminToolbar>
 
       {isLoading && <PageLoader />}
+      {isError && <ErrorState message="Failed to load posts." onRetry={() => refetch()} />}
 
       <div className="grid gap-4">
         {posts?.map((post: any) => (

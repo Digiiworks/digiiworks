@@ -8,6 +8,7 @@ import { Trash2 } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import AdminToolbar from '@/components/admin/AdminToolbar';
 import PageLoader from '@/components/admin/PageLoader';
+import { ErrorState } from '@/components/admin/EmptyState';
 
 const ROLES = ['admin', 'editor', 'client'] as const;
 
@@ -16,7 +17,7 @@ const UsersAdmin = () => {
   const queryClient = useQueryClient();
   const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null);
 
-  const { data: profiles, isLoading } = useQuery({
+  const { data: profiles, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-profiles'],
     queryFn: async () => {
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -67,6 +68,7 @@ const UsersAdmin = () => {
       <AdminToolbar title="Users & Roles" subtitle="Manage team members and permissions" />
 
       {isLoading && <PageLoader />}
+      {isError && <ErrorState message="Failed to load users." onRetry={() => refetch()} />}
 
       {/* Mobile card view */}
       <div className="space-y-3 md:hidden">
