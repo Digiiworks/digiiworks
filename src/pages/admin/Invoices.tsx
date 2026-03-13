@@ -243,6 +243,10 @@ export default function Invoices() {
 
   useEffect(() => { setPage(1); }, [filterStatus, search, sortField, sortDir]);
 
+  useEffect(() => {
+    if (!isAdmin && filterStatus === 'draft') setFilterStatus('all');
+  }, [isAdmin, filterStatus]);
+
   const outstandingByCurrency = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
     visibleInvoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).forEach(i => {
