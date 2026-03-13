@@ -443,6 +443,14 @@ const ClientDashboard = () => {
                                   <Badge variant={cfg.variant} className="text-xs">
                                     {cfg.label}
                                   </Badge>
+                                  {isUnpaid && (
+                                    <span
+                                      className="text-xs font-medium text-primary hover:underline cursor-pointer"
+                                      onClick={(e) => { e.stopPropagation(); openInvoice(inv); setDialogView('pay'); }}
+                                    >
+                                      Pay Now
+                                    </span>
+                                  )}
                                   <span className={`font-mono text-sm font-bold ${inv.status === 'overdue' ? 'text-destructive' : 'text-foreground'}`}>
                                     {fmtCurrency(Number(inv.total), company.currency)}
                                   </span>
