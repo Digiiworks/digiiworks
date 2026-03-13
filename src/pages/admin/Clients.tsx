@@ -401,6 +401,7 @@ export default function Clients() {
   const handleUpdate = async () => {
     if (!editClient) return;
     setSaving(true);
+    const logoUrl = await uploadLogo(editClient.id);
     const { error } = await supabase
       .from('client_companies')
       .update({
@@ -409,6 +410,7 @@ export default function Clients() {
         currency: countryToCurrency(form.country),
         phone: form.phone || null,
         notes: form.notes || null,
+        logo_url: logoUrl,
       })
       .eq('id', editClient.id);
 
