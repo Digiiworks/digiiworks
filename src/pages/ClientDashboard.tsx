@@ -224,7 +224,7 @@ const ClientDashboard = () => {
       const company = companies.find(c => c.id === inv.client_company_id);
       return company?.currency ?? 'USD';
     }
-    return profile?.currency || 'USD';
+    return 'USD';
   };
 
   // Overall stats
