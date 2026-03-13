@@ -63,14 +63,14 @@ const App = () => (
               <Route element={<Layout />}>
                 <Route path="/" element={<Index />} />
                   <Route path="/services" element={<Services />} />
-                  <Route path="/services/:slug" element={<ServiceDetail />} />
+                  <Route path="/services/:slug" element={<Suspense fallback={<ContentPageSkeleton />}><ServiceDetail /></Suspense>} />
                   <Route path="/ai" element={<AIAutomation />} />
                   <Route path="/get-started" element={<GetStarted />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/blog" element={<Blog />} />
-                  <Route path="/blog/:slug" element={<BlogPost />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/blog/:slug" element={<Suspense fallback={<ContentPageSkeleton />}><BlogPost /></Suspense>} />
+                  <Route path="/privacy" element={<Suspense fallback={<LegalPageSkeleton />}><Privacy /></Suspense>} />
+                  <Route path="/terms" element={<Suspense fallback={<LegalPageSkeleton />}><Terms /></Suspense>} />
                 </Route>
 
                 {/* Auth */}
