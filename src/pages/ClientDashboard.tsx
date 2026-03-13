@@ -417,7 +417,7 @@ const ClientDashboard = () => {
                     ) : (
                       <div className="divide-y divide-border/50">
                         {companyInvoices.map(inv => {
-                          const cfg = statusConfig[inv.status] ?? statusConfig.draft;
+                          const cfg = clientStatusConfig[inv.status] ?? clientStatusConfig.sent;
                           const Icon = cfg.icon;
                           const isUnpaid = ['sent', 'overdue'].includes(inv.status);
 
