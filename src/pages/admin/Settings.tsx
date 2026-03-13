@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PAGE_KEY = 'payment_settings';
