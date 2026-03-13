@@ -15,7 +15,7 @@ import RichEditor from '@/components/admin/RichEditor';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import AdminToolbar from '@/components/admin/AdminToolbar';
 import PageLoader from '@/components/admin/PageLoader';
-import EmptyState from '@/components/admin/EmptyState';
+import EmptyState, { ErrorState } from '@/components/admin/EmptyState';
 
 const Posts = () => {
   const { toast } = useToast();
