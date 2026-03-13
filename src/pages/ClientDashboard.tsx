@@ -51,6 +51,7 @@ interface ClientCompany {
   company_name: string;
   currency: string;
   address: string | null;
+  logo_url: string | null;
 }
 
 const clientStatusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
