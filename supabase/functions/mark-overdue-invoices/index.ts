@@ -17,31 +17,33 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find all 'sent' invoices that have an email sent more than 24 hours ago
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Get today's date as YYYY-MM-DD (UTC)
+    const now = new Date();
+    const todayStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
 
-    // Get emails that were sent more than 24h ago
-    const { data: overdueEmails, error: emailErr } = await supabase
-      .from("invoice_emails")
-      .select("invoice_id")
+    // Find all 'sent' invoices whose due_date has passed (strictly before today)
+    const { data: overdueInvoices, error: fetchErr } = await supabase
+      .from("invoices")
+      .select("id, invoice_number")
       .eq("status", "sent")
-      .lt("sent_at", twentyFourHoursAgo);
+      .not("due_date", "is", null)
+      .lt("due_date", todayStr);
 
-    if (emailErr) {
-      console.error("Error fetching emails:", emailErr);
-      return new Response(JSON.stringify({ error: emailErr.message }), {
+    if (fetchErr) {
+      console.error("Error fetching overdue invoices:", fetchErr);
+      return new Response(JSON.stringify({ error: fetchErr.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (!overdueEmails || overdueEmails.length === 0) {
+    if (!overdueInvoices || overdueInvoices.length === 0) {
       return new Response(JSON.stringify({ updated: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const invoiceIds = [...new Set(overdueEmails.map((e) => e.invoice_id))];
+    const invoiceIds = overdueInvoices.map((i) => i.id);
 
     // Update only invoices that are still 'sent' (not already paid/cancelled/overdue)
     const { data: updated, error: updateErr } = await supabase
