@@ -699,14 +699,14 @@ export default function Invoices() {
                     <span className="text-muted-foreground">Due: {inv.due_date ? format(new Date(inv.due_date), 'MMM d') : '—'}</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/30">
-                    {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
-                      <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs" onClick={() => handleSendEmail(inv.id)} disabled={sendingId === inv.id}>
-                        {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                      </Button>
-                    )}
                     {isUnpaid && (
                       <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs" onClick={() => handlePayClick(inv)}>
-                        <CreditCard className="h-3 w-3" /> Pay
+                        <CreditCard className="h-3 w-3" /> Pay Now
+                      </Button>
+                    )}
+                    {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
+                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSendEmail(inv.id)} disabled={sendingId === inv.id}>
+                        {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                       </Button>
                     )}
                     <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto" onClick={() => viewDetail(inv)}>
@@ -736,9 +736,9 @@ export default function Invoices() {
                   <SortHeader field="invoice_number">Invoice #</SortHeader>
                   <TableHead className="font-mono text-xs">Client</TableHead>
                   <SortHeader field="status">Status</SortHeader>
-                  <SortHeader field="total"><span className="ml-auto">Total</span></SortHeader>
                   <SortHeader field="due_date">Due Date</SortHeader>
                   <TableHead className="font-mono text-xs">Send Date</TableHead>
+                  <SortHeader field="total"><span className="ml-auto">Total</span></SortHeader>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -775,9 +775,6 @@ export default function Invoices() {
                           <Badge className={`${STATUS_COLORS[inv.status]} border-0 capitalize`}>{inv.status}</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm">
-                        <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>{fmtCurrency(inv.total, inv.currency)}</span>
-                      </TableCell>
                       <TableCell className={`text-sm ${isOverdue ? 'text-orange-400' : 'text-muted-foreground'}`}>
                         {inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—'}
                       </TableCell>
@@ -789,20 +786,11 @@ export default function Invoices() {
                           </span>
                         ) : '—'}
                       </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>{fmtCurrency(inv.total, inv.currency)}</span>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 gap-1 font-mono text-xs border-primary/50 text-primary hover:bg-primary/10"
-                              onClick={() => handleSendEmail(inv.id)}
-                              disabled={sendingId === inv.id}
-                            >
-                              {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                              
-                            </Button>
-                          )}
                           {isUnpaid && (
                             <Button
                               variant="outline"
@@ -815,7 +803,18 @@ export default function Invoices() {
                               onClick={() => handlePayClick(inv)}
                             >
                               <CreditCard className="h-3 w-3" />
-                              Pay {fmtCurrency(inv.total, inv.currency)}
+                              Pay Now
+                            </Button>
+                          )}
+                          {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 border-primary/50 text-primary hover:bg-primary/10"
+                              onClick={() => handleSendEmail(inv.id)}
+                              disabled={sendingId === inv.id}
+                            >
+                              {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                             </Button>
                           )}
                           {isAdmin && inv.status === 'draft' && (
