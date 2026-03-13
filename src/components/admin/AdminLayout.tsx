@@ -153,10 +153,38 @@ const AdminLayout = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-3 pb-20 sm:p-4 sm:pb-20 md:p-6 lg:p-8 lg:pb-8">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile bottom tab bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur-xl lg:hidden">
+        <div className="flex items-stretch justify-around">
+          {(isClient ? bottomTabs.filter(t => t.to === '/admin/invoices') : bottomTabs).map((tab) => {
+            const active = pathname === tab.to || (tab.to !== '/admin' && pathname.startsWith(tab.to));
+            return (
+              <Link
+                key={tab.to}
+                to={tab.to}
+                className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 font-mono text-[10px] transition-colors ${
+                  active ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                <tab.icon className={`h-5 w-5 ${active ? 'text-primary' : ''}`} />
+                {tab.label}
+              </Link>
+            );
+          })}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="flex flex-1 flex-col items-center gap-0.5 py-2.5 font-mono text-[10px] text-muted-foreground"
+          >
+            <MoreHorizontal className="h-5 w-5" />
+            More
+          </button>
+        </div>
+      </nav>
     </div>
   );
 };
