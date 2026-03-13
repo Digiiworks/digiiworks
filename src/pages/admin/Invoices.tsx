@@ -775,9 +775,6 @@ export default function Invoices() {
                           <Badge className={`${STATUS_COLORS[inv.status]} border-0 capitalize`}>{inv.status}</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm">
-                        <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>{fmtCurrency(inv.total, inv.currency)}</span>
-                      </TableCell>
                       <TableCell className={`text-sm ${isOverdue ? 'text-orange-400' : 'text-muted-foreground'}`}>
                         {inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—'}
                       </TableCell>
@@ -789,20 +786,11 @@ export default function Invoices() {
                           </span>
                         ) : '—'}
                       </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>{fmtCurrency(inv.total, inv.currency)}</span>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 gap-1 font-mono text-xs border-primary/50 text-primary hover:bg-primary/10"
-                              onClick={() => handleSendEmail(inv.id)}
-                              disabled={sendingId === inv.id}
-                            >
-                              {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                              
-                            </Button>
-                          )}
                           {isUnpaid && (
                             <Button
                               variant="outline"
@@ -815,7 +803,18 @@ export default function Invoices() {
                               onClick={() => handlePayClick(inv)}
                             >
                               <CreditCard className="h-3 w-3" />
-                              Pay {fmtCurrency(inv.total, inv.currency)}
+                              Pay Now
+                            </Button>
+                          )}
+                          {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 border-primary/50 text-primary hover:bg-primary/10"
+                              onClick={() => handleSendEmail(inv.id)}
+                              disabled={sendingId === inv.id}
+                            >
+                              {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                             </Button>
                           )}
                           {isAdmin && inv.status === 'draft' && (
