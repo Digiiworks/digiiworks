@@ -94,7 +94,7 @@ const AdminLayout = () => {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden w-64 flex-shrink-0 border-r border-border/50 bg-card/50 backdrop-blur-xl md:flex md:flex-col">
+      <aside className="hidden w-64 flex-shrink-0 border-r border-border/50 bg-card/50 backdrop-blur-xl lg:flex lg:flex-col">
         <div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
           <Link to="/">
             <img src="/logo.svg" alt="Digiiworks" style={{ width: 120 }} />
@@ -105,7 +105,7 @@ const AdminLayout = () => {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" onClick={() => setMobileOpen(false)}>
+        <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setMobileOpen(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <aside
             className="absolute left-0 top-0 bottom-0 w-64 bg-card border-r border-border/50 flex flex-col animate-in slide-in-from-left duration-200"
@@ -127,7 +127,7 @@ const AdminLayout = () => {
       {/* Main content */}
       <div className="flex flex-1 flex-col">
         {/* Mobile header - matches frontend navbar */}
-        <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl md:hidden">
+        <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl lg:hidden">
           <div className="flex items-center justify-between px-6 py-4">
             <Link to="/">
               <img src="/logo.svg" alt="Digiiworks" style={{ width: 175 }} />

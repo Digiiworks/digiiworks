@@ -658,7 +658,7 @@ export default function Invoices() {
       ) : (
         <>
           {/* Mobile card view */}
-          <div className="space-y-3 md:hidden">
+          <div className="space-y-3 lg:hidden">
             {paginated.map(inv => {
               const isOverdue = inv.status === 'overdue';
               const isUnpaid = isPayableStatus(inv.status);
@@ -709,7 +709,7 @@ export default function Invoices() {
           </div>
 
           {/* Desktop table view */}
-          <div className="rounded-lg border border-border bg-card/50 overflow-x-auto hidden md:block">
+          <div className="rounded-lg border border-border bg-card/50 overflow-x-auto hidden lg:block">
             <Table>
               <TableHeader>
                 <TableRow className="border-border/50">
