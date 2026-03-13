@@ -509,6 +509,13 @@ export default function Clients() {
     } else if (data?.error) {
       toast({ title: 'Error creating client', description: data.error, variant: 'destructive' });
     } else {
+      // Upload logo if provided
+      if (data?.client_company_id && logoFile) {
+        const logoUrl = await uploadLogo(data.client_company_id);
+        if (logoUrl) {
+          await supabase.from('client_companies').update({ logo_url: logoUrl }).eq('id', data.client_company_id);
+        }
+      }
       // Save recurring services
       const activeServices = recurringServices.filter(s => s.active);
       if (data?.user_id && data?.client_company_id && recurringServices.length > 0) {
