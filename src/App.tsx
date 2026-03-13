@@ -18,6 +18,7 @@ import Contact from "./pages/Contact";
 import GetStarted from "./pages/GetStarted";
 import Blog from "./pages/Blog";
 import AIAutomation from "./pages/AIAutomation";
+import NotFound from "./pages/NotFound";
 
 // Eager imports for admin pages — fast admin navigation
 import Dashboard from "./pages/admin/Dashboard";
@@ -33,7 +34,7 @@ import SettingsAdmin from "./pages/admin/Settings";
 // Lazy imports for low-traffic / detail pages
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+
 const Auth = lazy(() => import("./pages/Auth"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -127,7 +128,7 @@ const App = () => (
                 </Route>
 
                 <Route path="*" element={<Layout />}>
-                  <Route path="*" element={<Suspense fallback={<ContentPageSkeleton />}><NotFound /></Suspense>} />
+                  <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
           </AuthProvider>
