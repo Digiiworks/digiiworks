@@ -199,8 +199,9 @@ const AdminDashboardContent = () => {
 };
 
 const Dashboard = () => {
-  const { isClient } = useAuth();
-  if (isClient) return <ClientDashboard />;
+  const { isClient, isAdmin, isEditor } = useAuth();
+  // Admins/editors always see admin dashboard, even if they also have 'client' role
+  if (isClient && !isAdmin && !isEditor) return <ClientDashboard />;
   return <AdminDashboardContent />;
 };
 
