@@ -147,6 +147,10 @@ export default function Invoices() {
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [payingMethod, setPayingMethod] = useState<string | null>(null);
 
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState<string | null>(null);
+
   // Create/Edit form
   const [form, setForm] = useState({ client_id: '', client_company_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
   const [sendDate, setSendDate] = useState<Date | undefined>(get25thOfCurrentMonth());
