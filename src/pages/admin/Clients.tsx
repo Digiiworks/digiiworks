@@ -697,13 +697,13 @@ export default function Clients() {
                   <TableHead className="font-mono text-xs text-center cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('invoices')}>
                     <span className="inline-flex items-center gap-1">Invoices <ArrowUpDown className={`h-3 w-3 ${sortField === 'invoices' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
                   </TableHead>
-                  <TableHead className="font-mono text-xs text-center cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('recurring')}>
+                  <TableHead className="font-mono text-xs text-center cursor-pointer select-none hover:text-foreground transition-colors hidden lg:table-cell" onClick={() => toggleSort('recurring')}>
                     <span className="inline-flex items-center gap-1">Recurring <ArrowUpDown className={`h-3 w-3 ${sortField === 'recurring' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
                   </TableHead>
                   <TableHead className="font-mono text-xs text-right cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('outstanding')}>
                     <span className="inline-flex items-center gap-1 justify-end">Outstanding <ArrowUpDown className={`h-3 w-3 ${sortField === 'outstanding' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
                   </TableHead>
-                  <TableHead className="font-mono text-xs cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('created')}>
+                  <TableHead className="font-mono text-xs cursor-pointer select-none hover:text-foreground transition-colors hidden lg:table-cell" onClick={() => toggleSort('created')}>
                     <span className="inline-flex items-center gap-1">Created <ArrowUpDown className={`h-3 w-3 ${sortField === 'created' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
                   </TableHead>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
@@ -741,7 +741,7 @@ export default function Clients() {
                         {client.invoice_count}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hidden lg:table-cell">
                       {(client.recurring_count ?? 0) > 0 ? (
                         <Badge variant="secondary" className="font-mono text-xs">
                           {client.recurring_count}
@@ -757,7 +757,7 @@ export default function Clients() {
                         <span className="text-muted-foreground">{fmtCurrency(0, client.currency)}</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">
                       {format(new Date(client.created_at), 'MMM d, yyyy')}
                     </TableCell>
                     <TableCell className="text-right">
