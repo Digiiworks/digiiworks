@@ -245,14 +245,14 @@ export default function Invoices() {
 
   const outstandingByCurrency = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
-    invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).forEach(i => {
+    visibleInvoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).forEach(i => {
       const c = i.currency ?? 'USD';
       if (!map[c]) map[c] = { total: 0, count: 0 };
       map[c].total += i.total;
       map[c].count++;
     });
     return map;
-  }, [invoices]);
+  }, [visibleInvoices]);
 
   const paidByCurrency = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
