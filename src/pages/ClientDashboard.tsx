@@ -674,6 +674,7 @@ const ClientDashboard = () => {
           </DialogContent>
         </Dialog>
       </div>
+  );
 };
 
 export default ClientDashboard;
