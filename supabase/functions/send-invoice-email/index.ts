@@ -14,56 +14,139 @@ interface InvoiceItem {
   total: number;
 }
 
-function currencySymbol(currency: string) {
-  return currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
+function normalizeCurrency(currency?: string) {
+  return (currency || 'USD').toString().trim().toUpperCase();
 }
 
-function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, invoiceTotal?: number, paymentMethods?: any) {
-  if (!bankInfo) return '';
+function currencySymbol(currency: string) {
+  const code = normalizeCurrency(currency);
+  return code === 'ZAR' ? 'R' : code === 'THB' ? '฿' : '$';
+}
 
-  const fields: string[] = [];
-  if (bankInfo.bank_name) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;width:130px;">Bank</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.bank_name + '</td></tr>');
-  if (bankInfo.account_name) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Account Name</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.account_name + '</td></tr>');
-  if (bankInfo.account_number) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Account / IBAN</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.account_number + '</td></tr>');
-  if (bankInfo.swift_code) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">SWIFT</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.swift_code + '</td></tr>');
-  if (bankInfo.routing_number) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Routing Number</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.routing_number + '</td></tr>');
-  if (bankInfo.branch_code) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Branch Code</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.branch_code + '</td></tr>');
-  if (bankInfo.branch) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Branch</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.branch + '</td></tr>');
-  if (bankInfo.account_type) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Type</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.account_type + '</td></tr>');
+function hasAnyBankField(bankInfo: any) {
+  if (!bankInfo || typeof bankInfo !== 'object') return false;
 
-  if (fields.length === 0) return '';
+  return Boolean(
+    bankInfo.bank_name ||
+      bankInfo.account_name ||
+      bankInfo.account_number ||
+      bankInfo.swift_code ||
+      bankInfo.routing_number ||
+      bankInfo.branch_code ||
+      bankInfo.branch ||
+      bankInfo.account_type ||
+      bankInfo.reference_note ||
+      bankInfo.currency
+  );
+}
 
-  const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
+function firstRegionObject(settings: any, keys: string[]) {
+  for (const key of keys) {
+    if (settings?.[key] && typeof settings[key] === 'object') return settings[key];
+  }
+  return null;
+}
 
-  let linksHTML = '';
+function resolveRegionalBankInfo(paymentSettings: any, currency: string) {
+  const code = normalizeCurrency(currency);
 
-  // Stripe button (if enabled) — links to client dashboard where checkout session is created
-  const stripeEnabled = paymentMethods?.stripe_enabled === true || paymentMethods?.stripe_enabled === 'true';
-  if (stripeEnabled) {
-    linksHTML += '<a href="https://digiiworks.lovable.app/client" style="display:inline-block;padding:11px 28px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:10px;letter-spacing:0.5px;">💳 Pay with Stripe</a>';
+  const regionMap = code === 'ZAR'
+    ? { label: 'South Africa', keys: ['south_africa', 'southAfrica', 'south-africa', 'za'] }
+    : code === 'THB'
+      ? { label: 'Thailand', keys: ['thai', 'thailand', 'th'] }
+      : { label: 'International', keys: ['global', 'international', 'usd'] };
+
+  const regional = firstRegionObject(paymentSettings, regionMap.keys);
+  if (regional && hasAnyBankField(regional)) {
+    return { bankInfo: regional, regionLabel: regionMap.label };
   }
 
-  // Yoco button (if enabled and ZAR)
+  const fallbackOrder = [
+    { label: 'International', keys: ['global', 'international', 'usd'] },
+    { label: 'Thailand', keys: ['thai', 'thailand', 'th'] },
+    { label: 'South Africa', keys: ['south_africa', 'southAfrica', 'south-africa', 'za'] },
+  ];
+
+  for (const region of fallbackOrder) {
+    const info = firstRegionObject(paymentSettings, region.keys);
+    if (info && hasAnyBankField(info)) {
+      return { bankInfo: info, regionLabel: region.label };
+    }
+  }
+
+  if (regional) {
+    return { bankInfo: regional, regionLabel: regionMap.label };
+  }
+
+  return null;
+}
+
+function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, invoiceTotal?: number, paymentMethods?: any, regionLabel?: string) {
+  const safeBankInfo = bankInfo && typeof bankInfo === 'object' ? bankInfo : {};
+
+  const fields: string[] = [];
+  if (safeBankInfo.bank_name) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;width:130px;">Bank</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.bank_name + '</td></tr>');
+  if (safeBankInfo.account_name) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Account Name</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.account_name + '</td></tr>');
+  if (safeBankInfo.account_number) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Account / IBAN</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.account_number + '</td></tr>');
+  if (safeBankInfo.swift_code) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">SWIFT</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.swift_code + '</td></tr>');
+  if (safeBankInfo.routing_number) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Routing Number</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.routing_number + '</td></tr>');
+  if (safeBankInfo.branch_code) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Branch Code</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.branch_code + '</td></tr>');
+  if (safeBankInfo.branch) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Branch</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.branch + '</td></tr>');
+  if (safeBankInfo.account_type) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Type</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.account_type + '</td></tr>');
+  if (safeBankInfo.currency) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Currency</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.currency + '</td></tr>');
+
+  const resolvedRegionLabel = regionLabel || (currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International');
+
+  const buttonRows: string[] = [];
+
+  const stripeEnabled = paymentMethods?.stripe_enabled === true || paymentMethods?.stripe_enabled === 'true';
+  if (stripeEnabled) {
+    buttonRows.push(
+      '<tr><td style="padding:0 0 10px;"><a href="https://digiiworks.lovable.app/client" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;">💳 Pay with Stripe</a></td></tr>'
+    );
+  }
+
   const yocoEnabled = paymentMethods?.yoco_enabled === true || paymentMethods?.yoco_enabled === 'true' || paymentMethods?.yoco_enabled === undefined;
-  if (yocoEnabled && paymentLinks?.yoco_payment_link && currency === 'ZAR') {
+  const normalizedCurrency = normalizeCurrency(currency);
+  if (yocoEnabled && paymentLinks?.yoco_payment_link && normalizedCurrency === 'ZAR') {
     const yocoUrl = paymentLinks.yoco_payment_link + (paymentLinks.yoco_payment_link.includes('?') ? '&' : '?') + 'amount=' + Number(invoiceTotal || 0).toFixed(2);
-    linksHTML += '<a href="' + yocoUrl + '" style="display:inline-block;padding:11px 28px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:10px;letter-spacing:0.5px;">Pay with Yoco</a>';
+    buttonRows.push(
+      '<tr><td style="padding:0 0 10px;"><a href="' + yocoUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;">Pay with Yoco</a></td></tr>'
+    );
   }
 
   if (paymentLinks?.wise_payment_link) {
-    linksHTML += '<a href="' + paymentLinks.wise_payment_link + '" style="display:inline-block;padding:11px 28px;background:#9fe870;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;letter-spacing:0.5px;">Pay with Wise</a>';
+    buttonRows.push(
+      '<tr><td style="padding:0;"><a href="' + paymentLinks.wise_payment_link + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#9fe870;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;">Pay with Wise</a></td></tr>'
+    );
   }
 
-  const refNote = bankInfo.reference_note
-    ? '<p style="margin:12px 0 0;font-size:12px;color:#6b7280;font-style:italic;">' + bankInfo.reference_note + '</p>'
+  if (fields.length === 0 && buttonRows.length > 0) {
+    fields.push('<tr><td colspan="2" style="padding:4px 0 2px;color:#6b7280;font-size:12px;">Local bank details are still being configured. You can use the online payment options below.</td></tr>');
+  }
+
+  if (fields.length === 0 && buttonRows.length === 0) return '';
+
+  const refNote = safeBankInfo.reference_note
+    ? '<p style="margin:12px 0 0;font-size:12px;color:#6b7280;font-style:italic;">' + safeBankInfo.reference_note + '</p>'
     : '';
 
-  return '<div style="margin-top:28px;padding:20px 24px;background:#f0fdfa;border-radius:10px;border:1px solid #ccfbf1;">' +
-    '<p style="margin:0 0 12px;font-size:11px;text-transform:uppercase;letter-spacing:2.5px;color:#0d9488;font-weight:700;">Direct Deposit — ' + regionLabel + '</p>' +
+  const directDepositCard = '<div style="margin-top:28px;padding:20px 24px;background:#f0fdfa;border-radius:10px;border:1px solid #ccfbf1;">' +
+    '<p style="margin:0 0 12px;font-size:11px;text-transform:uppercase;letter-spacing:2.5px;color:#0d9488;font-weight:700;">Direct Deposit — ' + resolvedRegionLabel + '</p>' +
     '<table style="width:100%;border-collapse:collapse;">' + fields.join('') + '</table>' +
     refNote +
-    '</div>' +
-    (linksHTML ? '<div style="text-align:center;margin:24px 0 0;">' + linksHTML + '<p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">Don\'t have a Wise account? <a href="https://wise.com/invite/dic/justind507" style="color:#0d9488;text-decoration:underline;">Sign up today</a> for fee-free transfers.</p></div>' : '');
+    '</div>';
+
+  const linksHTML = buttonRows.length > 0
+    ? '<div style="text-align:center;margin:20px 0 0;">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:360px;margin:0 auto;border-collapse:collapse;">' + buttonRows.join('') + '</table>' +
+      (paymentLinks?.wise_payment_link
+        ? '<p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">Don\'t have a Wise account? <a href="https://wise.com/invite/dic/justind507" style="color:#0d9488;text-decoration:underline;">Sign up today</a> for fee-free transfers.</p>'
+        : '') +
+      '</div>'
+    : '';
+
+  return directDepositCard + linksHTML;
 }
 
 async function hmacSign(invoiceId: string, secret: string): Promise<string> {
@@ -82,7 +165,8 @@ async function hmacSign(invoiceId: string, secret: string): Promise<string> {
 }
 
 function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, currency: string, pdfToken: string, paymentSettings?: any) {
-  const sym = currencySymbol(currency);
+  const normalizedCurrency = normalizeCurrency(currency);
+  const sym = currencySymbol(normalizedCurrency);
 
   const itemRows = items.map(function (it) {
     return '<tr>' +
@@ -115,8 +199,15 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
 
   let bankingBlock = '';
   if (paymentSettings) {
-    const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
-    bankingBlock = buildBankingHTML(paymentSettings[bankKey], paymentSettings.payment_links, currency, invoice.total, paymentSettings.payment_methods);
+    const resolved = resolveRegionalBankInfo(paymentSettings, normalizedCurrency);
+    bankingBlock = buildBankingHTML(
+      resolved?.bankInfo,
+      paymentSettings.payment_links,
+      normalizedCurrency,
+      invoice.total,
+      paymentSettings.payment_methods,
+      resolved?.regionLabel,
+    );
   }
 
   return '<!DOCTYPE html>' +
