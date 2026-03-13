@@ -69,6 +69,7 @@ export default function Clients() {
 
   const [clients, setClients] = useState<ClientCompany[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>('company');
