@@ -582,8 +582,8 @@ const ClientDashboard = () => {
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Status:</span>{' '}
-                      <Badge variant={statusConfig[selectedInvoice.status]?.variant ?? 'outline'}>
-                        {statusConfig[selectedInvoice.status]?.label ?? selectedInvoice.status}
+                      <Badge variant={clientStatusConfig[selectedInvoice.status]?.variant ?? 'outline'}>
+                        {clientStatusConfig[selectedInvoice.status]?.label ?? selectedInvoice.status}
                       </Badge>
                     </div>
                     <div>
