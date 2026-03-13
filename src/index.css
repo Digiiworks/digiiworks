@@ -62,6 +62,11 @@
     @apply border-border;
   }
 
+  /* Consistent focus rings across the app */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background rounded-sm;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;

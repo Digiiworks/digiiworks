@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Post } from '@/lib/types';
 import { format } from 'date-fns';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Clock } from 'lucide-react';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SERVICE_PAGES } from '@/lib/service-pages';
@@ -29,21 +29,17 @@ const getServiceForPost = (tags?: string[] | null) => {
   return SERVICE_PAGES.find(s => s.slug === slug) ?? SERVICE_PAGES[0];
 };
 
-/* Get a second, different service for the inline CTA */
 const getSecondaryService = (tags?: string[] | null) => {
   const primarySlug = TAG_SERVICE_MAP[tags?.[0] ?? ''];
-  // Try second tag first, then pick a different service from the primary
   if (tags && tags[1] && TAG_SERVICE_MAP[tags[1]]) {
     const s = SERVICE_PAGES.find(s => s.slug === TAG_SERVICE_MAP[tags[1]]);
     if (s && s.slug !== primarySlug) return s;
   }
-  // Fallback: pick a service from a different pillar
   const primary = SERVICE_PAGES.find(s => s.slug === primarySlug);
   const alt = SERVICE_PAGES.find(s => s.pillarId !== primary?.pillarId);
   return alt ?? SERVICE_PAGES[SERVICE_PAGES.length - 1];
 };
 
-/* Inject an inline service banner roughly in the middle of the HTML content */
 const injectInlineServiceLink = (html: string, tags?: string[] | null): string => {
   if (!html) return html;
   const service = getSecondaryService(tags);
@@ -56,12 +52,19 @@ const injectInlineServiceLink = (html: string, tags?: string[] | null): string =
       <p style="margin:0.5rem 0 0;font-size:0.85rem;color:hsl(var(--muted-foreground));line-height:1.5;">${service.subtitle}</p>
     </div>
   `;
-  // Insert after roughly the middle paragraph
   const paragraphs = html.split('</p>');
   if (paragraphs.length < 3) return html + banner;
   const midIdx = Math.floor(paragraphs.length / 2);
   paragraphs.splice(midIdx, 0, banner);
   return paragraphs.join('</p>');
+};
+
+/** Estimate read time from HTML content */
+const getReadTime = (html?: string | null): number => {
+  if (!html) return 1;
+  const text = html.replace(/<[^>]*>/g, '');
+  const words = text.trim().split(/\s+/).length;
+  return Math.max(1, Math.round(words / 200));
 };
 
 const ArticleJsonLd = ({ post }: { post: Post }) => (
@@ -97,6 +100,31 @@ const PostSkeleton = () => (
   </div>
 );
 
+/** Scroll progress bar */
+const ScrollProgress = () => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = document.documentElement;
+      const scrollTop = el.scrollTop;
+      const scrollHeight = el.scrollHeight - el.clientHeight;
+      setProgress(scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[60] h-0.5 bg-transparent">
+      <div
+        className="h-full bg-primary transition-[width] duration-100 ease-out"
+        style={{ width: `${progress}%`, boxShadow: '0 0 8px hsl(184 100% 50% / 0.5)' }}
+      />
+    </div>
+  );
+};
+
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
 
@@ -113,6 +141,7 @@ const BlogPost = () => {
     },
     enabled: !!slug,
   });
+
   // Update social meta tags when post loads
   useEffect(() => {
     if (!post) return;
@@ -126,8 +155,11 @@ const BlogPost = () => {
     });
   }, [post]);
 
+  const readTime = getReadTime(post?.content);
+
   return (
     <div className="relative min-h-screen">
+      {post && <ScrollProgress />}
       {post && <ArticleJsonLd post={post} />}
       <div className="absolute inset-0 grid-overlay opacity-10" />
       <div className="relative mx-auto max-w-3xl px-6 py-16 md:py-20">
@@ -139,8 +171,9 @@ const BlogPost = () => {
         <Link
           to="/blog"
           className="mb-10 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+          aria-label="Back to blog listing"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Back to Blog
         </Link>
 
@@ -162,13 +195,19 @@ const BlogPost = () => {
               <img
                 src={post.featured_image}
                 alt={post.title}
+                loading="lazy"
+                decoding="async"
                 className="mb-8 w-full rounded-lg object-cover max-h-80"
               />
             )}
 
-            <div className="mb-6 flex items-center gap-3">
+            <div className="mb-6 flex items-center gap-3 flex-wrap">
               <span className="font-mono text-xs text-neon-blue">
                 {format(new Date(post.created_at), 'yyyy.MM.dd')}
+              </span>
+              <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" aria-hidden="true" />
+                {readTime} min read
               </span>
               <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
                 /{post.slug}
@@ -217,7 +256,7 @@ const BlogPost = () => {
                   </p>
                   <span className="inline-flex items-center gap-2 font-mono text-xs text-primary">
                     Learn more about this service
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                   </span>
                 </Link>
               );
