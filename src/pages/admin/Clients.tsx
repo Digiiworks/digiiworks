@@ -27,6 +27,7 @@ import EmptyState from '@/components/admin/EmptyState';
 import PageLoader from '@/components/admin/PageLoader';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import RecurringServicesSelector, { type RecurringService } from '@/components/admin/RecurringServicesSelector';
+import ImageCropper from '@/components/admin/ImageCropper';
 
 type ClientCompany = {
   id: string;
@@ -87,6 +88,8 @@ export default function Clients() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [startDate, setStartDate] = useState<string | null>(null);
@@ -282,8 +285,26 @@ export default function Clients() {
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const src = URL.createObjectURL(file);
+    setCropperSrc(src);
+    setShowCropper(true);
+    // Reset file input so the same file can be re-selected
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    const file = new File([croppedBlob], 'logo.png', { type: 'image/png' });
     setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+    setLogoPreview(URL.createObjectURL(croppedBlob));
+    setShowCropper(false);
+    if (cropperSrc) URL.revokeObjectURL(cropperSrc);
+    setCropperSrc(null);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    if (cropperSrc) URL.revokeObjectURL(cropperSrc);
+    setCropperSrc(null);
   };
 
   const clearLogo = () => {
@@ -1085,6 +1106,17 @@ export default function Clients() {
           }
         }}
       />
+
+      {/* Image Cropper Modal */}
+      {cropperSrc && (
+        <ImageCropper
+          open={showCropper}
+          imageSrc={cropperSrc}
+          onClose={handleCropCancel}
+          onCropComplete={handleCropComplete}
+          title="Crop Company Logo"
+        />
+      )}
     </div>
   );
 }
