@@ -622,7 +622,7 @@ export default function Clients() {
             placeholder="Search clients..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-52 pl-9 bg-card border-border h-9 text-sm"
+            className="w-full sm:w-52 pl-9 bg-card border-border h-9 text-sm"
           />
         </div>
         <Button onClick={openCreate} className="gap-1.5 h-9">
