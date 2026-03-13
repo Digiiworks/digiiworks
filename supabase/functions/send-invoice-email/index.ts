@@ -189,9 +189,7 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
     ? '<p style="margin:4px 0 0;font-size:14px;color:#6b7280;">' + client.company + '</p>'
     : '';
 
-  const notesBlock = invoice.notes
-    ? '<tr><td style="padding:24px 32px 0;"><div style="padding:14px 18px;background:#f0f9ff;border-radius:8px;border-left:3px solid #0891b2;"><p style="margin:0;font-size:13px;color:#374151;line-height:1.5;">' + invoice.notes + '</p></div></td></tr>'
-    : '';
+  const notesBlock = '';
 
   const taxRow = Number(invoice.tax_rate) > 0
     ? '<tr><td style="padding:5px 0;font-size:13px;color:#6b7280;">Tax (' + invoice.tax_rate + '%)</td><td style="padding:5px 0;font-size:13px;color:#374151;text-align:right;font-family:Courier New,monospace;">' + sym + taxAmount.toFixed(2) + '</td></tr>'
