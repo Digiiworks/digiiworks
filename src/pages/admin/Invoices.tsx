@@ -775,10 +775,10 @@ export default function Invoices() {
                           <Badge className={`${STATUS_COLORS[inv.status]} border-0 capitalize`}>{inv.status}</Badge>
                         )}
                       </TableCell>
-                      <TableCell className={`text-sm ${isOverdue ? 'text-orange-400' : 'text-muted-foreground'}`}>
+                      <TableCell className={`text-xs ${isOverdue ? 'text-orange-400' : 'text-muted-foreground'}`}>
                         {inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—'}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-xs text-muted-foreground">
                         {inv.send_date ? format(new Date(inv.send_date), 'MMM d') : '—'}
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
