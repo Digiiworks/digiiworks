@@ -77,9 +77,19 @@ const Blog = () => {
 
   const filteredPosts = useMemo(() => {
     if (!posts) return [];
-    if (!activeCategory) return posts;
-    return posts.filter(p => (p.tags || []).includes(activeCategory));
-  }, [posts, activeCategory]);
+    let result = posts;
+    if (activeCategory) {
+      result = result.filter(p => (p.tags || []).includes(activeCategory));
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        (p.excerpt || '').toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [posts, activeCategory, searchQuery]);
 
   const visiblePosts = useMemo(
     () => filteredPosts.slice(0, visibleCount),
