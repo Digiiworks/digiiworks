@@ -69,6 +69,8 @@ export default function Clients() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField>('company');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   // Dialog state
   const [editClient, setEditClient] = useState<ClientCompany | null>(null);
