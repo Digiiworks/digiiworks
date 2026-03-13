@@ -85,20 +85,19 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
   const safeBankInfo = bankInfo && typeof bankInfo === 'object' ? bankInfo : {};
 
   const fields: string[] = [];
-  if (bankInfo.bank_name) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;width:130px;">Bank</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.bank_name + '</td></tr>');
-  if (bankInfo.account_name) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Account Name</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.account_name + '</td></tr>');
-  if (bankInfo.account_number) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Account / IBAN</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.account_number + '</td></tr>');
-  if (bankInfo.swift_code) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">SWIFT</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.swift_code + '</td></tr>');
-  if (bankInfo.routing_number) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Routing Number</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.routing_number + '</td></tr>');
-  if (bankInfo.branch_code) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Branch Code</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.branch_code + '</td></tr>');
-  if (bankInfo.branch) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Branch</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.branch + '</td></tr>');
-  if (bankInfo.account_type) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Type</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.account_type + '</td></tr>');
+  if (safeBankInfo.bank_name) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;width:130px;">Bank</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.bank_name + '</td></tr>');
+  if (safeBankInfo.account_name) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Account Name</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.account_name + '</td></tr>');
+  if (safeBankInfo.account_number) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Account / IBAN</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.account_number + '</td></tr>');
+  if (safeBankInfo.swift_code) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">SWIFT</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.swift_code + '</td></tr>');
+  if (safeBankInfo.routing_number) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Routing Number</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.routing_number + '</td></tr>');
+  if (safeBankInfo.branch_code) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Branch Code</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.branch_code + '</td></tr>');
+  if (safeBankInfo.branch) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Branch</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.branch + '</td></tr>');
+  if (safeBankInfo.account_type) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Type</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.account_type + '</td></tr>');
+  if (safeBankInfo.currency) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;">Currency</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + safeBankInfo.currency + '</td></tr>');
 
-  if (fields.length === 0) return '';
+  const resolvedRegionLabel = regionLabel || (currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International');
 
-  const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
-
-  let linksHTML = '';
+  const buttonRows: string[] = [];
 
   // Stripe button (if enabled) — links to client dashboard where checkout session is created
   const stripeEnabled = paymentMethods?.stripe_enabled === true || paymentMethods?.stripe_enabled === 'true';
