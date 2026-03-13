@@ -85,7 +85,7 @@ const ClientDashboard = () => {
   // Invoice detail
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
-
+  const [dialogView, setDialogView] = useState<'invoice' | 'pay'>('invoice');
   // Payment loading
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
   const [payingMethod, setPayingMethod] = useState<string | null>(null);
@@ -180,6 +180,7 @@ const ClientDashboard = () => {
 
   const openInvoice = (inv: InvoiceRow) => {
     setSelectedInvoice(inv);
+    setDialogView('invoice');
     fetchItems(inv.id);
   };
 
@@ -475,13 +476,110 @@ const ClientDashboard = () => {
         {/* Invoice Detail Dialog */}
         <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-card border-border">
-            <DialogHeader>
-              <DialogTitle className="font-mono">Invoice #{selectedInvoice?.invoice_number}</DialogTitle>
-            </DialogHeader>
             {selectedInvoice && (() => {
               const currency = getCurrencyForInvoice(selectedInvoice);
+              const isUnpaid = ['sent', 'overdue'].includes(selectedInvoice.status);
+
+              if (dialogView === 'pay') {
+                // Payment options view
+                const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
+                const bank = paymentSettings?.[bankKey];
+                const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
+
+                return (
+                  <div className="space-y-5">
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setDialogView('invoice')}>
+                        <ChevronRight className="h-4 w-4 rotate-180" />
+                      </Button>
+                      <div>
+                        <DialogHeader className="p-0">
+                          <DialogTitle className="font-mono text-lg">Pay Invoice #{selectedInvoice.invoice_number}</DialogTitle>
+                        </DialogHeader>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          Total: <span className="font-bold text-foreground">{fmtCurrency(Number(selectedInvoice.total), currency)}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Online payment */}
+                    {(stripeEnabled || (yocoEnabled && currency === 'ZAR')) && (
+                      <div className="space-y-3">
+                        <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Pay Online</p>
+                        <div className="grid gap-3">
+                          {stripeEnabled && (
+                            <Button
+                              className="w-full font-mono gap-2 h-12 text-sm"
+                              disabled={payingInvoiceId === selectedInvoice.id}
+                              onClick={() => handleStripePayment(selectedInvoice.id)}
+                            >
+                              {payingInvoiceId === selectedInvoice.id && payingMethod === 'stripe'
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <CreditCard className="h-4 w-4" />}
+                              Pay with Stripe
+                            </Button>
+                          )}
+                          {yocoEnabled && currency === 'ZAR' && (
+                            <Button
+                              variant="outline"
+                              className="w-full font-mono gap-2 h-12 text-sm"
+                              disabled={payingInvoiceId === selectedInvoice.id}
+                              onClick={() => handleYocoPayment(selectedInvoice.id)}
+                            >
+                              {payingInvoiceId === selectedInvoice.id && payingMethod === 'yoco'
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <CreditCard className="h-4 w-4" />}
+                              Pay with Yoco
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Wise */}
+                    {wiseLink && (
+                      <div className="space-y-3">
+                        <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">International Transfer</p>
+                        <Button variant="outline" className="w-full font-mono gap-2 h-12 text-sm" asChild>
+                          <a href={wiseLink} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4" /> Pay via Wise
+                          </a>
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Banking details */}
+                    {bank?.bank_name && (
+                      <div className="space-y-3">
+                        <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Direct Deposit — {regionLabel}</p>
+                        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1.5">
+                          <p className="font-mono text-xs text-primary flex items-center gap-1.5">
+                            <Landmark className="h-3.5 w-3.5" /> Bank Details
+                          </p>
+                          {bank.bank_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Bank:</span> {bank.bank_name}</p>}
+                          {bank.account_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account Name:</span> {bank.account_name}</p>}
+                          {bank.account_number && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account:</span> {bank.account_number}</p>}
+                          {bank.swift_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">SWIFT:</span> {bank.swift_code}</p>}
+                          {bank.routing_number && <p className="text-sm text-foreground"><span className="text-muted-foreground">Routing:</span> {bank.routing_number}</p>}
+                          {bank.branch_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch Code:</span> {bank.branch_code}</p>}
+                          {bank.branch && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch:</span> {bank.branch}</p>}
+                          {bank.account_type && <p className="text-sm text-foreground"><span className="text-muted-foreground">Type:</span> {bank.account_type}</p>}
+                          {bank.reference_note && <p className="text-xs text-muted-foreground italic mt-2">{bank.reference_note}</p>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // Invoice detail view
               return (
                 <div className="space-y-4">
+                  <DialogHeader>
+                    <DialogTitle className="font-mono">Invoice #{selectedInvoice.invoice_number}</DialogTitle>
+                  </DialogHeader>
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Status:</span>{' '}
@@ -535,90 +633,27 @@ const ClientDashboard = () => {
                     )}
                   </div>
 
-                  {/* Banking Details */}
-                  {paymentSettings && ['sent', 'overdue'].includes(selectedInvoice.status) && (() => {
-                    const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
-                    const bank = paymentSettings[bankKey];
-                    if (!bank?.bank_name) return null;
-                    const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
-                    return (
-                      <>
-                        <Separator />
-                        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1.5">
-                          <p className="font-mono text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
-                            <Landmark className="h-3.5 w-3.5" /> Direct Deposit — {regionLabel}
-                          </p>
-                          {bank.bank_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Bank:</span> {bank.bank_name}</p>}
-                          {bank.account_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account Name:</span> {bank.account_name}</p>}
-                          {bank.account_number && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account:</span> {bank.account_number}</p>}
-                          {bank.swift_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">SWIFT:</span> {bank.swift_code}</p>}
-                          {bank.routing_number && <p className="text-sm text-foreground"><span className="text-muted-foreground">Routing Number:</span> {bank.routing_number}</p>}
-                          {bank.branch_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch Code:</span> {bank.branch_code}</p>}
-                          {bank.branch && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch:</span> {bank.branch}</p>}
-                          {bank.account_type && <p className="text-sm text-foreground"><span className="text-muted-foreground">Type:</span> {bank.account_type}</p>}
-                          {bank.reference_note && <p className="text-xs text-muted-foreground italic mt-2">{bank.reference_note}</p>}
-                        </div>
-                      </>
-                    );
-                  })()}
-
-                  {/* Download PDF */}
+                  {/* Action buttons */}
                   <div className="flex flex-wrap gap-3 pt-2">
                     <Button variant="outline" className="font-mono" onClick={async () => {
                       try {
                         const { data, error } = await supabase.functions.invoke('generate-invoice-token', {
                           body: { invoice_id: selectedInvoice.id },
                         });
-                        console.log('generate-invoice-token response:', { data, error });
                         if (error) { alert('Could not generate PDF link: ' + (error.message || JSON.stringify(error))); return; }
                         if (!data?.token) { alert('Could not generate PDF link — no token returned'); return; }
                         window.open(`/invoice/${selectedInvoice.id}?token=${data.token}`, '_blank');
-                      } catch (e: any) { console.error('PDF link error:', e); alert('Could not generate PDF link: ' + (e.message || 'Unknown error')); }
+                      } catch (e: any) { alert('Could not generate PDF link: ' + (e.message || 'Unknown error')); }
                     }}>
                       <Download className="h-4 w-4 mr-1" /> Download PDF
                     </Button>
-                  </div>
 
-                  {/* Payment Buttons in Detail */}
-                  {['sent', 'overdue'].includes(selectedInvoice.status) && (
-                    <div className="space-y-2 pt-2">
-                      <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Pay Now</p>
-                      <div className="flex flex-wrap gap-3">
-                        {stripeEnabled && (
-                          <Button
-                            className="font-mono gap-2"
-                            disabled={payingInvoiceId === selectedInvoice.id}
-                            onClick={() => handleStripePayment(selectedInvoice.id)}
-                          >
-                            {payingInvoiceId === selectedInvoice.id && payingMethod === 'stripe'
-                              ? <Loader2 className="h-4 w-4 animate-spin" />
-                              : <CreditCard className="h-4 w-4" />}
-                            Pay with Stripe
-                          </Button>
-                        )}
-                        {yocoEnabled && currency === 'ZAR' && (
-                          <Button
-                            variant="outline"
-                            className="font-mono gap-2"
-                            disabled={payingInvoiceId === selectedInvoice.id}
-                            onClick={() => handleYocoPayment(selectedInvoice.id)}
-                          >
-                            {payingInvoiceId === selectedInvoice.id && payingMethod === 'yoco'
-                              ? <Loader2 className="h-4 w-4 animate-spin" />
-                              : <CreditCard className="h-4 w-4" />}
-                            Pay with Yoco
-                          </Button>
-                        )}
-                        {wiseLink && (
-                          <Button variant="outline" className="font-mono gap-2" asChild>
-                            <a href={wiseLink} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="h-4 w-4" /> Pay via Wise
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                    {isUnpaid && (
+                      <Button className="font-mono gap-2" onClick={() => setDialogView('pay')}>
+                        <CreditCard className="h-4 w-4" /> Pay Now
+                      </Button>
+                    )}
+                  </div>
                 </div>
               );
             })()}
