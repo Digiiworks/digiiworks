@@ -802,9 +802,16 @@ export default function Invoices() {
               const isOverdue = inv.status === 'overdue';
               const isUnpaid = isPayableStatus(inv.status);
               return (
-                <div key={inv.id} className={`rounded-lg border bg-card/50 p-3 space-y-2 ${isOverdue ? 'border-orange-500/40' : 'border-border'}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
+                <div key={inv.id} className={`rounded-lg border bg-card/50 p-3 space-y-2 ${isOverdue ? 'border-orange-500/40' : 'border-border'} ${selectedIds.has(inv.id) ? 'ring-1 ring-primary/50' : ''}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    {isAdmin && (
+                      <Checkbox
+                        checked={selectedIds.has(inv.id)}
+                        onCheckedChange={() => toggleSelect(inv.id)}
+                        className="border-muted-foreground/50 shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
                       <p className="font-mono text-sm font-medium truncate">
                         {isOverdue && <AlertTriangle className="inline h-3.5 w-3.5 text-orange-400 mr-1 -mt-0.5" />}
                         {inv.invoice_number}
