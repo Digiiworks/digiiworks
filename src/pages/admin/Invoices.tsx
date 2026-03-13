@@ -612,7 +612,7 @@ export default function Invoices() {
           <div className="space-y-3 md:hidden">
             {paginated.map(inv => {
               const isOverdue = inv.status === 'overdue';
-              const isUnpaid = ['sent', 'overdue'].includes(inv.status);
+              const isUnpaid = isPayableStatus(inv.status);
               return (
                 <div key={inv.id} className={`rounded-lg border bg-card/50 p-3 space-y-2 ${isOverdue ? 'border-orange-500/40' : 'border-border'}`}>
                   <div className="flex items-center justify-between">
