@@ -99,7 +99,7 @@ const Blog = () => {
   const hasMore = visibleCount < filteredPosts.length;
 
   // Reset visible count when category changes
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [activeCategory]);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [activeCategory, searchQuery]);
 
   // Infinite scroll observer
   const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
