@@ -18,6 +18,7 @@ import Contact from "./pages/Contact";
 import GetStarted from "./pages/GetStarted";
 import Blog from "./pages/Blog";
 import AIAutomation from "./pages/AIAutomation";
+import NotFound from "./pages/NotFound";
 
 // Eager imports for admin pages — fast admin navigation
 import Dashboard from "./pages/admin/Dashboard";
