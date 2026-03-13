@@ -450,21 +450,73 @@ export default function Invoices() {
     setSendingId(null);
   };
 
-  const handlePayClick = async (inv: Invoice) => {
+  const handlePayClick = (inv: Invoice) => {
+    setPayDialog(inv);
+  };
+
+  const handleManualPay = async () => {
+    if (!payDialog) return;
+    setPayingMethod('manual');
     try {
       const now = new Date().toISOString();
       const { error } = await supabase
         .from('invoices')
         .update({ status: 'paid', paid_at: now, payment_method: 'manual' })
-        .eq('id', inv.id);
+        .eq('id', payDialog.id);
       if (error) throw error;
-      toast({ title: 'Invoice marked as paid', description: `${inv.invoice_number} has been marked as paid.` });
+      toast({ title: 'Invoice marked as paid (manual)', description: `${payDialog.invoice_number} has been marked as paid.` });
       fetchAll();
-      if (showDetail?.id === inv.id) {
-        setShowDetail({ ...inv, status: 'paid', paid_at: now, payment_method: 'manual' } as any);
+      if (showDetail?.id === payDialog.id) {
+        setShowDetail({ ...payDialog, status: 'paid', paid_at: now, payment_method: 'manual' } as any);
       }
+      setPayDialog(null);
     } catch (err: any) {
       toast({ title: 'Failed to mark as paid', description: err.message, variant: 'destructive' });
+    }
+    setPayingMethod(null);
+  };
+
+  const handleStripeCheckout = async () => {
+    if (!payDialog) return;
+    setPayingMethod('stripe');
+    try {
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: { invoice_id: payDialog.id },
+      });
+      if (error) throw error;
+      if (data?.redirectUrl) {
+        window.open(data.redirectUrl, '_blank');
+        setPayDialog(null);
+      }
+    } catch (err: any) {
+      toast({ title: 'Stripe checkout failed', description: err.message, variant: 'destructive' });
+    }
+    setPayingMethod(null);
+  };
+
+  const handleYocoCheckout = async () => {
+    if (!payDialog) return;
+    setPayingMethod('yoco');
+    try {
+      const { data, error } = await supabase.functions.invoke('create-yoco-checkout', {
+        body: { invoice_id: payDialog.id },
+      });
+      if (error) throw error;
+      if (data?.redirectUrl) {
+        window.open(data.redirectUrl, '_blank');
+        setPayDialog(null);
+      }
+    } catch (err: any) {
+      toast({ title: 'Yoco checkout failed', description: err.message, variant: 'destructive' });
+    }
+    setPayingMethod(null);
+  };
+
+  const handleWisePayment = () => {
+    const wiseLink = paymentSettings?.wise_payment_link;
+    if (wiseLink) {
+      window.open(wiseLink, '_blank');
+      setPayDialog(null);
     }
   };
 
