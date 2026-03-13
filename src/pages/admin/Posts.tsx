@@ -116,6 +116,7 @@ const Posts = () => {
       </AdminToolbar>
 
       {isLoading && <PageLoader />}
+      {isError && <ErrorState message="Failed to load posts." onRetry={() => refetch()} />}
 
       <div className="grid gap-4">
         {posts?.map((post: any) => (

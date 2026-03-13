@@ -655,6 +655,8 @@ export default function Clients() {
 
       {loading ? (
         <PageLoader />
+      ) : fetchError ? (
+        <ErrorState message="Failed to load clients." onRetry={fetchClients} />
       ) : filtered.length === 0 ? (
         <EmptyState icon={User} message="No clients found." />
       ) : (

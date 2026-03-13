@@ -794,6 +794,8 @@ export default function Invoices() {
       {/* Table */}
       {loading ? (
         <PageLoader />
+      ) : fetchError ? (
+        <ErrorState message="Failed to load invoices." onRetry={fetchAll} />
       ) : processed.length === 0 ? (
         <EmptyState message="No invoices found." />
       ) : (

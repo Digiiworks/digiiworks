@@ -333,6 +333,8 @@ export default function Products() {
       {/* Table */}
       {loading ? (
         <PageLoader />
+      ) : fetchError ? (
+        <ErrorState message="Failed to load products." onRetry={fetchData} />
       ) : filtered.length === 0 ? (
         <EmptyState icon={Package} message="No products found." />
       ) : (

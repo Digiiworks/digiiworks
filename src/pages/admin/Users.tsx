@@ -68,6 +68,7 @@ const UsersAdmin = () => {
       <AdminToolbar title="Users & Roles" subtitle="Manage team members and permissions" />
 
       {isLoading && <PageLoader />}
+      {isError && <ErrorState message="Failed to load users." onRetry={() => refetch()} />}
 
       {/* Mobile card view */}
       <div className="space-y-3 md:hidden">
