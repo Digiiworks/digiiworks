@@ -426,7 +426,7 @@ export default function Invoices() {
   };
 
   const handleSendEmail = async (invoiceId: string, isResend = false) => {
-    setSending(true);
+    setSendingId(invoiceId);
     try {
       const { data, error } = await supabase.functions.invoke('send-invoice-email', {
         body: { invoice_id: invoiceId, force_resend: isResend },
