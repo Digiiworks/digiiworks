@@ -121,7 +121,7 @@ const SettingsPage = () => {
     setTimeout(() => setSaved(false), 2000);
   }, [recordId]);
 
-  const update = (path: string[], value: string) => {
+  const update = (path: string[], value: string | boolean) => {
     setData((prev) => {
       const next = JSON.parse(JSON.stringify(prev));
       let obj = next;
