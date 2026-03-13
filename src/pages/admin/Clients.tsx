@@ -112,6 +112,7 @@ export default function Clients() {
 
   const fetchClients = async () => {
     setLoading(true);
+    setFetchError(false);
 
     // Get all client companies joined with profiles
     const { data: companies } = await supabase
