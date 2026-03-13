@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import {
   Plus, Trash2, Pencil, Loader2, Search,
-  User, Mail, Phone, Building2, MapPin, FileText, Check,
+  User, Mail, Phone, Building2, MapPin, FileText, Check, ArrowUpDown,
 } from 'lucide-react';
 import StatCard from '@/components/admin/StatCard';
 import AdminToolbar from '@/components/admin/AdminToolbar';
@@ -57,6 +57,9 @@ type ProfileMatch = {
   companies: string[];
 };
 
+type SortField = 'company' | 'contact' | 'invoices' | 'recurring' | 'outstanding' | 'created';
+type SortDir = 'asc' | 'desc';
+
 const PAGE_SIZE = 10;
 
 export default function Clients() {
@@ -66,6 +69,8 @@ export default function Clients() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField>('company');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   // Dialog state
   const [editClient, setEditClient] = useState<ClientCompany | null>(null);
@@ -162,20 +167,52 @@ export default function Clients() {
   useEffect(() => { fetchClients(); }, []);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return clients;
-    const q = search.toLowerCase();
-    return clients.filter(c =>
-      (c.display_name ?? '').toLowerCase().includes(q) ||
-      (c.email ?? '').toLowerCase().includes(q) ||
-      c.company_name.toLowerCase().includes(q) ||
-      (c.phone ?? '').toLowerCase().includes(q)
-    );
-  }, [clients, search]);
+    let list = [...clients];
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(c =>
+        (c.display_name ?? '').toLowerCase().includes(q) ||
+        (c.email ?? '').toLowerCase().includes(q) ||
+        c.company_name.toLowerCase().includes(q) ||
+        (c.phone ?? '').toLowerCase().includes(q)
+      );
+    }
+    list.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'company':
+          cmp = a.company_name.localeCompare(b.company_name);
+          break;
+        case 'contact':
+          cmp = (a.display_name ?? '').localeCompare(b.display_name ?? '');
+          break;
+        case 'invoices':
+          cmp = (a.invoice_count ?? 0) - (b.invoice_count ?? 0);
+          break;
+        case 'recurring':
+          cmp = (a.recurring_count ?? 0) - (b.recurring_count ?? 0);
+          break;
+        case 'outstanding':
+          cmp = (a.outstanding ?? 0) - (b.outstanding ?? 0);
+          break;
+        case 'created':
+          cmp = a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0;
+          break;
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  }, [clients, search, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  useEffect(() => { setPage(1); }, [search]);
+  useEffect(() => { setPage(1); }, [search, sortField, sortDir]);
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('asc'); }
+  };
 
   // Fuzzy email search
   const searchEmails = useCallback(async (query: string) => {
@@ -603,12 +640,24 @@ export default function Clients() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border/50">
-                  <TableHead className="font-mono text-xs">Company</TableHead>
-                  <TableHead className="font-mono text-xs">Contact</TableHead>
-                  <TableHead className="font-mono text-xs text-center">Invoices</TableHead>
-                  <TableHead className="font-mono text-xs text-center">Recurring</TableHead>
-                  <TableHead className="font-mono text-xs text-right">Outstanding</TableHead>
-                  <TableHead className="font-mono text-xs">Created</TableHead>
+                  <TableHead className="font-mono text-xs cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('company')}>
+                    <span className="inline-flex items-center gap-1">Company <ArrowUpDown className={`h-3 w-3 ${sortField === 'company' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
+                  <TableHead className="font-mono text-xs cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('contact')}>
+                    <span className="inline-flex items-center gap-1">Contact <ArrowUpDown className={`h-3 w-3 ${sortField === 'contact' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-center cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('invoices')}>
+                    <span className="inline-flex items-center gap-1">Invoices <ArrowUpDown className={`h-3 w-3 ${sortField === 'invoices' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-center cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('recurring')}>
+                    <span className="inline-flex items-center gap-1">Recurring <ArrowUpDown className={`h-3 w-3 ${sortField === 'recurring' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-right cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('outstanding')}>
+                    <span className="inline-flex items-center gap-1 justify-end">Outstanding <ArrowUpDown className={`h-3 w-3 ${sortField === 'outstanding' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
+                  <TableHead className="font-mono text-xs cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('created')}>
+                    <span className="inline-flex items-center gap-1">Created <ArrowUpDown className={`h-3 w-3 ${sortField === 'created' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
