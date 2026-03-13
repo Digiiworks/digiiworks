@@ -165,7 +165,8 @@ async function hmacSign(invoiceId: string, secret: string): Promise<string> {
 }
 
 function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, currency: string, pdfToken: string, paymentSettings?: any) {
-  const sym = currencySymbol(currency);
+  const normalizedCurrency = normalizeCurrency(currency);
+  const sym = currencySymbol(normalizedCurrency);
 
   const itemRows = items.map(function (it) {
     return '<tr>' +
