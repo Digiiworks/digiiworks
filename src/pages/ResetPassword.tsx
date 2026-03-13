@@ -11,7 +11,7 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const navigate = useNavigate();
-  
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check for recovery token in URL hash
