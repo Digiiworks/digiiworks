@@ -53,6 +53,21 @@ const AdminLayout = () => {
       </nav>
 
       <div className="border-t border-border/50 px-3 py-4 space-y-3">
+        {!isClient && (() => {
+          const active = pathname === settingsItem.to || pathname.startsWith(settingsItem.to);
+          return (
+            <Link
+              to={settingsItem.to}
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 font-mono text-sm transition-colors ${
+                active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <settingsItem.icon className="h-4 w-4" />
+              {settingsItem.label}
+            </Link>
+          );
+        })()}
         <div className="px-3">
           <p className="font-mono text-xs text-foreground truncate">{profile?.display_name ?? profile?.email}</p>
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{roleLabel}</p>
