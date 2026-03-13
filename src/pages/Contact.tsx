@@ -110,6 +110,50 @@ const Contact = () => {
           </p>
         </div>
 
+        {submitted ? (
+          <div className="glass-card glass-card-glow p-8 md:p-10 text-center space-y-5 animate-in fade-in zoom-in-95 duration-400">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-neon-mint/10 ring-1 ring-neon-mint/30">
+              <CheckCircle className="h-7 w-7 text-neon-mint" />
+            </div>
+            <h2 className="font-mono text-xl font-bold text-foreground">
+              {isAI ? 'Consultation Initialized' : 'Message Received'}
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Thanks for reaching out! We typically respond within 24 hours. Check your inbox for a confirmation.
+            </p>
+            <div className="pt-2 space-y-3">
+              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">What happens next</p>
+              <div className="text-left space-y-2 max-w-xs mx-auto">
+                {[
+                  'We review your message',
+                  'A team member reaches out',
+                  'We scope your project together',
+                ].map((step, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 font-mono text-[10px] font-bold text-primary">
+                      {i + 1}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 pt-3 justify-center">
+              <Button
+                variant="outline"
+                className="font-mono text-xs gap-1.5"
+                onClick={() => setSubmitted(false)}
+              >
+                Send Another Message
+              </Button>
+              <Button asChild className="font-mono text-xs gap-1.5 bg-primary text-primary-foreground">
+                <Link to="/get-started">
+                  Start a Project <ArrowRight className="h-3 w-3" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        ) : (
         <div className="glass-card p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
             {/* Honeypot — hidden from users, bots fill it */}
@@ -206,6 +250,7 @@ const Contact = () => {
             </Button>
           </form>
         </div>
+        )}
       </div>
     </div>
   );
