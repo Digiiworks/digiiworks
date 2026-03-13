@@ -22,9 +22,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import {
-  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle, Pencil, ExternalLink, CircleDollarSign,
+  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle, Pencil, ExternalLink, CircleDollarSign, CheckSquare,
 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import StatCard from '@/components/admin/StatCard';
 import AdminToolbar from '@/components/admin/AdminToolbar';
 import AdminPagination from '@/components/admin/AdminPagination';
@@ -145,6 +146,10 @@ export default function Invoices() {
   const [payDialog, setPayDialog] = useState<Invoice | null>(null);
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [payingMethod, setPayingMethod] = useState<string | null>(null);
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState<string | null>(null);
 
   // Create/Edit form
   const [form, setForm] = useState({ client_id: '', client_company_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
@@ -532,6 +537,70 @@ export default function Invoices() {
     }
   };
 
+  // Bulk actions
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginated.length && paginated.every(i => selectedIds.has(i.id))) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginated.map(i => i.id)));
+    }
+  };
+
+  const selectedInvoices = invoices.filter(i => selectedIds.has(i.id));
+
+  const bulkMarkPaid = async () => {
+    const payable = selectedInvoices.filter(i => isPayableStatus(i.status));
+    if (!payable.length) { toast({ title: 'No unpaid invoices selected', variant: 'destructive' }); return; }
+    setBulkLoading('paid');
+    const now = new Date().toISOString();
+    for (const inv of payable) {
+      await supabase.from('invoices').update({ status: 'paid' as const, paid_at: now, payment_method: 'manual' as const }).eq('id', inv.id);
+    }
+    toast({ title: `${payable.length} invoice(s) marked as paid` });
+    setSelectedIds(new Set());
+    setBulkLoading(null);
+    fetchAll();
+  };
+
+  const bulkSendReminder = async () => {
+    const sendable = selectedInvoices.filter(i => !['paid', 'cancelled'].includes(i.status));
+    if (!sendable.length) { toast({ title: 'No sendable invoices selected', variant: 'destructive' }); return; }
+    setBulkLoading('send');
+    let sent = 0;
+    for (const inv of sendable) {
+      try {
+        await supabase.functions.invoke('send-invoice-email', { body: { invoice_id: inv.id, force_resend: true } });
+        sent++;
+      } catch { /* skip failed */ }
+    }
+    toast({ title: `${sent} reminder(s) sent` });
+    setSelectedIds(new Set());
+    setBulkLoading(null);
+    fetchAll();
+  };
+
+  const bulkUpdateStatus = async (newStatus: string) => {
+    if (!selectedIds.size) return;
+    setBulkLoading('status');
+    const extra: Record<string, unknown> = { status: newStatus };
+    if (newStatus === 'paid') extra.paid_at = new Date().toISOString();
+    for (const id of selectedIds) {
+      await supabase.from('invoices').update(extra as any).eq('id', id);
+    }
+    toast({ title: `${selectedIds.size} invoice(s) updated to ${newStatus}` });
+    setSelectedIds(new Set());
+    setBulkLoading(null);
+    fetchAll();
+  };
+
   const SortHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
     <TableHead
       className="font-mono text-xs cursor-pointer select-none hover:text-foreground transition-colors"
@@ -670,6 +739,56 @@ export default function Invoices() {
         )}
       </AdminToolbar>
 
+      {/* Bulk action bar */}
+      {isAdmin && selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 animate-in fade-in duration-200">
+          <Checkbox
+            checked={true}
+            onCheckedChange={() => setSelectedIds(new Set())}
+            className="border-primary data-[state=checked]:bg-primary"
+          />
+          <span className="font-mono text-xs text-foreground">{selectedIds.size} selected</span>
+          <div className="flex gap-2 ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 font-mono text-xs border-primary/50 text-primary hover:bg-primary/10"
+              onClick={bulkMarkPaid}
+              disabled={!!bulkLoading}
+            >
+              {bulkLoading === 'paid' ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+              Mark Paid
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 font-mono text-xs border-primary/50 text-primary hover:bg-primary/10"
+              onClick={bulkSendReminder}
+              disabled={!!bulkLoading}
+            >
+              {bulkLoading === 'send' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+              Send Reminders
+            </Button>
+            <Select onValueChange={bulkUpdateStatus} disabled={!!bulkLoading}>
+              <SelectTrigger className="h-7 w-32 border-border bg-card font-mono text-xs">
+                <SelectValue placeholder="Set Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 font-mono text-xs text-muted-foreground"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       {loading ? (
         <PageLoader />
@@ -683,9 +802,16 @@ export default function Invoices() {
               const isOverdue = inv.status === 'overdue';
               const isUnpaid = isPayableStatus(inv.status);
               return (
-                <div key={inv.id} className={`rounded-lg border bg-card/50 p-3 space-y-2 ${isOverdue ? 'border-orange-500/40' : 'border-border'}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
+                <div key={inv.id} className={`rounded-lg border bg-card/50 p-3 space-y-2 ${isOverdue ? 'border-orange-500/40' : 'border-border'} ${selectedIds.has(inv.id) ? 'ring-1 ring-primary/50' : ''}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    {isAdmin && (
+                      <Checkbox
+                        checked={selectedIds.has(inv.id)}
+                        onCheckedChange={() => toggleSelect(inv.id)}
+                        className="border-muted-foreground/50 shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
                       <p className="font-mono text-sm font-medium truncate">
                         {isOverdue && <AlertTriangle className="inline h-3.5 w-3.5 text-orange-400 mr-1 -mt-0.5" />}
                         {inv.invoice_number}
@@ -733,6 +859,15 @@ export default function Invoices() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border/50">
+                  {isAdmin && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={paginated.length > 0 && paginated.every(i => selectedIds.has(i.id))}
+                        onCheckedChange={toggleSelectAll}
+                        className="border-muted-foreground/50"
+                      />
+                    </TableHead>
+                  )}
                   <SortHeader field="invoice_number">Invoice #</SortHeader>
                   <TableHead className="font-mono text-xs">Client</TableHead>
                   <SortHeader field="status">Status</SortHeader>
@@ -751,8 +886,17 @@ export default function Invoices() {
                       key={inv.id}
                       className={`border-border/30 transition-colors ${
                         isOverdue ? 'bg-orange-500/5 border-l-2 border-l-orange-500' : ''
-                      }`}
+                      } ${selectedIds.has(inv.id) ? 'bg-primary/5' : ''}`}
                     >
+                      {isAdmin && (
+                        <TableCell className="w-10">
+                          <Checkbox
+                            checked={selectedIds.has(inv.id)}
+                            onCheckedChange={() => toggleSelect(inv.id)}
+                            className="border-muted-foreground/50"
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-mono text-sm">
                         {isOverdue && <AlertTriangle className="inline h-3.5 w-3.5 text-orange-400 mr-1.5 -mt-0.5" />}
                         {inv.invoice_number}
