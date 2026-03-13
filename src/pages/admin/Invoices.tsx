@@ -190,7 +190,8 @@ export default function Invoices() {
         company_name: company?.company_name ?? profile?.company ?? '',
       };
     });
-    setInvoices(enriched);
+    const visibleInvoices = isAdmin ? enriched : enriched.filter(inv => inv.status !== 'draft');
+    setInvoices(visibleInvoices);
     setProfiles(profRes.data ?? []);
     setClientCompanies(companyOptions);
     setProducts(prodRes.data ?? []);
