@@ -33,7 +33,7 @@ const Navbar = () => {
 
         <div className="flex items-center gap-8">
           {/* Engine Status */}
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-2 lg:flex">
             <div className="relative flex items-center gap-1.5">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-mint opacity-75" />
