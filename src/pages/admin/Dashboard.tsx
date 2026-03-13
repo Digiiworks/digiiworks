@@ -11,37 +11,18 @@ import ClientDashboard from '@/pages/ClientDashboard';
 const COLORS = ['hsl(184, 100%, 50%)', 'hsl(280, 99%, 53%)', 'hsl(106, 100%, 55%)', 'hsl(0, 72%, 51%)', 'hsl(45, 100%, 60%)'];
 
 const AdminDashboardContent = () => {
-  const { data: leadCount } = useQuery({
-    queryKey: ['admin-lead-count'],
+  const { data: stats } = useQuery({
+    queryKey: ['admin-dashboard-stats'],
     queryFn: async () => {
-      const { count } = await supabase.from('leads').select('*', { count: 'exact', head: true });
-      return count ?? 0;
+      const { data } = await supabase.rpc('get_dashboard_stats');
+      return (data as { lead_count: number; new_leads: number; converted_count: number; post_count: number }) ?? { lead_count: 0, new_leads: 0, converted_count: 0, post_count: 0 };
     },
   });
 
-  const { data: postCount } = useQuery({
-    queryKey: ['admin-post-count'],
-    queryFn: async () => {
-      const { count } = await supabase.from('posts').select('*', { count: 'exact', head: true });
-      return count ?? 0;
-    },
-  });
-
-  const { data: newLeads } = useQuery({
-    queryKey: ['admin-new-leads'],
-    queryFn: async () => {
-      const { count } = await supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'new');
-      return count ?? 0;
-    },
-  });
-
-  const { data: convertedCount } = useQuery({
-    queryKey: ['admin-converted-count'],
-    queryFn: async () => {
-      const { count } = await supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'converted');
-      return count ?? 0;
-    },
-  });
+  const leadCount = stats?.lead_count ?? 0;
+  const newLeads = stats?.new_leads ?? 0;
+  const convertedCount = stats?.converted_count ?? 0;
+  const postCount = stats?.post_count ?? 0;
 
   const { data: recentLeads } = useQuery({
     queryKey: ['admin-recent-leads'],
@@ -88,7 +69,7 @@ const AdminDashboardContent = () => {
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   })();
 
-  const conversionRate = leadCount && leadCount > 0 && convertedCount
+  const conversionRate = leadCount > 0 && convertedCount
     ? `${Math.round((convertedCount / leadCount) * 100)}%`
     : '0%';
 
@@ -97,9 +78,9 @@ const AdminDashboardContent = () => {
       <AdminToolbar title="Dashboard" subtitle="Overview of your agency operations" />
 
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Leads" value={leadCount ?? 0} icon={Mail} iconColor="text-neon-blue" />
-        <StatCard label="New Leads" value={newLeads ?? 0} icon={TrendingUp} iconColor="text-neon-mint" />
-        <StatCard label="Blog Posts" value={postCount ?? 0} icon={FileText} iconColor="text-neon-purple" />
+        <StatCard label="Total Leads" value={leadCount} icon={Mail} iconColor="text-neon-blue" />
+        <StatCard label="New Leads" value={newLeads} icon={TrendingUp} iconColor="text-neon-mint" />
+        <StatCard label="Blog Posts" value={postCount} icon={FileText} iconColor="text-neon-purple" />
         <StatCard label="Conversion Rate" value={conversionRate} icon={Users} iconColor="text-primary" />
       </div>
 
