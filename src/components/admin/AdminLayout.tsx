@@ -26,7 +26,7 @@ const AdminLayout = () => {
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   const visibleNav = isClient
-    ? navItems.filter((n) => n.to === '/admin' || n.to === '/admin/leads' || n.to === '/admin/invoices')
+    ? navItems.filter((n) => n.to === '/admin' || n.to === '/admin/invoices')
     : navItems;
 
   const homeLink = isClient ? '/client' : '/';
