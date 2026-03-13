@@ -138,6 +138,9 @@ const SettingsPage = () => {
   const sendTestEmail = async () => {
     if (!testEmail) { toast.error('Please enter an email address'); return; }
     setTestSending(true);
+    // Force-save current data before sending so the edge function reads latest values
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    await persist(data);
     try {
       const { data: result, error } = await supabase.functions.invoke('send-invoice-email', {
         body: { mode: 'test', currency: testCurrency, send_to: testEmail },

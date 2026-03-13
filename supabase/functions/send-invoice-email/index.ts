@@ -37,10 +37,10 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
 
   let linksHTML = '';
 
-  // Stripe button (if enabled)
+  // Stripe button (if enabled) — links to client dashboard where checkout session is created
   const stripeEnabled = paymentMethods?.stripe_enabled === true || paymentMethods?.stripe_enabled === 'true';
   if (stripeEnabled) {
-    linksHTML += '<a href="https://digiiworks.lovable.app/dashboard" style="display:inline-block;padding:11px 28px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:10px;letter-spacing:0.5px;">Pay with Stripe</a>';
+    linksHTML += '<a href="https://digiiworks.lovable.app/client" style="display:inline-block;padding:11px 28px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:10px;letter-spacing:0.5px;">💳 Pay with Stripe</a>';
   }
 
   // Yoco button (if enabled and ZAR)
