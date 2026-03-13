@@ -43,7 +43,7 @@ const Auth = () => {
         if (roles.includes('admin') || roles.includes('editor')) {
           navigate('/admin');
         } else {
-          navigate('/client');
+          navigate('/admin');
         }
       } else {
         const { error } = await supabase.auth.signUp({
