@@ -55,7 +55,7 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast.success('Check your email', { description: 'Confirm your email to continue.' });
+        toast({ title: 'Check your email', description: 'Confirm your email to continue.' });
       }
     } catch (err: any) {
       toast.error('Error', { description: err.message });
