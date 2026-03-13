@@ -122,8 +122,8 @@ const AdminLayout = () => {
               <Link to="/" onClick={() => setMobileOpen(false)}>
                 <img src="/logo.svg" alt="Digiiworks" style={{ width: 120 }} />
               </Link>
-              <button onClick={() => setMobileOpen(false)} className="text-muted-foreground hover:text-foreground">
-                <X className="h-5 w-5" />
+              <button onClick={() => setMobileOpen(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close menu">
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
             {navContent}
