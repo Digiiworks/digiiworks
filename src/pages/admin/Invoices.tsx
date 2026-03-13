@@ -564,7 +564,7 @@ export default function Invoices() {
         });
 
         return (
-          <div className="grid gap-3 grid-cols-2">
+          <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
             {allCurrencies.length === 0 ? (
               <>
                 <StatCard label="Outstanding" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
