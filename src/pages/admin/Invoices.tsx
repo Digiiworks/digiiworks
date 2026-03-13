@@ -126,6 +126,7 @@ export default function Invoices() {
   const [clientCompanies, setClientCompanies] = useState<ClientCompanyOption[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
