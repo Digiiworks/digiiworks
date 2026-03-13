@@ -256,6 +256,7 @@ const SettingsPage = () => {
           <TabsTrigger value="south_africa" className="gap-1.5 font-mono text-xs">🇿🇦 South Africa (ZAR)</TabsTrigger>
           <TabsTrigger value="links" className="gap-1.5 font-mono text-xs"><LinkIcon className="h-3.5 w-3.5" /> Payment Links</TabsTrigger>
           <TabsTrigger value="tracking" className="gap-1.5 font-mono text-xs"><BarChart3 className="h-3.5 w-3.5" /> Tracking Pixels</TabsTrigger>
+          <TabsTrigger value="payment_methods" className="gap-1.5 font-mono text-xs"><CreditCard className="h-3.5 w-3.5" /> Payment Methods</TabsTrigger>
         </TabsList>
 
         <TabsContent value="global">
