@@ -739,6 +739,56 @@ export default function Invoices() {
         )}
       </AdminToolbar>
 
+      {/* Bulk action bar */}
+      {isAdmin && selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 animate-in fade-in duration-200">
+          <Checkbox
+            checked={true}
+            onCheckedChange={() => setSelectedIds(new Set())}
+            className="border-primary data-[state=checked]:bg-primary"
+          />
+          <span className="font-mono text-xs text-foreground">{selectedIds.size} selected</span>
+          <div className="flex gap-2 ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 font-mono text-xs border-primary/50 text-primary hover:bg-primary/10"
+              onClick={bulkMarkPaid}
+              disabled={!!bulkLoading}
+            >
+              {bulkLoading === 'paid' ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+              Mark Paid
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 font-mono text-xs border-primary/50 text-primary hover:bg-primary/10"
+              onClick={bulkSendReminder}
+              disabled={!!bulkLoading}
+            >
+              {bulkLoading === 'send' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+              Send Reminders
+            </Button>
+            <Select onValueChange={bulkUpdateStatus} disabled={!!bulkLoading}>
+              <SelectTrigger className="h-7 w-32 border-border bg-card font-mono text-xs">
+                <SelectValue placeholder="Set Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 font-mono text-xs text-muted-foreground"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       {loading ? (
         <PageLoader />
