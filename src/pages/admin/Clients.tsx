@@ -741,7 +741,7 @@ export default function Clients() {
                         {client.invoice_count}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hidden lg:table-cell">
                       {(client.recurring_count ?? 0) > 0 ? (
                         <Badge variant="secondary" className="font-mono text-xs">
                           {client.recurring_count}
@@ -757,7 +757,7 @@ export default function Clients() {
                         <span className="text-muted-foreground">{fmtCurrency(0, client.currency)}</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">
                       {format(new Date(client.created_at), 'MMM d, yyyy')}
                     </TableCell>
                     <TableCell className="text-right">
