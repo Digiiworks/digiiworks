@@ -12,8 +12,9 @@ const navItems = [
   { label: 'Blog Posts', to: '/admin/posts', icon: FileText },
   { label: 'Page Content', to: '/admin/content', icon: Settings },
   { label: 'Users', to: '/admin/users', icon: Users },
-  { label: 'Settings', to: '/admin/settings', icon: Wrench },
 ];
+
+const settingsItem = { label: 'Settings', to: '/admin/settings', icon: Wrench };
 
 const AdminLayout = () => {
   const { pathname } = useLocation();

@@ -73,7 +73,6 @@ const SettingsPage = () => {
   const [recordId, setRecordId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Test email state
   const [testOpen, setTestOpen] = useState(false);
   const [testCurrency, setTestCurrency] = useState<string>('USD');
   const [testEmail, setTestEmail] = useState('');
@@ -90,11 +89,8 @@ const SettingsPage = () => {
         setRecordId(row.id);
         setData({ ...defaultData, ...(row.content as any) });
       }
-
-      // Pre-fill test email from current user
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) setTestEmail(user.email);
-
       setLoading(false);
     };
     load();
@@ -127,14 +123,12 @@ const SettingsPage = () => {
       let obj = next;
       for (let i = 0; i < path.length - 1; i++) obj = obj[path[i]];
       obj[path[path.length - 1]] = value;
-
-      // Auto-save with 5s debounce
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => persist(next), 5000);
-
       return next;
     });
   };
+
   const getVal = (obj: any, path: string[]) => {
     let v = obj;
     for (const k of path) v = v?.[k] ?? '';
@@ -142,10 +136,7 @@ const SettingsPage = () => {
   };
 
   const sendTestEmail = async () => {
-    if (!testEmail) {
-      toast.error('Please enter an email address');
-      return;
-    }
+    if (!testEmail) { toast.error('Please enter an email address'); return; }
     setTestSending(true);
     try {
       const { data: result, error } = await supabase.functions.invoke('send-invoice-email', {
@@ -173,6 +164,7 @@ const SettingsPage = () => {
       />
     </div>
   );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -182,11 +174,12 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-4xl">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-mono text-xl font-bold text-foreground">Payment Settings</h1>
-          <p className="text-sm text-muted-foreground">Banking details shown on invoices & emails per region</p>
+          <h1 className="font-mono text-xl font-bold text-foreground">Settings</h1>
+          <p className="text-sm text-muted-foreground">Manage payments, banking & tracking</p>
         </div>
         <div className="flex items-center gap-2">
           {saving && (
@@ -218,9 +211,7 @@ const SettingsPage = () => {
             <div className="space-y-1.5">
               <Label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Currency</Label>
               <Select value={testCurrency} onValueChange={setTestCurrency}>
-                <SelectTrigger className="font-mono text-sm">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="font-mono text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="USD">🌍 USD — Global</SelectItem>
                   <SelectItem value="ZAR">🇿🇦 ZAR — South Africa</SelectItem>
@@ -230,13 +221,7 @@ const SettingsPage = () => {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Send To</Label>
-              <Input
-                value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
-                placeholder="you@example.com"
-                type="email"
-                className="font-mono text-sm"
-              />
+              <Input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="you@example.com" type="email" className="font-mono text-sm" />
             </div>
           </div>
           <DialogFooter>
@@ -249,119 +234,87 @@ const SettingsPage = () => {
         </DialogContent>
       </Dialog>
 
-      <Tabs defaultValue="global" className="space-y-4">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="global" className="gap-1.5 font-mono text-xs"><Globe className="h-3.5 w-3.5" /> Global (USD)</TabsTrigger>
-          <TabsTrigger value="thai" className="gap-1.5 font-mono text-xs">🇹🇭 Thailand (THB)</TabsTrigger>
-          <TabsTrigger value="south_africa" className="gap-1.5 font-mono text-xs">🇿🇦 South Africa (ZAR)</TabsTrigger>
-          <TabsTrigger value="links" className="gap-1.5 font-mono text-xs"><LinkIcon className="h-3.5 w-3.5" /> Payment Links</TabsTrigger>
-          <TabsTrigger value="tracking" className="gap-1.5 font-mono text-xs"><BarChart3 className="h-3.5 w-3.5" /> Tracking Pixels</TabsTrigger>
-          <TabsTrigger value="payment_methods" className="gap-1.5 font-mono text-xs"><CreditCard className="h-3.5 w-3.5" /> Payment Methods</TabsTrigger>
-        </TabsList>
+      {/* ─── SECTION 1: Payments & Banking ─── */}
+      <Card className="border-border bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-mono text-base">
+            <Landmark className="h-4 w-4 text-primary" /> Payments & Banking
+          </CardTitle>
+          <CardDescription>Bank accounts, payment links and gateway toggles</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Regional Bank Accounts — inner tabs */}
+          <div>
+            <h3 className="font-mono text-sm font-medium text-foreground mb-3">Regional Bank Accounts</h3>
+            <Tabs defaultValue="global">
+              <TabsList className="bg-muted/50 w-full justify-start">
+                <TabsTrigger value="global" className="gap-1.5 font-mono text-xs"><Globe className="h-3.5 w-3.5" /> Global (USD)</TabsTrigger>
+                <TabsTrigger value="thai" className="gap-1.5 font-mono text-xs">🇹🇭 Thailand (THB)</TabsTrigger>
+                <TabsTrigger value="south_africa" className="gap-1.5 font-mono text-xs">🇿🇦 South Africa (ZAR)</TabsTrigger>
+              </TabsList>
 
-        <TabsContent value="global">
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-mono text-base">
-                <Landmark className="h-4 w-4 text-primary" /> Global Bank Details
-              </CardTitle>
-              <CardDescription>Used for USD clients and international transfers via SWIFT</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <Field label="Bank Name" path={['global', 'bank_name']} placeholder="e.g. Wise, Mercury" />
-              <Field label="Account Name" path={['global', 'account_name']} placeholder="DigiiWorks LLC" />
-              <Field label="Account Number / IBAN" path={['global', 'account_number']} placeholder="GB12 XXXX …" />
-              <Field label="SWIFT / BIC Code" path={['global', 'swift_code']} placeholder="TRWIGB2L" />
-              <Field label="Routing Number" path={['global', 'routing_number']} placeholder="021000021" />
-              <Field label="Currency" path={['global', 'currency']} placeholder="USD" />
-              <Field label="Reference Note" path={['global', 'reference_note']} placeholder="Use invoice number as reference" />
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <TabsContent value="global" className="mt-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Bank Name" path={['global', 'bank_name']} placeholder="e.g. Wise, Mercury" />
+                  <Field label="Account Name" path={['global', 'account_name']} placeholder="DigiiWorks LLC" />
+                  <Field label="Account Number / IBAN" path={['global', 'account_number']} placeholder="GB12 XXXX …" />
+                  <Field label="SWIFT / BIC Code" path={['global', 'swift_code']} placeholder="TRWIGB2L" />
+                  <Field label="Routing Number" path={['global', 'routing_number']} placeholder="021000021" />
+                  <Field label="Currency" path={['global', 'currency']} placeholder="USD" />
+                  <Field label="Reference Note" path={['global', 'reference_note']} placeholder="Use invoice number as reference" />
+                </div>
+              </TabsContent>
 
-        <TabsContent value="thai">
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-mono text-base">
-                <Landmark className="h-4 w-4 text-primary" /> Thailand Bank Details
-              </CardTitle>
-              <CardDescription>Used for THB clients paying via local Thai bank transfer</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <Field label="Bank Name" path={['thai', 'bank_name']} placeholder="e.g. Bangkok Bank, Kasikorn" />
-              <Field label="Account Name" path={['thai', 'account_name']} placeholder="DigiiWorks Co., Ltd." />
-              <Field label="Account Number" path={['thai', 'account_number']} placeholder="xxx-x-xxxxx-x" />
-              <Field label="Branch" path={['thai', 'branch']} placeholder="e.g. Sukhumvit" />
-              <Field label="Currency" path={['thai', 'currency']} placeholder="THB" />
-              <Field label="Reference Note" path={['thai', 'reference_note']} placeholder="Use invoice number as reference" />
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <TabsContent value="thai" className="mt-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Bank Name" path={['thai', 'bank_name']} placeholder="e.g. Bangkok Bank, Kasikorn" />
+                  <Field label="Account Name" path={['thai', 'account_name']} placeholder="DigiiWorks Co., Ltd." />
+                  <Field label="Account Number" path={['thai', 'account_number']} placeholder="xxx-x-xxxxx-x" />
+                  <Field label="Branch" path={['thai', 'branch']} placeholder="e.g. Sukhumvit" />
+                  <Field label="Currency" path={['thai', 'currency']} placeholder="THB" />
+                  <Field label="Reference Note" path={['thai', 'reference_note']} placeholder="Use invoice number as reference" />
+                </div>
+              </TabsContent>
 
-        <TabsContent value="south_africa">
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-mono text-base">
-                <Landmark className="h-4 w-4 text-primary" /> South Africa Bank Details
-              </CardTitle>
-              <CardDescription>Used for ZAR clients paying via local EFT</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <Field label="Bank Name" path={['south_africa', 'bank_name']} placeholder="e.g. FNB, Capitec, Standard Bank" />
-              <Field label="Account Name" path={['south_africa', 'account_name']} placeholder="DigiiWorks (Pty) Ltd" />
-              <Field label="Account Number" path={['south_africa', 'account_number']} placeholder="62xxxxxxx" />
-              <Field label="Branch Code" path={['south_africa', 'branch_code']} placeholder="250655" />
-              <Field label="Account Type" path={['south_africa', 'account_type']} placeholder="Cheque / Savings" />
-              <Field label="Currency" path={['south_africa', 'currency']} placeholder="ZAR" />
-              <Field label="Reference Note" path={['south_africa', 'reference_note']} placeholder="Use invoice number as reference" />
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <TabsContent value="south_africa" className="mt-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Bank Name" path={['south_africa', 'bank_name']} placeholder="e.g. FNB, Capitec, Standard Bank" />
+                  <Field label="Account Name" path={['south_africa', 'account_name']} placeholder="DigiiWorks (Pty) Ltd" />
+                  <Field label="Account Number" path={['south_africa', 'account_number']} placeholder="62xxxxxxx" />
+                  <Field label="Branch Code" path={['south_africa', 'branch_code']} placeholder="250655" />
+                  <Field label="Account Type" path={['south_africa', 'account_type']} placeholder="Cheque / Savings" />
+                  <Field label="Currency" path={['south_africa', 'currency']} placeholder="ZAR" />
+                  <Field label="Reference Note" path={['south_africa', 'reference_note']} placeholder="Use invoice number as reference" />
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
 
-        <TabsContent value="links">
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-mono text-base">
-                <LinkIcon className="h-4 w-4 text-primary" /> Direct Payment Links
-              </CardTitle>
-              <CardDescription>Links shown on invoices and emails for quick online payments</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <Separator />
+
+          {/* Payment Links */}
+          <div>
+            <h3 className="font-mono text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <LinkIcon className="h-3.5 w-3.5 text-primary" /> Payment Links
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Yoco Payment Link" path={['payment_links', 'yoco_payment_link']} placeholder="https://pay.yoco.com/your-link" />
-              <Separator />
               <Field label="Wise Payment Link" path={['payment_links', 'wise_payment_link']} placeholder="https://wise.com/pay/your-link" />
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
 
-        <TabsContent value="tracking">
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-mono text-base">
-                <BarChart3 className="h-4 w-4 text-primary" /> Tracking Pixels
-              </CardTitle>
-              <CardDescription>Google Analytics / Ads and Meta (Facebook) pixel IDs injected into the site</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Field label="Google Pixel / GA4 Measurement ID" path={['tracking', 'google_pixel_id']} placeholder="G-XXXXXXXXXX or AW-XXXXXXXXX" />
-              <Separator />
-              <Field label="Meta (Facebook) Pixel ID" path={['tracking', 'meta_pixel_id']} placeholder="123456789012345" />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="payment_methods">
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-mono text-base">
-                <CreditCard className="h-4 w-4 text-primary" /> Payment Methods
-              </CardTitle>
-              <CardDescription>Enable or disable payment gateways shown on invoices and emails</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <Separator />
+
+          {/* Payment Methods */}
+          <div>
+            <h3 className="font-mono text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <CreditCard className="h-3.5 w-3.5 text-primary" /> Payment Methods
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex items-center justify-between rounded-lg border border-border p-4">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-medium text-foreground">Stripe Payments</Label>
-                  <p className="text-xs text-muted-foreground">Accept card payments via Stripe (all currencies)</p>
+                  <Label className="text-sm font-medium text-foreground">Stripe</Label>
+                  <p className="text-xs text-muted-foreground">Card payments — all currencies</p>
                 </div>
                 <Switch
                   checked={data.payment_methods?.stripe_enabled === true || data.payment_methods?.stripe_enabled === 'true' as any}
@@ -370,18 +323,32 @@ const SettingsPage = () => {
               </div>
               <div className="flex items-center justify-between rounded-lg border border-border p-4">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-medium text-foreground">Yoco Payments</Label>
-                  <p className="text-xs text-muted-foreground">Accept ZAR card payments via Yoco (South Africa)</p>
+                  <Label className="text-sm font-medium text-foreground">Yoco</Label>
+                  <p className="text-xs text-muted-foreground">ZAR card payments — South Africa</p>
                 </div>
                 <Switch
                   checked={data.payment_methods?.yoco_enabled === true || data.payment_methods?.yoco_enabled === 'true' as any || (data.payment_methods?.yoco_enabled === undefined)}
                   onCheckedChange={(checked) => update(['payment_methods', 'yoco_enabled'], checked)}
                 />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ─── SECTION 2: Tracking & Analytics ─── */}
+      <Card className="border-border bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-mono text-base">
+            <BarChart3 className="h-4 w-4 text-primary" /> Tracking & Analytics
+          </CardTitle>
+          <CardDescription>Pixel IDs injected into the site for analytics & remarketing</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <Field label="Google Pixel / GA4 Measurement ID" path={['tracking', 'google_pixel_id']} placeholder="G-XXXXXXXXXX or AW-XXXXXXXXX" />
+          <Field label="Meta (Facebook) Pixel ID" path={['tracking', 'meta_pixel_id']} placeholder="123456789012345" />
+        </CardContent>
+      </Card>
     </div>
   );
 };
