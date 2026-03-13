@@ -50,25 +50,29 @@ const Services = () => {
         </div>
 
         {/* Sticky filter bar */}
-        <div className="sticky top-16 z-30 -mx-6 px-6 py-3 mb-8 backdrop-blur-xl bg-background/70 border-b border-border/40">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-            {PILLARS.map((pillar) => (
-              <button
-                key={pillar.id}
-                onClick={() => scrollTo(pillar.id)}
-                className={cn(
-                  'shrink-0 rounded-full px-4 py-1.5 font-mono text-xs transition-all duration-300 border',
-                  activePillar === pillar.id
-                    ? pillar.id === 'autonomous'
-                      ? 'bg-neon-purple/10 border-neon-purple/40 text-neon-purple'
-                      : 'bg-primary/10 border-primary/40 text-primary'
-                    : 'border-border/50 text-muted-foreground hover:text-foreground hover:border-border'
-                )}
-              >
-                <span className="mr-1.5 opacity-60">{pillar.label}</span>
-                {pillar.title}
-              </button>
-            ))}
+        <div className="sticky top-16 z-30 -mx-6 px-6 py-4 mb-8 backdrop-blur-xl bg-background/70 border-b border-border/40">
+          <div className="flex items-center justify-center gap-3 overflow-x-auto scrollbar-hide">
+            {PILLARS.map((pillar) => {
+              const isActive = activePillar === pillar.id;
+              const isPurple = pillar.id === 'autonomous';
+              return (
+                <button
+                  key={pillar.id}
+                  onClick={() => scrollTo(pillar.id)}
+                  className={cn(
+                    'shrink-0 rounded-full px-5 py-2 font-mono text-sm transition-all duration-300 border',
+                    isActive
+                      ? isPurple
+                        ? 'bg-neon-purple/10 border-neon-purple/50 text-neon-purple shadow-[0_0_16px_hsl(280_99%_53%/0.15)]'
+                        : 'bg-primary/10 border-primary/50 text-primary shadow-[0_0_16px_hsl(184_100%_50%/0.15)]'
+                      : 'border-border/40 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/20'
+                  )}
+                >
+                  <span className={cn('mr-2', isActive ? 'opacity-80' : 'opacity-40')}>{pillar.label}</span>
+                  {pillar.title}
+                </button>
+              );
+            })}
           </div>
         </div>
 
