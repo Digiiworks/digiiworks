@@ -321,9 +321,13 @@ const ClientDashboard = () => {
                   onClick={() => toggleCompany(company.id)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 font-mono text-sm font-bold text-primary">
-                      {company.company_name.charAt(0).toUpperCase()}
-                    </div>
+                    {company.logo_url ? (
+                      <img src={company.logo_url} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 font-mono text-sm font-bold text-primary">
+                        {company.company_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <h2 className="font-mono text-lg font-bold text-foreground">{company.company_name}</h2>
                       <p className="text-xs text-muted-foreground">{company.currency} · {companyInvoices.length} invoice{companyInvoices.length !== 1 ? 's' : ''}</p>
