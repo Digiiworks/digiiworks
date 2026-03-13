@@ -201,8 +201,8 @@ const InvoicePrint = () => {
           if (!hasLinks) return null;
           return (
             <div className="no-print" style={{ padding: '24px 32px 0', textAlign: 'center' }}>
-              {stripeOn && (
-                <a href="/client" style={{ display: 'inline-block', padding: '11px 28px', background: '#635bff', color: '#ffffff', textDecoration: 'none', fontWeight: 700, fontSize: 13, borderRadius: 6, marginRight: 10, letterSpacing: 0.5 }}>💳 Pay with Stripe</a>
+              {stripeOn && id && token && (
+                <a href={`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/create-stripe-checkout-public?invoice_id=${id}&token=${token}`} style={{ display: 'inline-block', padding: '11px 28px', background: '#635bff', color: '#ffffff', textDecoration: 'none', fontWeight: 700, fontSize: 13, borderRadius: 6, marginRight: 10, letterSpacing: 0.5 }}>💳 Pay with Stripe</a>
               )}
               {yocoOn && links?.yoco_payment_link && (
                 <a href={links.yoco_payment_link + (links.yoco_payment_link.includes('?') ? '&' : '?') + 'amount=' + Number(invoice.total).toFixed(2)} style={{ display: 'inline-block', padding: '11px 28px', background: '#0a0a0a', color: '#ffffff', textDecoration: 'none', fontWeight: 700, fontSize: 13, borderRadius: 6, marginRight: 10, letterSpacing: 0.5 }}>Pay with Yoco</a>

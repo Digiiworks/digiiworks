@@ -81,7 +81,7 @@ function resolveRegionalBankInfo(paymentSettings: any, currency: string) {
   return null;
 }
 
-function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, invoiceTotal?: number, paymentMethods?: any, regionLabel?: string) {
+function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, invoiceTotal?: number, paymentMethods?: any, regionLabel?: string, stripeCheckoutUrl?: string) {
   const safeBankInfo = bankInfo && typeof bankInfo === 'object' ? bankInfo : {};
 
   const fields: string[] = [];
@@ -100,9 +100,9 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
   const buttonRows: string[] = [];
 
   const stripeEnabled = paymentMethods?.stripe_enabled === true || paymentMethods?.stripe_enabled === 'true';
-  if (stripeEnabled) {
+  if (stripeEnabled && stripeCheckoutUrl) {
     buttonRows.push(
-      '<tr><td style="padding:0 0 10px;"><a href="https://digiiworks.lovable.app/client" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;">💳 Pay with Stripe</a></td></tr>'
+      '<tr><td style="padding:0 0 10px;"><a href="' + stripeCheckoutUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;">💳 Pay with Stripe</a></td></tr>'
     );
   }
 
@@ -164,7 +164,7 @@ async function hmacSign(invoiceId: string, secret: string): Promise<string> {
     .join("");
 }
 
-function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, currency: string, pdfToken: string, paymentSettings?: any) {
+function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboardUrl: string, currency: string, pdfToken: string, paymentSettings?: any, stripeCheckoutUrl?: string) {
   const normalizedCurrency = normalizeCurrency(currency);
   const sym = currencySymbol(normalizedCurrency);
 
@@ -207,6 +207,7 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
       invoice.total,
       paymentSettings.payment_methods,
       resolved?.regionLabel,
+      stripeCheckoutUrl,
     );
   }
 
@@ -397,7 +398,8 @@ Deno.serve(async (req) => {
       };
 
       const testToken = await hmacSign("test-invoice-id", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      const html = buildEmailHTML(mockInvoice, items, mockClient, dashboardBaseUrl, testCurrency, testToken, paymentSettings);
+      // No real stripe checkout URL for test mode
+      const html = buildEmailHTML(mockInvoice, items, mockClient, dashboardBaseUrl, testCurrency, testToken, paymentSettings, '');
       await sendEmail(send_to, "[TEST] Invoice TEST-0001 from DigiiWorks (" + testCurrency + ")", html);
 
       return new Response(
@@ -451,7 +453,9 @@ Deno.serve(async (req) => {
             .eq("invoice_id", inv.id);
 
           const pdfToken = await hmacSign(inv.id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-          const html = buildEmailHTML(inv, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings);
+          const stripeToken = await hmacSign(inv.id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+          const stripeUrl = `${supabaseUrl}/functions/v1/create-stripe-checkout-public?invoice_id=${inv.id}&token=${stripeToken}`;
+          const html = buildEmailHTML(inv, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings, stripeUrl);
           await sendEmail(client.email, "Invoice " + inv.invoice_number + " from DigiiWorks", html);
 
           await supabase.from("invoice_emails").insert({
@@ -521,7 +525,9 @@ Deno.serve(async (req) => {
       .eq("invoice_id", invoice_id);
 
     const pdfToken = await hmacSign(invoice_id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings);
+    const stripeToken = await hmacSign(invoice_id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const stripeUrl = `${supabaseUrl}/functions/v1/create-stripe-checkout-public?invoice_id=${invoice_id}&token=${stripeToken}`;
+    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings, stripeUrl);
     await sendEmail(client.email, "Invoice " + invoice.invoice_number + " from DigiiWorks", html);
 
     await supabase.from("invoice_emails").insert({
