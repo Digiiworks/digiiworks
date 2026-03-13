@@ -714,9 +714,13 @@ export default function Clients() {
                   <TableRow key={client.id} className="border-border/30">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-mono text-sm font-bold">
-                          {client.company_name[0].toUpperCase()}
-                        </div>
+                        {client.logo_url ? (
+                          <img src={client.logo_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-mono text-sm font-bold">
+                            {client.company_name[0].toUpperCase()}
+                          </div>
+                        )}
                         <div>
                           <p className="text-sm font-medium text-foreground">{client.company_name}</p>
                           <p className="text-xs text-muted-foreground">{client.currency}</p>
