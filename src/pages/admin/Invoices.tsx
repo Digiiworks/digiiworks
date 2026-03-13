@@ -779,12 +779,7 @@ export default function Invoices() {
                         {inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {inv.send_date ? (
-                          <span className="inline-flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {format(new Date(inv.send_date), 'MMM d')}
-                          </span>
-                        ) : '—'}
+                        {inv.send_date ? format(new Date(inv.send_date), 'MMM d') : '—'}
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
                         <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>{fmtCurrency(inv.total, inv.currency)}</span>
