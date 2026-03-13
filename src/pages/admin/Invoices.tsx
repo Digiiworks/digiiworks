@@ -152,12 +152,14 @@ export default function Invoices() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [invRes, profRes, prodRes, compRes] = await Promise.all([
+    const [invRes, profRes, prodRes, compRes, paySettingsRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('user_id, display_name, email, company, currency'),
       supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
       supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
+      supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
     ]);
+    if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
     const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
     const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
 
