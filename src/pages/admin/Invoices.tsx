@@ -658,7 +658,7 @@ export default function Invoices() {
       ) : (
         <>
           {/* Mobile card view */}
-          <div className="space-y-3 md:hidden">
+          <div className="space-y-3 lg:hidden">
             {paginated.map(inv => {
               const isOverdue = inv.status === 'overdue';
               const isUnpaid = isPayableStatus(inv.status);
