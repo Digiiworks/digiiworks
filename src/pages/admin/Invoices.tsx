@@ -442,7 +442,7 @@ export default function Invoices() {
     } catch (err: any) {
       toast({ title: 'Failed to send email', description: err.message, variant: 'destructive' });
     }
-    setSending(false);
+    setSendingId(null);
   };
 
   const handlePayClick = async (inv: Invoice) => {
