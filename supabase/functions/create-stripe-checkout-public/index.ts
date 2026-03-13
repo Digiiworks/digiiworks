@@ -103,8 +103,8 @@ Deno.serve(async (req) => {
     // Create Stripe Checkout Session
     const params = new URLSearchParams();
     params.append("mode", "payment");
-    params.append("success_url", `${baseUrl}/dashboard?payment=success&invoice=${invoice.invoice_number}`);
-    params.append("cancel_url", `${baseUrl}/dashboard?payment=cancelled&invoice=${invoice.invoice_number}`);
+    params.append("success_url", `${baseUrl}/client?payment=success&invoice=${invoice.invoice_number}`);
+    params.append("cancel_url", `${baseUrl}/client?payment=cancelled&invoice=${invoice.invoice_number}`);
     params.append("line_items[0][price_data][currency]", currency.toLowerCase());
     params.append("line_items[0][price_data][unit_amount]", String(amountInCents));
     params.append("line_items[0][price_data][product_data][name]", `Invoice ${invoice.invoice_number}`);

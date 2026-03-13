@@ -368,7 +368,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { invoice_id, mode, force_resend } = body;
 
-    const dashboardBaseUrl = "https://digiiworks.lovable.app/dashboard";
+    const dashboardBaseUrl = "https://digiiworks.lovable.app/client";
     const results: { invoice_id: string; status: string; error?: string }[] = [];
 
     // Fetch payment settings once
