@@ -1127,7 +1127,7 @@ export default function Invoices() {
                 </div>
               )}
 
-              {['sent', 'overdue'].includes(showDetail.status) && (
+              {isPayableStatus(showDetail.status) && (
                 <Button
                   className={`w-full gap-2 font-mono ${
                     showDetail.status === 'overdue'
