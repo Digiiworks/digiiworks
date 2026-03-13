@@ -256,27 +256,27 @@ export default function Invoices() {
 
   const paidByCurrency = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
-    invoices.filter(i => i.status === 'paid').forEach(i => {
+    visibleInvoices.filter(i => i.status === 'paid').forEach(i => {
       const c = i.currency ?? 'USD';
       if (!map[c]) map[c] = { total: 0, count: 0 };
       map[c].total += i.total;
       map[c].count++;
     });
     return map;
-  }, [invoices]);
+  }, [visibleInvoices]);
 
   const overdueByCurrency = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
-    invoices.filter(i => i.status === 'overdue').forEach(i => {
+    visibleInvoices.filter(i => i.status === 'overdue').forEach(i => {
       const c = i.currency ?? 'USD';
       if (!map[c]) map[c] = { total: 0, count: 0 };
       map[c].total += i.total;
       map[c].count++;
     });
     return map;
-  }, [invoices]);
+  }, [visibleInvoices]);
 
-  const overdueCount = invoices.filter(i => i.status === 'overdue').length;
+  const overdueCount = visibleInvoices.filter(i => i.status === 'overdue').length;
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
