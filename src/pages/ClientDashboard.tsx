@@ -342,6 +342,40 @@ const ClientDashboard = () => {
           </p>
         </div>
 
+        {/* Summary Stats */}
+        {invoices.length > 0 && (() => {
+          const overdueInvs = invoices.filter(i => i.status === 'overdue');
+          const overdueTotal = overdueInvs.reduce((s, i) => s + Number(i.total), 0);
+          const outstandingInvs = invoices.filter(i => ['sent', 'overdue'].includes(i.status));
+          const outstandingTotal = outstandingInvs.reduce((s, i) => s + Number(i.total), 0);
+          const paidInvs = invoices.filter(i => i.status === 'paid');
+          const paidTotal = paidInvs.reduce((s, i) => s + Number(i.total), 0);
+          // Use first company currency or USD
+          const mainCurrency = companies[0]?.currency ?? 'USD';
+
+          return (
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 mb-8">
+              <Card className="border-border bg-card p-4">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Outstanding</p>
+                <p className="font-mono text-xl font-bold text-foreground mt-1">{fmtCurrency(outstandingTotal, mainCurrency)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{outstandingInvs.length} invoice{outstandingInvs.length !== 1 ? 's' : ''}</p>
+              </Card>
+              {overdueInvs.length > 0 && (
+                <Card className="border-destructive/30 bg-destructive/5 p-4">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-destructive">Overdue</p>
+                  <p className="font-mono text-xl font-bold text-destructive mt-1">{fmtCurrency(overdueTotal, mainCurrency)}</p>
+                  <p className="text-xs text-destructive/70 mt-0.5">{overdueInvs.length} invoice{overdueInvs.length !== 1 ? 's' : ''}</p>
+                </Card>
+              )}
+              <Card className="border-border bg-card p-4">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Paid</p>
+                <p className="font-mono text-xl font-bold text-primary mt-1">{fmtCurrency(paidTotal, mainCurrency)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{paidInvs.length} invoice{paidInvs.length !== 1 ? 's' : ''}</p>
+              </Card>
+            </div>
+          );
+        })()}
+
         {/* Businesses with Invoices */}
         <div className="space-y-6">
           {companiesWithInvoices.map(({ company, invoices: companyInvoices }) => {
