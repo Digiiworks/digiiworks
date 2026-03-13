@@ -1,11 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+
+const PasswordStrength = ({ password }: { password: string }) => {
+  const checks = [
+    { label: '6+ characters', pass: password.length >= 6 },
+    { label: 'Uppercase', pass: /[A-Z]/.test(password) },
+    { label: 'Number', pass: /\d/.test(password) },
+    { label: 'Special char', pass: /[^A-Za-z0-9]/.test(password) },
+  ];
+  const score = checks.filter(c => c.pass).length;
+  const colors = ['bg-destructive', 'bg-destructive', 'bg-orange-500', 'bg-neon-mint', 'bg-neon-mint'];
+  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+
+  return (
+    <div className="space-y-2 pt-1">
+      <div className="flex gap-1">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= score ? colors[score] : 'bg-muted'}`} />
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className={`font-mono text-[10px] ${score <= 1 ? 'text-destructive' : score <= 2 ? 'text-orange-500' : 'text-neon-mint'}`}>
+          {labels[score]}
+        </span>
+        <div className="flex gap-2">
+          {checks.map(c => (
+            <span key={c.label} className={`font-mono text-[10px] ${c.pass ? 'text-neon-mint' : 'text-muted-foreground'}`}>
+              {c.pass ? '✓' : '○'} {c.label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,9 +50,16 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState('');
   const [forgotPassword, setForgotPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,19 +74,11 @@ const Auth = () => {
         toast({ title: 'Check your email', description: 'Password reset link sent.' });
         setForgotPassword(false);
       } else if (isLogin) {
-        const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // Check roles to redirect appropriately
-        const { data: rolesData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', data.user.id);
-        const roles = rolesData?.map((r: any) => r.role) ?? [];
-        if (roles.includes('admin') || roles.includes('editor')) {
-          navigate('/admin');
-        } else {
-          navigate('/admin');
-        }
+        // AuthContext handles role loading; navigate to admin — Dashboard component
+        // renders the correct view based on role.
+        navigate('/admin');
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -63,6 +97,15 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  // Show nothing while checking auth state
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen">
@@ -124,51 +167,8 @@ const Auth = () => {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {!isLogin && password.length > 0 && (() => {
-                  const checks = [
-                    { label: '6+ characters', pass: password.length >= 6 },
-                    { label: 'Uppercase', pass: /[A-Z]/.test(password) },
-                    { label: 'Number', pass: /\d/.test(password) },
-                    { label: 'Special char', pass: /[^A-Za-z0-9]/.test(password) },
-                  ];
-                  const score = checks.filter(c => c.pass).length;
-                  const colors = ['bg-destructive', 'bg-destructive', 'bg-orange-500', 'bg-neon-mint', 'bg-neon-mint'];
-                  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-                  return (
-                    <div className="space-y-2 pt-1">
-                      <div className="flex gap-1">
-                        {[1,2,3,4].map(i => (
-                          <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= score ? colors[score] : 'bg-muted'}`} />
-                        ))}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className={`font-mono text-[10px] ${score <= 1 ? 'text-destructive' : score <= 2 ? 'text-orange-500' : 'text-neon-mint'}`}>
-                          {labels[score]}
-                        </span>
-                        <div className="flex gap-2">
-                          {checks.map(c => (
-                            <span key={c.label} className={`font-mono text-[10px] ${c.pass ? 'text-neon-mint' : 'text-muted-foreground'}`}>
-                              {c.pass ? '✓' : '○'} {c.label}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
+                {!isLogin && password.length > 0 && <PasswordStrength password={password} />}
               </div>
-            )}
-
-            {isLogin && !forgotPassword && (
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-border accent-primary"
-                />
-                <span className="font-mono text-xs text-muted-foreground">Remember me</span>
-              </label>
             )}
 
             <Button
@@ -187,7 +187,7 @@ const Auth = () => {
           </form>
 
           <div className="mt-5 space-y-2 text-center">
-            {!forgotPassword && (
+            {isLogin && !forgotPassword && (
               <button
                 onClick={() => setForgotPassword(true)}
                 className="block w-full font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
@@ -195,12 +195,22 @@ const Auth = () => {
                 Forgot password?
               </button>
             )}
-            <button
-              onClick={() => { setIsLogin(!isLogin); setForgotPassword(false); }}
-              className="block w-full font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
-            >
-              {isLogin ? "Don't have an account? Sign up as a client" : 'Already have an account? Sign in'}
-            </button>
+            {forgotPassword && (
+              <button
+                onClick={() => setForgotPassword(false)}
+                className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <ArrowLeft className="h-3 w-3" /> Back to Sign In
+              </button>
+            )}
+            {!forgotPassword && (
+              <button
+                onClick={() => { setIsLogin(!isLogin); setForgotPassword(false); }}
+                className="block w-full font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                {isLogin ? "Don't have an account? Sign up as a client" : 'Already have an account? Sign in'}
+              </button>
+            )}
           </div>
         </div>
       </div>
