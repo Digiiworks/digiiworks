@@ -199,8 +199,15 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
 
   let bankingBlock = '';
   if (paymentSettings) {
-    const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
-    bankingBlock = buildBankingHTML(paymentSettings[bankKey], paymentSettings.payment_links, currency, invoice.total, paymentSettings.payment_methods);
+    const resolved = resolveRegionalBankInfo(paymentSettings, normalizedCurrency);
+    bankingBlock = buildBankingHTML(
+      resolved?.bankInfo,
+      paymentSettings.payment_links,
+      normalizedCurrency,
+      invoice.total,
+      paymentSettings.payment_methods,
+      resolved?.regionLabel,
+    );
   }
 
   return '<!DOCTYPE html>' +
