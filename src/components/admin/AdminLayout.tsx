@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package, Menu, X, Wrench } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package, Menu, X, Wrench, MoreHorizontal } from 'lucide-react';
+
+const bottomTabs = [
+  { label: 'Clients', to: '/admin/clients', icon: UserCircle },
+  { label: 'Products', to: '/admin/products', icon: Package },
+  { label: 'Invoices', to: '/admin/invoices', icon: DollarSign },
+  { label: 'Settings', to: '/admin/settings', icon: Wrench },
+];
 
 const navItems = [
   { label: 'Dashboard', to: '/admin', icon: LayoutDashboard },
