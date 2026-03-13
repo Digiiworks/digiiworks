@@ -60,6 +60,7 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [showActive, setShowActive] = useState<'all' | 'active' | 'inactive'>('all');
