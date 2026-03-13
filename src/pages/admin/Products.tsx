@@ -81,12 +81,16 @@ export default function Products() {
 
   const fetchData = async () => {
     setLoading(true);
+    setFetchError(false);
     const [prodRes, catRes] = await Promise.all([
       supabase.from('products').select('*').order('category').order('name'),
       supabase.from('product_categories').select('*').order('sort_order'),
     ]);
-    if (prodRes.error) toast({ title: 'Error loading products', description: prodRes.error.message, variant: 'destructive' });
-    if (catRes.error) toast({ title: 'Error loading categories', description: catRes.error.message, variant: 'destructive' });
+    if (prodRes.error || catRes.error) {
+      setFetchError(true);
+      if (prodRes.error) toast({ title: 'Error loading products', description: prodRes.error.message, variant: 'destructive' });
+      if (catRes.error) toast({ title: 'Error loading categories', description: catRes.error.message, variant: 'destructive' });
+    }
     setProducts(prodRes.data ?? []);
     setCategories(catRes.data ?? []);
     setLoading(false);
