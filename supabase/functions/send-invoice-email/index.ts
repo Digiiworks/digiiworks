@@ -99,33 +99,54 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
 
   const buttonRows: string[] = [];
 
-  // Stripe button (if enabled) — links to client dashboard where checkout session is created
   const stripeEnabled = paymentMethods?.stripe_enabled === true || paymentMethods?.stripe_enabled === 'true';
   if (stripeEnabled) {
-    linksHTML += '<a href="https://digiiworks.lovable.app/client" style="display:inline-block;padding:11px 28px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:10px;letter-spacing:0.5px;">💳 Pay with Stripe</a>';
+    buttonRows.push(
+      '<tr><td style="padding:0 0 10px;"><a href="https://digiiworks.lovable.app/client" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;">💳 Pay with Stripe</a></td></tr>'
+    );
   }
 
-  // Yoco button (if enabled and ZAR)
   const yocoEnabled = paymentMethods?.yoco_enabled === true || paymentMethods?.yoco_enabled === 'true' || paymentMethods?.yoco_enabled === undefined;
-  if (yocoEnabled && paymentLinks?.yoco_payment_link && currency === 'ZAR') {
+  const normalizedCurrency = normalizeCurrency(currency);
+  if (yocoEnabled && paymentLinks?.yoco_payment_link && normalizedCurrency === 'ZAR') {
     const yocoUrl = paymentLinks.yoco_payment_link + (paymentLinks.yoco_payment_link.includes('?') ? '&' : '?') + 'amount=' + Number(invoiceTotal || 0).toFixed(2);
-    linksHTML += '<a href="' + yocoUrl + '" style="display:inline-block;padding:11px 28px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:10px;letter-spacing:0.5px;">Pay with Yoco</a>';
+    buttonRows.push(
+      '<tr><td style="padding:0 0 10px;"><a href="' + yocoUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;">Pay with Yoco</a></td></tr>'
+    );
   }
 
   if (paymentLinks?.wise_payment_link) {
-    linksHTML += '<a href="' + paymentLinks.wise_payment_link + '" style="display:inline-block;padding:11px 28px;background:#9fe870;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;letter-spacing:0.5px;">Pay with Wise</a>';
+    buttonRows.push(
+      '<tr><td style="padding:0;"><a href="' + paymentLinks.wise_payment_link + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#9fe870;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;">Pay with Wise</a></td></tr>'
+    );
   }
 
-  const refNote = bankInfo.reference_note
-    ? '<p style="margin:12px 0 0;font-size:12px;color:#6b7280;font-style:italic;">' + bankInfo.reference_note + '</p>'
+  if (fields.length === 0 && buttonRows.length > 0) {
+    fields.push('<tr><td colspan="2" style="padding:4px 0 2px;color:#6b7280;font-size:12px;">Local bank details are still being configured. You can use the online payment options below.</td></tr>');
+  }
+
+  if (fields.length === 0 && buttonRows.length === 0) return '';
+
+  const refNote = safeBankInfo.reference_note
+    ? '<p style="margin:12px 0 0;font-size:12px;color:#6b7280;font-style:italic;">' + safeBankInfo.reference_note + '</p>'
     : '';
 
-  return '<div style="margin-top:28px;padding:20px 24px;background:#f0fdfa;border-radius:10px;border:1px solid #ccfbf1;">' +
-    '<p style="margin:0 0 12px;font-size:11px;text-transform:uppercase;letter-spacing:2.5px;color:#0d9488;font-weight:700;">Direct Deposit — ' + regionLabel + '</p>' +
+  const directDepositCard = '<div style="margin-top:28px;padding:20px 24px;background:#f0fdfa;border-radius:10px;border:1px solid #ccfbf1;">' +
+    '<p style="margin:0 0 12px;font-size:11px;text-transform:uppercase;letter-spacing:2.5px;color:#0d9488;font-weight:700;">Direct Deposit — ' + resolvedRegionLabel + '</p>' +
     '<table style="width:100%;border-collapse:collapse;">' + fields.join('') + '</table>' +
     refNote +
-    '</div>' +
-    (linksHTML ? '<div style="text-align:center;margin:24px 0 0;">' + linksHTML + '<p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">Don\'t have a Wise account? <a href="https://wise.com/invite/dic/justind507" style="color:#0d9488;text-decoration:underline;">Sign up today</a> for fee-free transfers.</p></div>' : '');
+    '</div>';
+
+  const linksHTML = buttonRows.length > 0
+    ? '<div style="text-align:center;margin:20px 0 0;">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:360px;margin:0 auto;border-collapse:collapse;">' + buttonRows.join('') + '</table>' +
+      (paymentLinks?.wise_payment_link
+        ? '<p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">Don\'t have a Wise account? <a href="https://wise.com/invite/dic/justind507" style="color:#0d9488;text-decoration:underline;">Sign up today</a> for fee-free transfers.</p>'
+        : '') +
+      '</div>'
+    : '';
+
+  return directDepositCard + linksHTML;
 }
 
 async function hmacSign(invoiceId: string, secret: string): Promise<string> {
