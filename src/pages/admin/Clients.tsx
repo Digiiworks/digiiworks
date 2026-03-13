@@ -83,6 +83,10 @@ export default function Clients() {
   const [form, setForm] = useState({
     email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa' | 'thailand',
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [startDate, setStartDate] = useState<string | null>(null);
