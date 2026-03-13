@@ -368,6 +368,9 @@ export default function Clients() {
     setSelectedExistingUser(null);
     setEmailQuery('');
     setEmailMatches([]);
+    setLogoFile(null);
+    setLogoPreview(null);
+    setExistingLogoUrl(null);
   };
 
   const saveRecurringServices = async (clientId: string, companyId: string) => {
