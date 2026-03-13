@@ -127,7 +127,7 @@ const AdminLayout = () => {
       {/* Main content */}
       <div className="flex flex-1 flex-col">
         {/* Mobile header - matches frontend navbar */}
-        <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl md:hidden">
+        <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl lg:hidden">
           <div className="flex items-center justify-between px-6 py-4">
             <Link to="/">
               <img src="/logo.svg" alt="Digiiworks" style={{ width: 175 }} />
