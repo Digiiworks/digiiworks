@@ -1,24 +1,21 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
   FileText,
-  DollarSign,
   Clock,
   CheckCircle2,
   AlertCircle,
-  LogOut,
   ChevronRight,
   ChevronDown,
-  User,
   Landmark,
   Download,
   CreditCard,
@@ -26,6 +23,7 @@ import {
   Building2,
   Loader2,
 } from 'lucide-react';
+import AdminToolbar from '@/components/admin/AdminToolbar';
 
 interface InvoiceRow {
   id: string;
