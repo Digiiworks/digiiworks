@@ -241,50 +241,8 @@ const ClientDashboard = () => {
   const yocoEnabled = paymentSettings?.yoco_enabled || paymentSettings?.payment_methods?.yoco_enabled === true || paymentSettings?.payment_methods?.yoco_enabled === 'true' || paymentSettings?.payment_methods?.yoco_enabled === undefined;
   const wiseLink = paymentSettings?.wise_payment_link || paymentSettings?.payment_links?.wise_payment_link;
 
-  const renderPaymentButtons = (inv: InvoiceRow, currency: string) => {
-    if (!['sent', 'overdue'].includes(inv.status)) return null;
-    const isLoading = payingInvoiceId === inv.id;
-    
-    return (
-      <div className="flex flex-wrap gap-2 pt-2">
-        {stripeEnabled && (
-          <Button
-            size="sm"
-            className="gap-1.5 font-mono text-xs"
-            disabled={isLoading}
-            onClick={(e) => { e.stopPropagation(); handleStripePayment(inv.id); }}
-          >
-            {isLoading && payingMethod === 'stripe' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
-            Stripe
-          </Button>
-        )}
-        {yocoEnabled && currency === 'ZAR' && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5 font-mono text-xs"
-            disabled={isLoading}
-            onClick={(e) => { e.stopPropagation(); handleYocoPayment(inv.id); }}
-          >
-            {isLoading && payingMethod === 'yoco' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
-            Yoco
-          </Button>
-        )}
-        {wiseLink && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5 font-mono text-xs"
-            asChild
-            onClick={(e) => e.stopPropagation()}
-          >
-            <a href={wiseLink} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3.5 w-3.5" /> Wise
-            </a>
-          </Button>
-        )}
-      </div>
-    );
+  const renderPaymentButtons = (_inv: InvoiceRow, _currency: string) => {
+    return null;
   };
 
   const subtitle = companies.length > 0
