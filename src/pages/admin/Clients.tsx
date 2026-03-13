@@ -39,6 +39,7 @@ type ClientCompany = {
   active: boolean;
   created_at: string;
   updated_at: string;
+  logo_url: string | null;
   // enriched from profile
   email: string | null;
   display_name: string | null;
