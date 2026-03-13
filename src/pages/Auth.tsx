@@ -58,7 +58,7 @@ const Auth = () => {
         toast({ title: 'Check your email', description: 'Confirm your email to continue.' });
       }
     } catch (err: any) {
-      toast.error('Error', { description: err.message });
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }

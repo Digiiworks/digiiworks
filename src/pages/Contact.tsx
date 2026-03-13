@@ -85,7 +85,7 @@ const Contact = () => {
       formLoadTime.current = Date.now();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Connection failed. Please try again.';
-      toast.error('Error', { description: message });
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
