@@ -9,6 +9,7 @@ import Layout from "./components/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/admin/AdminLayout";
+import { ContentPageSkeleton, FormPageSkeleton, LegalPageSkeleton, AdminPageSkeleton } from "./components/PageSkeleton";
 
 // Eager imports for main nav pages — instant navigation
 import Index from "./pages/Index";
@@ -49,12 +50,6 @@ const queryClient = new QueryClient({
   },
 });
 
-const PageLoader = () => (
-  <div className="flex min-h-[60vh] items-center justify-center">
-    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-  </div>
-);
-
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -68,28 +63,28 @@ const App = () => (
               <Route element={<Layout />}>
                 <Route path="/" element={<Index />} />
                   <Route path="/services" element={<Services />} />
-                  <Route path="/services/:slug" element={<ServiceDetail />} />
+                  <Route path="/services/:slug" element={<Suspense fallback={<ContentPageSkeleton />}><ServiceDetail /></Suspense>} />
                   <Route path="/ai" element={<AIAutomation />} />
                   <Route path="/get-started" element={<GetStarted />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/blog" element={<Blog />} />
-                  <Route path="/blog/:slug" element={<BlogPost />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/blog/:slug" element={<Suspense fallback={<ContentPageSkeleton />}><BlogPost /></Suspense>} />
+                  <Route path="/privacy" element={<Suspense fallback={<LegalPageSkeleton />}><Privacy /></Suspense>} />
+                  <Route path="/terms" element={<Suspense fallback={<LegalPageSkeleton />}><Terms /></Suspense>} />
                 </Route>
 
                 {/* Auth */}
-                <Route path="/auth" element={<Suspense fallback={<PageLoader />}><Auth /></Suspense>} />
-                <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
+                <Route path="/auth" element={<Suspense fallback={<FormPageSkeleton />}><Auth /></Suspense>} />
+                <Route path="/reset-password" element={<Suspense fallback={<FormPageSkeleton />}><ResetPassword /></Suspense>} />
                 <Route path="/client" element={<Navigate to="/admin" replace />} />
                 <Route path="/invoice/:id" element={
-                  <Suspense fallback={<PageLoader />}><InvoicePrint /></Suspense>
+                  <Suspense fallback={<ContentPageSkeleton />}><InvoicePrint /></Suspense>
                 } />
 
                 {/* Admin CRM */}
                 <Route path="/admin" element={
                   <ProtectedRoute requiredRoles={['admin', 'editor', 'client']}>
-                    <Suspense fallback={<PageLoader />}><AdminLayout /></Suspense>
+                    <Suspense fallback={<AdminPageSkeleton />}><AdminLayout /></Suspense>
                   </ProtectedRoute>
                 }>
                   <Route index element={<Dashboard />} />
@@ -132,7 +127,7 @@ const App = () => (
                 </Route>
 
                 <Route path="*" element={<Layout />}>
-                  <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
+                  <Route path="*" element={<Suspense fallback={<ContentPageSkeleton />}><NotFound /></Suspense>} />
                 </Route>
               </Routes>
           </AuthProvider>
