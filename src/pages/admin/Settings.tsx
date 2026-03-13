@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PAGE_KEY = 'payment_settings';
@@ -49,6 +50,10 @@ interface BankingInfo {
     google_pixel_id: string;
     meta_pixel_id: string;
   };
+  payment_methods: {
+    stripe_enabled: boolean;
+    yoco_enabled: boolean;
+  };
 }
 
 const defaultData: BankingInfo = {
@@ -57,6 +62,7 @@ const defaultData: BankingInfo = {
   south_africa: { bank_name: '', account_name: '', account_number: '', branch_code: '', account_type: 'Cheque', currency: 'ZAR', reference_note: '' },
   payment_links: { yoco_payment_link: '', wise_payment_link: '' },
   tracking: { google_pixel_id: '', meta_pixel_id: '' },
+  payment_methods: { stripe_enabled: false, yoco_enabled: true },
 };
 
 const SettingsPage = () => {
@@ -115,7 +121,7 @@ const SettingsPage = () => {
     setTimeout(() => setSaved(false), 2000);
   }, [recordId]);
 
-  const update = (path: string[], value: string) => {
+  const update = (path: string[], value: string | boolean) => {
     setData((prev) => {
       const next = JSON.parse(JSON.stringify(prev));
       let obj = next;
@@ -250,6 +256,7 @@ const SettingsPage = () => {
           <TabsTrigger value="south_africa" className="gap-1.5 font-mono text-xs">🇿🇦 South Africa (ZAR)</TabsTrigger>
           <TabsTrigger value="links" className="gap-1.5 font-mono text-xs"><LinkIcon className="h-3.5 w-3.5" /> Payment Links</TabsTrigger>
           <TabsTrigger value="tracking" className="gap-1.5 font-mono text-xs"><BarChart3 className="h-3.5 w-3.5" /> Tracking Pixels</TabsTrigger>
+          <TabsTrigger value="payment_methods" className="gap-1.5 font-mono text-xs"><CreditCard className="h-3.5 w-3.5" /> Payment Methods</TabsTrigger>
         </TabsList>
 
         <TabsContent value="global">
@@ -339,6 +346,38 @@ const SettingsPage = () => {
               <Field label="Google Pixel / GA4 Measurement ID" path={['tracking', 'google_pixel_id']} placeholder="G-XXXXXXXXXX or AW-XXXXXXXXX" />
               <Separator />
               <Field label="Meta (Facebook) Pixel ID" path={['tracking', 'meta_pixel_id']} placeholder="123456789012345" />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="payment_methods">
+          <Card className="border-border bg-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-mono text-base">
+                <CreditCard className="h-4 w-4 text-primary" /> Payment Methods
+              </CardTitle>
+              <CardDescription>Enable or disable payment gateways shown on invoices and emails</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium text-foreground">Stripe Payments</Label>
+                  <p className="text-xs text-muted-foreground">Accept card payments via Stripe (all currencies)</p>
+                </div>
+                <Switch
+                  checked={data.payment_methods?.stripe_enabled === true || data.payment_methods?.stripe_enabled === 'true' as any}
+                  onCheckedChange={(checked) => update(['payment_methods', 'stripe_enabled'], checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium text-foreground">Yoco Payments</Label>
+                  <p className="text-xs text-muted-foreground">Accept ZAR card payments via Yoco (South Africa)</p>
+                </div>
+                <Switch
+                  checked={data.payment_methods?.yoco_enabled === true || data.payment_methods?.yoco_enabled === 'true' as any || (data.payment_methods?.yoco_enabled === undefined)}
+                  onCheckedChange={(checked) => update(['payment_methods', 'yoco_enabled'], checked)}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

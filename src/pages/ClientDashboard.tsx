@@ -56,6 +56,7 @@ const ClientDashboard = () => {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [yocoLoading, setYocoLoading] = useState(false);
+  const [stripeLoading, setStripeLoading] = useState(false);
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [clientCurrency, setClientCurrency] = useState('USD');
   const [paymentMessage, setPaymentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -93,6 +94,25 @@ const ClientDashboard = () => {
       console.error('Yoco payment error:', err);
       alert(err.message || 'Failed to initiate payment');
       setYocoLoading(false);
+    }
+  };
+
+  const handleStripePayment = async (invoiceId: string) => {
+    setStripeLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: { invoice_id: invoiceId },
+      });
+      if (error) throw error;
+      if (data?.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        throw new Error('No redirect URL received');
+      }
+    } catch (err: any) {
+      console.error('Stripe payment error:', err);
+      alert(err.message || 'Failed to initiate payment');
+      setStripeLoading(false);
     }
   };
 
@@ -346,17 +366,25 @@ const ClientDashboard = () => {
 
               {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue') && (
                 <div className="flex flex-wrap gap-3 pt-2">
-                  <Button className="font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90">
-                    Pay with Stripe
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="font-mono border-secondary text-secondary hover:bg-secondary/10"
-                    disabled={yocoLoading}
-                    onClick={() => handleYocoPayment(selectedInvoice.id)}
-                  >
-                    {yocoLoading ? 'Redirecting…' : 'Pay with Yoco'}
-                  </Button>
+                  {(paymentSettings?.payment_methods?.stripe_enabled === true || paymentSettings?.payment_methods?.stripe_enabled === 'true') && (
+                    <Button
+                      className="font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90"
+                      disabled={stripeLoading}
+                      onClick={() => handleStripePayment(selectedInvoice.id)}
+                    >
+                      {stripeLoading ? 'Redirecting…' : 'Pay with Stripe'}
+                    </Button>
+                  )}
+                  {(paymentSettings?.payment_methods?.yoco_enabled === true || paymentSettings?.payment_methods?.yoco_enabled === 'true' || paymentSettings?.payment_methods?.yoco_enabled === undefined) && clientCurrency === 'ZAR' && (
+                    <Button
+                      variant="outline"
+                      className="font-mono border-secondary text-secondary hover:bg-secondary/10"
+                      disabled={yocoLoading}
+                      onClick={() => handleYocoPayment(selectedInvoice.id)}
+                    >
+                      {yocoLoading ? 'Redirecting…' : 'Pay with Yoco'}
+                    </Button>
+                  )}
                   {paymentSettings?.payment_links?.wise_payment_link && (
                     <Button
                       variant="outline"
