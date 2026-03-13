@@ -396,8 +396,8 @@ Deno.serve(async (req) => {
       };
 
       const testToken = await hmacSign("test-invoice-id", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      // No real stripe checkout URL for test mode
-      const html = buildEmailHTML(mockInvoice, items, mockClient, dashboardBaseUrl, testCurrency, testToken, paymentSettings, '');
+      const testStripeUrl = `${supabaseUrl}/functions/v1/create-stripe-checkout-public?invoice_id=test-invoice-id&token=${testToken}`;
+      const html = buildEmailHTML(mockInvoice, items, mockClient, dashboardBaseUrl, testCurrency, testToken, paymentSettings, testStripeUrl);
       await sendEmail(send_to, "[TEST] Invoice TEST-0001 from DigiiWorks (" + testCurrency + ")", html);
 
       return new Response(
