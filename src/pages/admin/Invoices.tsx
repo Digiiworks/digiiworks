@@ -546,7 +546,7 @@ export default function Invoices() {
 
   return (
     <div className="space-y-6">
-      {/* Summary cards - 2 cols: Outstanding | Overdue per currency row, then Paid spanning 2 cols */}
+      {/* Summary cards */}
       {(() => {
         const currencyOrder = ['ZAR', 'THB', 'USD'];
         const allCurrencies = [...new Set([
@@ -557,73 +557,93 @@ export default function Invoices() {
           const bi = currencyOrder.indexOf(b);
           return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
         });
-        const paidCurrencies = Object.keys(paidByCurrency).sort((a, b) => {
-          const ai = currencyOrder.indexOf(a);
-          const bi = currencyOrder.indexOf(b);
-          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-        });
 
         return (
-          <div className="grid gap-3 grid-cols-2">
-            {allCurrencies.length === 0 ? (
-              <>
-                <StatCard label="Outstanding" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
-                <StatCard label="Overdue" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
-              </>
-            ) : (
-              allCurrencies.map(currency => {
-                const out = outstandingByCurrency[currency];
-                const od = overdueByCurrency[currency];
-                return (
-                  <React.Fragment key={currency}>
-                    <StatCard
-                      label={`Outstanding (${currency})`}
-                      value={fmtCurrency(out?.total ?? 0, currency)}
-                      subtitle={`${out?.count ?? 0} invoice(s)`}
-                    />
-                    {od ? (
+          <>
+            {/* Desktop: 3 columns, each currency is a column with Outstanding on top, Overdue below */}
+            <div className="hidden lg:grid lg:grid-cols-3 gap-3">
+              {allCurrencies.length === 0 ? (
+                <div className="space-y-3">
+                  <StatCard label="Outstanding" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
+                  <StatCard label="Overdue" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
+                </div>
+              ) : (
+                allCurrencies.map(currency => {
+                  const out = outstandingByCurrency[currency];
+                  const od = overdueByCurrency[currency];
+                  return (
+                    <div key={currency} className="space-y-3">
                       <StatCard
-                        label={`Overdue (${currency})`}
-                        value={fmtCurrency(od.total, currency)}
-                        icon={AlertTriangle}
-                        iconColor="text-orange-400"
-                        valueColor="text-orange-400"
-                        variant="alert"
-                        alertColor="orange-500"
-                        subtitle={`${od.count} invoice(s)`}
+                        label={`Outstanding (${currency})`}
+                        value={fmtCurrency(out?.total ?? 0, currency)}
+                        subtitle={`${out?.count ?? 0} invoice(s)`}
                       />
-                    ) : (
-                      <StatCard
-                        label={`Overdue (${currency})`}
-                        value={fmtCurrency(0, currency)}
-                        subtitle="0 invoice(s)"
-                      />
-                    )}
-                  </React.Fragment>
-                );
-              })
-            )}
+                      {od ? (
+                        <StatCard
+                          label={`Overdue (${currency})`}
+                          value={fmtCurrency(od.total, currency)}
+                          icon={AlertTriangle}
+                          iconColor="text-orange-400"
+                          valueColor="text-orange-400"
+                          variant="alert"
+                          alertColor="orange-500"
+                          subtitle={`${od.count} invoice(s)`}
+                        />
+                      ) : (
+                        <StatCard
+                          label={`Overdue (${currency})`}
+                          value={fmtCurrency(0, currency)}
+                          subtitle="0 invoice(s)"
+                        />
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
 
-            {/* Paid cards spanning full width */}
-            {paidCurrencies.length === 0 ? (
-              <div className="col-span-2">
-                <StatCard label="Paid" value={fmtCurrency(0)} valueColor="text-green-400" subtitle="0 invoice(s)" />
-              </div>
-            ) : (
-              paidCurrencies.map(currency => {
-                const p = paidByCurrency[currency];
-                return (
-                  <StatCard
-                    key={`paid-${currency}`}
-                    label={`Paid (${currency})`}
-                    value={fmtCurrency(p.total, currency)}
-                    valueColor="text-green-400"
-                    subtitle={`${p.count} invoice(s)`}
-                  />
-                );
-              })
-            )}
-          </div>
+            {/* Mobile/Tablet: 2 columns, Outstanding | Overdue per currency row */}
+            <div className="grid gap-3 grid-cols-2 lg:hidden">
+              {allCurrencies.length === 0 ? (
+                <>
+                  <StatCard label="Outstanding" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
+                  <StatCard label="Overdue" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
+                </>
+              ) : (
+                allCurrencies.map(currency => {
+                  const out = outstandingByCurrency[currency];
+                  const od = overdueByCurrency[currency];
+                  return (
+                    <React.Fragment key={currency}>
+                      <StatCard
+                        label={`Outstanding (${currency})`}
+                        value={fmtCurrency(out?.total ?? 0, currency)}
+                        subtitle={`${out?.count ?? 0} invoice(s)`}
+                      />
+                      {od ? (
+                        <StatCard
+                          label={`Overdue (${currency})`}
+                          value={fmtCurrency(od.total, currency)}
+                          icon={AlertTriangle}
+                          iconColor="text-orange-400"
+                          valueColor="text-orange-400"
+                          variant="alert"
+                          alertColor="orange-500"
+                          subtitle={`${od.count} invoice(s)`}
+                        />
+                      ) : (
+                        <StatCard
+                          label={`Overdue (${currency})`}
+                          value={fmtCurrency(0, currency)}
+                          subtitle="0 invoice(s)"
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </div>
+          </>
         );
       })()}
 
