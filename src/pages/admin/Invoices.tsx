@@ -800,7 +800,7 @@ export default function Invoices() {
                               disabled={sendingId === inv.id}
                             >
                               {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                              Email
+                              
                             </Button>
                           )}
                           {isUnpaid && (
