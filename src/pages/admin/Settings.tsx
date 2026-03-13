@@ -374,8 +374,8 @@ const SettingsPage = () => {
                   <p className="text-xs text-muted-foreground">Accept ZAR card payments via Yoco (South Africa)</p>
                 </div>
                 <Switch
-                  checked={data.payment_methods?.yoco_enabled ?? true}
-                  onCheckedChange={(checked) => update(['payment_methods', 'yoco_enabled'], checked ? 'true' : 'false')}
+                  checked={data.payment_methods?.yoco_enabled === true || data.payment_methods?.yoco_enabled === 'true' as any || (data.payment_methods?.yoco_enabled === undefined)}
+                  onCheckedChange={(checked) => update(['payment_methods', 'yoco_enabled'], checked)}
                 />
               </div>
             </CardContent>

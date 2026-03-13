@@ -97,6 +97,25 @@ const ClientDashboard = () => {
     }
   };
 
+  const handleStripePayment = async (invoiceId: string) => {
+    setStripeLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: { invoice_id: invoiceId },
+      });
+      if (error) throw error;
+      if (data?.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        throw new Error('No redirect URL received');
+      }
+    } catch (err: any) {
+      console.error('Stripe payment error:', err);
+      alert(err.message || 'Failed to initiate payment');
+      setStripeLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
