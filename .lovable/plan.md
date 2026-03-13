@@ -1,20 +1,37 @@
 
 
-## Custom 404 Page — Neon Dark Theme
+## Settings Page Reorganization
 
-Replace the current plain 404 page with a styled version matching the site's neon-dark aesthetic.
+### Current Problem
+The settings page has 6 horizontal tabs that are cluttered and mix unrelated concerns (banking, payment methods, tracking pixels). The Settings nav item is positioned mid-sidebar instead of at the bottom.
 
-### Changes
+### New Layout
 
-**`src/pages/NotFound.tsx`** — Full redesign:
-- Dark background with `grid-overlay` pattern (matching ErrorBoundary style)
-- Glitchy "404" heading using `text-gradient` and `font-mono`
-- Pulsing status indicator (neon-mint dot with `animate-ping`) showing "Route Not Found"
-- Display the attempted path using `useLocation().pathname` in a mono-styled code block
-- Subtitle text in `text-muted-foreground`
-- "Return to Base" button styled with `glow-blue` and primary colors (matching ErrorBoundary's button pattern)
-- `glass-card` container for the content block
-- Wrap in the `Layout` component by moving the `*` route inside the Layout route group in `App.tsx`
+Replace the single tabbed page with a **two-section vertical layout** — no top tab bar.
 
-**`src/App.tsx`** — Move the catch-all route inside the `<Route element={<Layout />}>` group so the 404 page gets the navbar and footer.
+#### Section 1: Payments & Banking
+A single card/section containing:
+- **Regional Bank Accounts** — inner tabs (Global USD / Thailand THB / South Africa ZAR) for switching between bank detail forms
+- **Payment Links** — Yoco and Wise link fields below the bank tabs
+- **Payment Methods** — Stripe and Yoco toggles below payment links
+
+All payment-related config in one scrollable section.
+
+#### Section 2: Tracking & Analytics
+A separate card below for:
+- Google Pixel / GA4 ID
+- Meta (Facebook) Pixel ID
+
+This keeps tracking separate and makes room for future non-payment settings.
+
+### Sidebar Change
+
+**`src/components/admin/AdminLayout.tsx`**:
+- Move the Settings nav item out of the main `navItems` array
+- Render it separately at the bottom of the sidebar, just above the user info/sign-out section (in the `border-t` area)
+- Apply to both desktop and mobile sidebar views
+
+### Files Changed
+1. **`src/pages/admin/Settings.tsx`** — Remove top-level `Tabs`, restructure into two stacked sections. Keep inner tabs only for regional banks.
+2. **`src/components/admin/AdminLayout.tsx`** — Move Settings link to bottom of sidebar.
 
