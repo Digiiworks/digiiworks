@@ -45,10 +45,10 @@ const Index = () => (
 
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4 md:mt-10">
           <Button asChild className="w-full sm:w-auto glow-blue bg-primary text-primary-foreground font-mono hover:bg-primary/90 px-8 py-3">
-            <Link to="/services">Explore Services</Link>
-          </Button>
-          <Button variant="outline" asChild className="w-full sm:w-auto font-mono border-border hover:border-primary/50 hover:text-primary px-8 py-3">
             <Link to="/get-started">Get Started</Link>
+          </Button>
+          <Button variant="ghost" asChild className="w-full sm:w-auto font-mono text-muted-foreground hover:text-foreground px-8 py-3">
+            <Link to="/services">Explore Services →</Link>
           </Button>
         </div>
       </motion.div>
