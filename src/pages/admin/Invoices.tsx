@@ -22,7 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import {
-  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle, Pencil,
+  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle, Pencil, ExternalLink, CircleDollarSign,
 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import StatCard from '@/components/admin/StatCard';
@@ -139,6 +139,9 @@ export default function Invoices() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [payDialog, setPayDialog] = useState<Invoice | null>(null);
+  const [paymentSettings, setPaymentSettings] = useState<any>(null);
+  const [payingMethod, setPayingMethod] = useState<string | null>(null);
 
   // Create/Edit form
   const [form, setForm] = useState({ client_id: '', client_company_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
@@ -149,12 +152,14 @@ export default function Invoices() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [invRes, profRes, prodRes, compRes] = await Promise.all([
+    const [invRes, profRes, prodRes, compRes, paySettingsRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('user_id, display_name, email, company, currency'),
       supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
       supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
+      supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
     ]);
+    if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
     const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
     const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
 
@@ -445,21 +450,73 @@ export default function Invoices() {
     setSendingId(null);
   };
 
-  const handlePayClick = async (inv: Invoice) => {
+  const handlePayClick = (inv: Invoice) => {
+    setPayDialog(inv);
+  };
+
+  const handleManualPay = async () => {
+    if (!payDialog) return;
+    setPayingMethod('manual');
     try {
       const now = new Date().toISOString();
       const { error } = await supabase
         .from('invoices')
         .update({ status: 'paid', paid_at: now, payment_method: 'manual' })
-        .eq('id', inv.id);
+        .eq('id', payDialog.id);
       if (error) throw error;
-      toast({ title: 'Invoice marked as paid', description: `${inv.invoice_number} has been marked as paid.` });
+      toast({ title: 'Invoice marked as paid (manual)', description: `${payDialog.invoice_number} has been marked as paid.` });
       fetchAll();
-      if (showDetail?.id === inv.id) {
-        setShowDetail({ ...inv, status: 'paid', paid_at: now, payment_method: 'manual' } as any);
+      if (showDetail?.id === payDialog.id) {
+        setShowDetail({ ...payDialog, status: 'paid', paid_at: now, payment_method: 'manual' } as any);
       }
+      setPayDialog(null);
     } catch (err: any) {
       toast({ title: 'Failed to mark as paid', description: err.message, variant: 'destructive' });
+    }
+    setPayingMethod(null);
+  };
+
+  const handleStripeCheckout = async () => {
+    if (!payDialog) return;
+    setPayingMethod('stripe');
+    try {
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: { invoice_id: payDialog.id },
+      });
+      if (error) throw error;
+      if (data?.redirectUrl) {
+        window.open(data.redirectUrl, '_blank');
+        setPayDialog(null);
+      }
+    } catch (err: any) {
+      toast({ title: 'Stripe checkout failed', description: err.message, variant: 'destructive' });
+    }
+    setPayingMethod(null);
+  };
+
+  const handleYocoCheckout = async () => {
+    if (!payDialog) return;
+    setPayingMethod('yoco');
+    try {
+      const { data, error } = await supabase.functions.invoke('create-yoco-checkout', {
+        body: { invoice_id: payDialog.id },
+      });
+      if (error) throw error;
+      if (data?.redirectUrl) {
+        window.open(data.redirectUrl, '_blank');
+        setPayDialog(null);
+      }
+    } catch (err: any) {
+      toast({ title: 'Yoco checkout failed', description: err.message, variant: 'destructive' });
+    }
+    setPayingMethod(null);
+  };
+
+  const handleWisePayment = () => {
+    const wiseLink = paymentSettings?.wise_payment_link;
+    if (wiseLink) {
+      window.open(wiseLink, '_blank');
+      setPayDialog(null);
     }
   };
 
@@ -1113,6 +1170,109 @@ export default function Invoices() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Options Dialog */}
+      <Dialog open={!!payDialog} onOpenChange={() => setPayDialog(null)}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-mono flex items-center gap-2">
+              <CircleDollarSign className="h-5 w-5 text-primary" />
+              Pay {payDialog?.invoice_number}
+            </DialogTitle>
+          </DialogHeader>
+          {payDialog && (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border/50 bg-background/50 p-3 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Client</span>
+                  <span>{payDialog.client_name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Amount</span>
+                  <span className="font-mono font-bold">{fmtCurrency(payDialog.total, payDialog.currency)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Currency</span>
+                  <span className="font-mono">{payDialog.currency ?? 'USD'}</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground">Choose a payment method:</p>
+
+              <div className="space-y-2">
+                {/* Stripe */}
+                {paymentSettings?.stripe_enabled && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-12 font-mono text-sm border-border hover:border-primary/50 hover:bg-primary/5"
+                    onClick={handleStripeCheckout}
+                    disabled={!!payingMethod}
+                  >
+                    {payingMethod === 'stripe' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4 text-primary" />}
+                    <div className="text-left">
+                      <span className="block">Pay with Stripe</span>
+                      <span className="text-[10px] text-muted-foreground">Credit / Debit Card</span>
+                    </div>
+                    <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                  </Button>
+                )}
+
+                {/* Yoco - only for ZAR */}
+                {paymentSettings?.yoco_enabled && (payDialog.currency === 'ZAR') && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-12 font-mono text-sm border-border hover:border-primary/50 hover:bg-primary/5"
+                    onClick={handleYocoCheckout}
+                    disabled={!!payingMethod}
+                  >
+                    {payingMethod === 'yoco' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4 text-primary" />}
+                    <div className="text-left">
+                      <span className="block">Pay with Yoco</span>
+                      <span className="text-[10px] text-muted-foreground">South Africa (ZAR)</span>
+                    </div>
+                    <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                  </Button>
+                )}
+
+                {/* Wise */}
+                {paymentSettings?.wise_payment_link && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-12 font-mono text-sm border-border hover:border-primary/50 hover:bg-primary/5"
+                    onClick={handleWisePayment}
+                    disabled={!!payingMethod}
+                  >
+                    <ExternalLink className="h-4 w-4 text-primary" />
+                    <div className="text-left">
+                      <span className="block">Pay via Wise</span>
+                      <span className="text-[10px] text-muted-foreground">Bank Transfer</span>
+                    </div>
+                    <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                  </Button>
+                )}
+
+                {/* Manual */}
+                {isAdmin && (
+                  <div className="pt-2 border-t border-border/50">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3 h-10 font-mono text-xs text-muted-foreground hover:text-foreground"
+                      onClick={handleManualPay}
+                      disabled={!!payingMethod}
+                    >
+                      {payingMethod === 'manual' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                      Mark as Paid (Manual Override)
+                    </Button>
+                    <p className="text-[10px] text-muted-foreground px-3 mt-1">
+                      ⚠ This marks the invoice as paid without processing an actual payment.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
