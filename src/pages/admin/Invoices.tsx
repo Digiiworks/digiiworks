@@ -161,6 +161,7 @@ export default function Invoices() {
 
   const fetchAll = async () => {
     setLoading(true);
+    setFetchError(false);
     const [invRes, profRes, prodRes, compRes, paySettingsRes] = await Promise.all([
       supabase.from('invoices').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('user_id, display_name, email, company, currency'),
