@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { useSearchParams, Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -80,10 +80,7 @@ const Contact = () => {
         priority: isAI,
       }]);
       if (error) throw error;
-      toast({
-        title: isAI ? 'Consultation Initialized' : 'Transmission Sent',
-        description: 'We will be in touch soon.',
-      });
+      toast({ title: isAI ? 'Consultation Initialized' : 'Transmission Sent', description: 'We will be in touch soon.' });
       setForm({ name: '', email: '', service_interest: '', message: '' });
       formLoadTime.current = Date.now();
     } catch (err: unknown) {
@@ -101,10 +98,14 @@ const Contact = () => {
         <Breadcrumbs items={[{ label: 'Contact' }]} />
 
         <div className="mb-10 text-center md:mb-12">
-          <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// initiate_contact</p>
+          <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// quick_message</p>
           <h1 className="font-mono text-3xl font-bold md:text-4xl">
-            <span className="text-gradient">Get in Touch</span>
+            <span className="text-gradient">Send a Quick Message</span>
           </h1>
+          <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto">
+            Have a question or want to say hi? Drop us a line below. For full project scoping,{' '}
+            <Link to="/get-started" className="text-primary hover:underline underline-offset-2">use our project wizard →</Link>
+          </p>
         </div>
 
         <div className="glass-card p-6 md:p-8">
