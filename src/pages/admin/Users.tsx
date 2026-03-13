@@ -17,7 +17,7 @@ const UsersAdmin = () => {
   const queryClient = useQueryClient();
   const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null);
 
-  const { data: profiles, isLoading } = useQuery({
+  const { data: profiles, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-profiles'],
     queryFn: async () => {
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
