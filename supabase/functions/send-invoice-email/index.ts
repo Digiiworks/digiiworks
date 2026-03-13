@@ -281,14 +281,12 @@ taxRow +
 // Notes
 notesBlock +
 
-// CTA buttons
-'<tr><td style="padding:32px 32px 0;text-align:center;">' +
-'<a href="' + dashboardUrl + '" style="display:inline-block;padding:16px 48px;background:#0a0a0a;color:#00e5ff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;letter-spacing:1.5px;font-family:Courier New,monospace;">VIEW &amp; PAY INVOICE</a>' +
-'</td></tr>' +
-
-// Download PDF button
-'<tr><td style="padding:12px 32px 0;text-align:center;">' +
-'<a href="https://digiiworks.lovable.app/invoice/' + invoice.id + '?token=' + pdfToken + '" style="display:inline-block;padding:12px 36px;background:#ffffff;color:#0891b2;text-decoration:none;font-weight:700;font-size:13px;border-radius:8px;letter-spacing:1px;font-family:Courier New,monospace;border:2px solid #0891b2;">&#128196; DOWNLOAD PDF</a>' +
+// CTA buttons — stacked, full-width, matching payment button style
+'<tr><td style="padding:32px 32px 0;">' +
+'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:360px;margin:0 auto;border-collapse:collapse;">' +
+'<tr><td style="padding:0 0 10px;"><a href="' + dashboardUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#0a0a0a;color:#00e5ff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">&#9654;&#xFE0E; View &amp; Pay Invoice</a></td></tr>' +
+'<tr><td style="padding:0;"><a href="https://digiiworks.lovable.app/invoice/' + invoice.id + '?token=' + pdfToken + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#ffffff;color:#0891b2;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;border:2px solid #e5e7eb;">&#8681;&#xFE0E; Download PDF</a></td></tr>' +
+'</table>' +
 '</td></tr>' +
 
 // Banking
