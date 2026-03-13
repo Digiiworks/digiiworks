@@ -96,6 +96,8 @@ const EMAIL_STATUS_ICON: Record<string, React.ReactNode> = {
 const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
 
+const isPayableStatus = (status: Invoice['status']) => !['paid', 'cancelled'].includes(status);
+
 const fmtCurrency = (amount: number, currency: string = 'USD') => {
   const symbol = currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
   return `${symbol}${amount.toFixed(2)}`;
