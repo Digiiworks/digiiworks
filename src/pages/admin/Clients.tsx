@@ -605,7 +605,7 @@ export default function Clients() {
         });
         ['USD', 'ZAR', 'THB'].forEach(c => { if (!(c in byCurrency)) byCurrency[c] = 0; });
         return (
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <StatCard label="Total Companies" value={clients.length} />
             <StatCard label="With Outstanding" value={clients.filter(c => (c.outstanding ?? 0) > 0).length} />
             {Object.entries(byCurrency).map(([cur, total]) => (
@@ -616,16 +616,16 @@ export default function Clients() {
       })()}
 
       <AdminToolbar title="Clients">
-        <div className="relative">
+        <div className="relative w-full sm:w-52">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search clients..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full sm:w-52 pl-9 bg-card border-border h-9 text-sm"
+            className="w-full pl-9 bg-card border-border h-9 text-sm"
           />
         </div>
-        <Button onClick={openCreate} className="gap-1.5 h-9">
+        <Button onClick={openCreate} className="w-full sm:w-auto gap-1.5 h-9">
           <Plus className="h-4 w-4" /> Add Client
         </Button>
       </AdminToolbar>

@@ -13,25 +13,34 @@ const AdminPagination = ({ page, totalPages, totalItems, pageSize, onPageChange 
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <p className="font-mono text-xs text-muted-foreground">
         Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalItems)} of {totalItems}
       </p>
-      <div className="flex items-center gap-1">
+
+      <div className="flex items-center gap-1 self-start sm:self-auto">
         <Button variant="outline" size="icon" className="h-8 w-8" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-          <Button
-            key={p}
-            variant={p === page ? 'default' : 'outline'}
-            size="icon"
-            className="h-8 w-8 font-mono text-xs"
-            onClick={() => onPageChange(p)}
-          >
-            {p}
-          </Button>
-        ))}
+
+        <span className="px-2 font-mono text-xs text-muted-foreground sm:hidden">
+          {page} / {totalPages}
+        </span>
+
+        <div className="hidden items-center gap-1 sm:flex">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+            <Button
+              key={p}
+              variant={p === page ? 'default' : 'outline'}
+              size="icon"
+              className="h-8 w-8 font-mono text-xs"
+              onClick={() => onPageChange(p)}
+            >
+              {p}
+            </Button>
+          ))}
+        </div>
+
         <Button variant="outline" size="icon" className="h-8 w-8" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
           <ChevronRight className="h-4 w-4" />
         </Button>
