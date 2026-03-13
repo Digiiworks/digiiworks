@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PageMeta from "./components/PageMeta";
 import Layout from "./components/Layout";
@@ -83,11 +83,7 @@ const App = () => (
                 {/* Auth */}
                 <Route path="/auth" element={<Suspense fallback={<PageLoader />}><Auth /></Suspense>} />
                 <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
-                <Route path="/client" element={
-                  <ProtectedRoute requiredRoles={['client']}>
-                    <Suspense fallback={<PageLoader />}><ClientDashboard /></Suspense>
-                  </ProtectedRoute>
-                } />
+                <Route path="/client" element={<Navigate to="/admin" replace />} />
                 <Route path="/invoice/:id" element={
                   <Suspense fallback={<PageLoader />}><InvoicePrint /></Suspense>
                 } />

@@ -29,7 +29,7 @@ const AdminLayout = () => {
     ? navItems.filter((n) => n.to === '/admin' || n.to === '/admin/invoices')
     : navItems;
 
-  const homeLink = isClient ? '/client' : '/';
+  const homeLink = '/';
 
   const navContent = (
     <>

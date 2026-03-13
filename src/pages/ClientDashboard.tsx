@@ -1,24 +1,21 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
   FileText,
-  DollarSign,
   Clock,
   CheckCircle2,
   AlertCircle,
-  LogOut,
   ChevronRight,
   ChevronDown,
-  User,
   Landmark,
   Download,
   CreditCard,
@@ -26,6 +23,7 @@ import {
   Building2,
   Loader2,
 } from 'lucide-react';
+import AdminToolbar from '@/components/admin/AdminToolbar';
 
 interface InvoiceRow {
   id: string;
@@ -71,8 +69,7 @@ const fmtDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
 const ClientDashboard = () => {
-  const { user, profile, signOut, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const { user, profile, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
@@ -107,10 +104,6 @@ const ClientDashboard = () => {
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
-
-  useEffect(() => {
-    if (!authLoading && !user) navigate('/auth');
-  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (!user) return;
@@ -294,53 +287,28 @@ const ClientDashboard = () => {
     );
   };
 
+  const subtitle = companies.length > 0
+    ? `You have ${companies.length} business${companies.length > 1 ? 'es' : ''} linked to your account`
+    : 'Your invoices and project overview';
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link to="/">
-            <img src="/logo.svg" alt="Digiiworks" className="h-8" />
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="h-4 w-4" />
-              <span>{profile?.display_name || user?.email}</span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate('/'); }}>
-              <LogOut className="h-4 w-4 mr-1" /> Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-6">
+      <AdminToolbar title={`Welcome back, ${profile?.display_name || 'Client'}`} subtitle={subtitle} />
 
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        {/* Payment result banner */}
-        {paymentMessage && (
-          <div className={`mb-6 rounded-lg p-4 flex items-center justify-between ${
-            paymentMessage.type === 'success'
-              ? 'bg-primary/10 border border-primary/30 text-primary'
-              : 'bg-destructive/10 border border-destructive/30 text-destructive'
-          }`}>
-            <div className="flex items-center gap-2">
-              {paymentMessage.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-              <p className="text-sm font-medium">{paymentMessage.text}</p>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => setPaymentMessage(null)}>✕</Button>
+      {/* Payment result banner */}
+      {paymentMessage && (
+        <div className={`rounded-lg p-4 flex items-center justify-between ${
+          paymentMessage.type === 'success'
+            ? 'bg-primary/10 border border-primary/30 text-primary'
+            : 'bg-destructive/10 border border-destructive/30 text-destructive'
+        }`}>
+          <div className="flex items-center gap-2">
+            {paymentMessage.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+            <p className="text-sm font-medium">{paymentMessage.text}</p>
           </div>
-        )}
-
-        {/* Welcome */}
-        <div className="mb-8">
-          <h1 className="font-mono text-2xl font-bold text-foreground">
-            Welcome back, <span className="text-primary">{profile?.display_name || 'Client'}</span>
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {companies.length > 0
-              ? `You have ${companies.length} business${companies.length > 1 ? 'es' : ''} linked to your account`
-              : 'Your invoices and project overview'}
-          </p>
+          <Button variant="ghost" size="sm" onClick={() => setPaymentMessage(null)}>✕</Button>
         </div>
+      )}
 
         {/* Summary Stats */}
         {invoices.length > 0 && (() => {
@@ -700,8 +668,7 @@ const ClientDashboard = () => {
             })()}
           </DialogContent>
         </Dialog>
-      </main>
-    </div>
+      </div>
   );
 };
 
