@@ -180,6 +180,7 @@ const ClientDashboard = () => {
 
   const openInvoice = (inv: InvoiceRow) => {
     setSelectedInvoice(inv);
+    setDialogView('invoice');
     fetchItems(inv.id);
   };
 
