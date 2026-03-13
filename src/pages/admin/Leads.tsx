@@ -87,6 +87,7 @@ const Leads = () => {
       </AdminToolbar>
 
       {isLoading && <PageLoader />}
+      {isError && <ErrorState message="Failed to load leads." onRetry={() => refetch()} />}
 
       <div className="divide-y divide-border/30">
         {leads?.map((lead: any) => {
