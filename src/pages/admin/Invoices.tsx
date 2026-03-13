@@ -852,6 +852,15 @@ export default function Invoices() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border/50">
+                  {isAdmin && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={paginated.length > 0 && paginated.every(i => selectedIds.has(i.id))}
+                        onCheckedChange={toggleSelectAll}
+                        className="border-muted-foreground/50"
+                      />
+                    </TableHead>
+                  )}
                   <SortHeader field="invoice_number">Invoice #</SortHeader>
                   <TableHead className="font-mono text-xs">Client</TableHead>
                   <SortHeader field="status">Status</SortHeader>
