@@ -14,12 +14,75 @@ interface InvoiceItem {
   total: number;
 }
 
-function currencySymbol(currency: string) {
-  return currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
+function normalizeCurrency(currency?: string) {
+  return (currency || 'USD').toString().trim().toUpperCase();
 }
 
-function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, invoiceTotal?: number, paymentMethods?: any) {
-  if (!bankInfo) return '';
+function currencySymbol(currency: string) {
+  const code = normalizeCurrency(currency);
+  return code === 'ZAR' ? 'R' : code === 'THB' ? '฿' : '$';
+}
+
+function hasAnyBankField(bankInfo: any) {
+  if (!bankInfo || typeof bankInfo !== 'object') return false;
+
+  return Boolean(
+    bankInfo.bank_name ||
+      bankInfo.account_name ||
+      bankInfo.account_number ||
+      bankInfo.swift_code ||
+      bankInfo.routing_number ||
+      bankInfo.branch_code ||
+      bankInfo.branch ||
+      bankInfo.account_type ||
+      bankInfo.reference_note ||
+      bankInfo.currency
+  );
+}
+
+function firstRegionObject(settings: any, keys: string[]) {
+  for (const key of keys) {
+    if (settings?.[key] && typeof settings[key] === 'object') return settings[key];
+  }
+  return null;
+}
+
+function resolveRegionalBankInfo(paymentSettings: any, currency: string) {
+  const code = normalizeCurrency(currency);
+
+  const regionMap = code === 'ZAR'
+    ? { label: 'South Africa', keys: ['south_africa', 'southAfrica', 'south-africa', 'za'] }
+    : code === 'THB'
+      ? { label: 'Thailand', keys: ['thai', 'thailand', 'th'] }
+      : { label: 'International', keys: ['global', 'international', 'usd'] };
+
+  const regional = firstRegionObject(paymentSettings, regionMap.keys);
+  if (regional && hasAnyBankField(regional)) {
+    return { bankInfo: regional, regionLabel: regionMap.label };
+  }
+
+  const fallbackOrder = [
+    { label: 'International', keys: ['global', 'international', 'usd'] },
+    { label: 'Thailand', keys: ['thai', 'thailand', 'th'] },
+    { label: 'South Africa', keys: ['south_africa', 'southAfrica', 'south-africa', 'za'] },
+  ];
+
+  for (const region of fallbackOrder) {
+    const info = firstRegionObject(paymentSettings, region.keys);
+    if (info && hasAnyBankField(info)) {
+      return { bankInfo: info, regionLabel: region.label };
+    }
+  }
+
+  if (regional) {
+    return { bankInfo: regional, regionLabel: regionMap.label };
+  }
+
+  return null;
+}
+
+function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, invoiceTotal?: number, paymentMethods?: any, regionLabel?: string) {
+  const safeBankInfo = bankInfo && typeof bankInfo === 'object' ? bankInfo : {};
 
   const fields: string[] = [];
   if (bankInfo.bank_name) fields.push('<tr><td style="padding:3px 0;color:#6b7280;font-size:13px;width:130px;">Bank</td><td style="padding:3px 0;color:#111827;font-size:13px;font-weight:600;">' + bankInfo.bank_name + '</td></tr>');
