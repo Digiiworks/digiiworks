@@ -525,7 +525,9 @@ Deno.serve(async (req) => {
       .eq("invoice_id", invoice_id);
 
     const pdfToken = await hmacSign(invoice_id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings);
+    const stripeToken = await hmacSign(invoice_id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const stripeUrl = `${supabaseUrl}/functions/v1/create-stripe-checkout-public?invoice_id=${invoice_id}&token=${stripeToken}`;
+    const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings, stripeUrl);
     await sendEmail(client.email, "Invoice " + invoice.invoice_number + " from DigiiWorks", html);
 
     await supabase.from("invoice_emails").insert({
