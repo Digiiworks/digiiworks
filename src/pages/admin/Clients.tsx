@@ -640,12 +640,24 @@ export default function Clients() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border/50">
-                  <TableHead className="font-mono text-xs">Company</TableHead>
-                  <TableHead className="font-mono text-xs">Contact</TableHead>
-                  <TableHead className="font-mono text-xs text-center">Invoices</TableHead>
-                  <TableHead className="font-mono text-xs text-center">Recurring</TableHead>
-                  <TableHead className="font-mono text-xs text-right">Outstanding</TableHead>
-                  <TableHead className="font-mono text-xs">Created</TableHead>
+                  <TableHead className="font-mono text-xs cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('company')}>
+                    <span className="inline-flex items-center gap-1">Company <ArrowUpDown className={`h-3 w-3 ${sortField === 'company' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
+                  <TableHead className="font-mono text-xs cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('contact')}>
+                    <span className="inline-flex items-center gap-1">Contact <ArrowUpDown className={`h-3 w-3 ${sortField === 'contact' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-center cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('invoices')}>
+                    <span className="inline-flex items-center gap-1">Invoices <ArrowUpDown className={`h-3 w-3 ${sortField === 'invoices' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-center cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('recurring')}>
+                    <span className="inline-flex items-center gap-1">Recurring <ArrowUpDown className={`h-3 w-3 ${sortField === 'recurring' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
+                  <TableHead className="font-mono text-xs text-right cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('outstanding')}>
+                    <span className="inline-flex items-center gap-1 justify-end">Outstanding <ArrowUpDown className={`h-3 w-3 ${sortField === 'outstanding' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
+                  <TableHead className="font-mono text-xs cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('created')}>
+                    <span className="inline-flex items-center gap-1">Created <ArrowUpDown className={`h-3 w-3 ${sortField === 'created' ? 'text-primary' : 'text-muted-foreground/40'}`} /></span>
+                  </TableHead>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
