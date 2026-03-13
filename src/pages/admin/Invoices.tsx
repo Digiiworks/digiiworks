@@ -546,45 +546,82 @@ export default function Invoices() {
 
   return (
     <div className="space-y-6">
-      {/* Summary cards - per currency */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-        {Object.entries(outstandingByCurrency).map(([currency, { total, count }]) => (
-          <StatCard
-            key={`out-${currency}`}
-            label={`Outstanding (${currency})`}
-            value={fmtCurrency(total, currency)}
-            subtitle={`${count} invoice(s)`}
-          />
-        ))}
-        {Object.keys(outstandingByCurrency).length === 0 && (
-          <StatCard label="Outstanding" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
-        )}
-        {Object.entries(paidByCurrency).map(([currency, { total, count }]) => (
-          <StatCard
-            key={`paid-${currency}`}
-            label={`Paid (${currency})`}
-            value={fmtCurrency(total, currency)}
-            valueColor="text-green-400"
-            subtitle={`${count} invoice(s)`}
-          />
-        ))}
-        {Object.keys(paidByCurrency).length === 0 && (
-          <StatCard label="Paid" value={fmtCurrency(0)} valueColor="text-green-400" subtitle="0 invoice(s)" />
-        )}
-        {Object.entries(overdueByCurrency).map(([currency, { total, count }]) => (
-          <StatCard
-            key={`overdue-${currency}`}
-            label={`Overdue (${currency})`}
-            value={fmtCurrency(total, currency)}
-            icon={AlertTriangle}
-            iconColor="text-orange-400"
-            valueColor="text-orange-400"
-            variant="alert"
-            alertColor="orange-500"
-            subtitle={`${count} invoice(s)`}
-          />
-        ))}
-      </div>
+      {/* Summary cards - grouped by currency: outstanding + overdue paired */}
+      {(() => {
+        const allCurrencies = [...new Set([
+          ...Object.keys(outstandingByCurrency),
+          ...Object.keys(overdueByCurrency),
+        ])].sort();
+        const paidCurrencies = Object.keys(paidByCurrency).sort();
+
+        return (
+          <div className="space-y-3">
+            {/* Outstanding / Overdue pairs per currency */}
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
+              {allCurrencies.length === 0 ? (
+                <>
+                  <StatCard label="Outstanding" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
+                  <StatCard label="Overdue" value={fmtCurrency(0)} subtitle="0 invoice(s)" />
+                </>
+              ) : (
+                allCurrencies.map(currency => {
+                  const out = outstandingByCurrency[currency];
+                  const od = overdueByCurrency[currency];
+                  return (
+                    <div key={currency} className="grid grid-cols-2 md:grid-cols-1 gap-3">
+                      <StatCard
+                        label={`Outstanding (${currency})`}
+                        value={fmtCurrency(out?.total ?? 0, currency)}
+                        subtitle={`${out?.count ?? 0} invoice(s)`}
+                      />
+                      {od ? (
+                        <StatCard
+                          label={`Overdue (${currency})`}
+                          value={fmtCurrency(od.total, currency)}
+                          icon={AlertTriangle}
+                          iconColor="text-orange-400"
+                          valueColor="text-orange-400"
+                          variant="alert"
+                          alertColor="orange-500"
+                          subtitle={`${od.count} invoice(s)`}
+                        />
+                      ) : (
+                        <StatCard
+                          label={`Overdue (${currency})`}
+                          value={fmtCurrency(0, currency)}
+                          subtitle="0 invoice(s)"
+                        />
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Paid row spanning full width */}
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
+              {paidCurrencies.length === 0 ? (
+                <div className="col-span-2 md:col-span-3">
+                  <StatCard label="Paid" value={fmtCurrency(0)} valueColor="text-green-400" subtitle="0 invoice(s)" />
+                </div>
+              ) : (
+                paidCurrencies.map(currency => {
+                  const p = paidByCurrency[currency];
+                  return (
+                    <StatCard
+                      key={`paid-${currency}`}
+                      label={`Paid (${currency})`}
+                      value={fmtCurrency(p.total, currency)}
+                      valueColor="text-green-400"
+                      subtitle={`${p.count} invoice(s)`}
+                    />
+                  );
+                })
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       <AdminToolbar title="Invoices">
         <Input
