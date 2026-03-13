@@ -55,9 +55,8 @@ interface ClientCompany {
   address: string | null;
 }
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
-  draft: { label: 'Draft', variant: 'outline', icon: FileText },
-  sent: { label: 'Awaiting Payment', variant: 'secondary', icon: Clock },
+const clientStatusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
+  sent: { label: 'New', variant: 'secondary', icon: Clock },
   paid: { label: 'Paid', variant: 'default', icon: CheckCircle2 },
   overdue: { label: 'Overdue', variant: 'destructive', icon: AlertCircle },
   cancelled: { label: 'Cancelled', variant: 'outline', icon: FileText },
