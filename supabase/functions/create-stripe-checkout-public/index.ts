@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     if (invoice.status === "paid" || invoice.status === "cancelled") {
       const baseUrl = "https://digiiworks.lovable.app";
       return Response.redirect(
-        `${baseUrl}/dashboard?payment=already_${invoice.status}&invoice=${invoice.invoice_number}`,
+        `${baseUrl}/client?payment=already_${invoice.status}&invoice=${invoice.invoice_number}`,
         302
       );
     }
