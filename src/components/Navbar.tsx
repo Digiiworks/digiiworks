@@ -33,7 +33,7 @@ const Navbar = () => {
 
         <div className="flex items-center gap-8">
           {/* Engine Status */}
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-2 lg:flex">
             <div className="relative flex items-center gap-1.5">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-mint opacity-75" />
@@ -44,7 +44,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Nav */}
-          <div className="hidden gap-6 md:flex items-center">
+          <div className="hidden gap-6 lg:flex items-center">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.to}
@@ -94,7 +94,7 @@ const Navbar = () => {
 
           {/* Mobile burger */}
           <button
-            className="flex flex-col gap-1.5 md:hidden"
+            className="flex flex-col gap-1.5 lg:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
@@ -109,7 +109,7 @@ const Navbar = () => {
       {/* Mobile menu - CSS transition instead of AnimatePresence */}
       <div
         ref={menuRef}
-        className={`overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden transition-all duration-200 ease-out ${
+        className={`overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl lg:hidden transition-all duration-200 ease-out ${
           mobileOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 border-t-0'
         }`}
       >
