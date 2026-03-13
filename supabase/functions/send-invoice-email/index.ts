@@ -589,7 +589,8 @@ Deno.serve(async (req) => {
       }
     } catch (_) {}
 
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("send-invoice-email error:", err);
+    return new Response(JSON.stringify({ error: "An unexpected error occurred. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
