@@ -569,9 +569,11 @@ const ClientDashboard = () => {
                         const { data, error } = await supabase.functions.invoke('generate-invoice-token', {
                           body: { invoice_id: selectedInvoice.id },
                         });
-                        if (error || !data?.token) { alert('Could not generate PDF link'); return; }
+                        console.log('generate-invoice-token response:', { data, error });
+                        if (error) { alert('Could not generate PDF link: ' + (error.message || JSON.stringify(error))); return; }
+                        if (!data?.token) { alert('Could not generate PDF link — no token returned'); return; }
                         window.open(`/invoice/${selectedInvoice.id}?token=${data.token}`, '_blank');
-                      } catch { alert('Could not generate PDF link'); }
+                      } catch (e: any) { console.error('PDF link error:', e); alert('Could not generate PDF link: ' + (e.message || 'Unknown error')); }
                     }}>
                       <Download className="h-4 w-4 mr-1" /> Download PDF
                     </Button>
