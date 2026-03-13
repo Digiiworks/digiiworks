@@ -1048,9 +1048,9 @@ export default function Invoices() {
                   <Button
                     className="flex-1 gap-2 font-mono"
                     onClick={() => handleSendEmail(showDetail.id)}
-                    disabled={sending}
+                    disabled={sendingId === showDetail.id}
                   >
-                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {sendingId === showDetail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     Send Email Now
                   </Button>
                   {detailEmails.some(e => e.status === 'sent') && (
