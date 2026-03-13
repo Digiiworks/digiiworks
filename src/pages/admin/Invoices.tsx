@@ -572,7 +572,6 @@ export default function Invoices() {
                     {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
                       <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs" onClick={() => handleSendEmail(inv.id)} disabled={sendingId === inv.id}>
                         {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />} Email
-                        <Send className="h-3 w-3" /> Email
                       </Button>
                     )}
                     {isUnpaid && (
