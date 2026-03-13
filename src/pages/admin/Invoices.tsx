@@ -199,9 +199,14 @@ export default function Invoices() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const visibleInvoices = useMemo(
+    () => (isAdmin ? invoices : invoices.filter(i => i.status !== 'draft')),
+    [invoices, isAdmin]
+  );
+
   // Sort, filter, search, then paginate — overdue always on top
   const processed = useMemo(() => {
-    let list = [...invoices];
+    let list = [...visibleInvoices];
     if (filterStatus !== 'all') list = list.filter(i => i.status === filterStatus);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -231,7 +236,7 @@ export default function Invoices() {
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return list;
-  }, [invoices, filterStatus, search, sortField, sortDir]);
+  }, [visibleInvoices, filterStatus, search, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const paginated = processed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
