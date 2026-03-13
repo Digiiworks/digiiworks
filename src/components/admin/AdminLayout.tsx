@@ -105,7 +105,7 @@ const AdminLayout = () => {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" onClick={() => setMobileOpen(false)}>
+        <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setMobileOpen(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <aside
             className="absolute left-0 top-0 bottom-0 w-64 bg-card border-r border-border/50 flex flex-col animate-in slide-in-from-left duration-200"
