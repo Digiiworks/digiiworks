@@ -364,8 +364,8 @@ const SettingsPage = () => {
                   <p className="text-xs text-muted-foreground">Accept card payments via Stripe (all currencies)</p>
                 </div>
                 <Switch
-                  checked={data.payment_methods?.stripe_enabled ?? false}
-                  onCheckedChange={(checked) => update(['payment_methods', 'stripe_enabled'], checked ? 'true' : 'false')}
+                  checked={data.payment_methods?.stripe_enabled === true || data.payment_methods?.stripe_enabled === 'true' as any}
+                  onCheckedChange={(checked) => update(['payment_methods', 'stripe_enabled'], checked)}
                 />
               </div>
               <div className="flex items-center justify-between rounded-lg border border-border p-4">
