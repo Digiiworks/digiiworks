@@ -279,6 +279,30 @@ export default function Clients() {
 
   const [originalRecurringIds, setOriginalRecurringIds] = useState<Set<string>>(new Set());
 
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const clearLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    setExistingLogoUrl(null);
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
+
+  const uploadLogo = async (companyId: string): Promise<string | null> => {
+    if (!logoFile) return existingLogoUrl;
+    const ext = logoFile.name.split('.').pop() ?? 'png';
+    const path = `${companyId}.${ext}`;
+    const { error } = await supabase.storage.from('client-logos').upload(path, logoFile, { upsert: true });
+    if (error) { console.error('Logo upload error:', error); return existingLogoUrl; }
+    const { data: urlData } = supabase.storage.from('client-logos').getPublicUrl(path);
+    return urlData.publicUrl + '?v=' + Date.now();
+  };
+
   const openEdit = async (client: ClientCompany) => {
     setEditClient(client);
     setForm({
@@ -290,6 +314,9 @@ export default function Clients() {
       notes: client.notes ?? '',
       country: client.currency === 'ZAR' ? 'south_africa' : client.currency === 'THB' ? 'thailand' : 'global',
     });
+    setLogoFile(null);
+    setLogoPreview(null);
+    setExistingLogoUrl(client.logo_url ?? null);
     // Load existing recurring services for this company
     const { data } = await supabase
       .from('client_recurring_services')
