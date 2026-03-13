@@ -570,7 +570,8 @@ export default function Invoices() {
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/30">
                     {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
-                      <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs" onClick={() => handleSendEmail(inv.id)} disabled={sending}>
+                      <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs" onClick={() => handleSendEmail(inv.id)} disabled={sendingId === inv.id}>
+                        {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />} Email
                         <Send className="h-3 w-3" /> Email
                       </Button>
                     )}
