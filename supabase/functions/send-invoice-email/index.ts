@@ -102,7 +102,7 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
   const stripeEnabled = paymentMethods?.stripe_enabled === true || paymentMethods?.stripe_enabled === 'true';
   if (stripeEnabled && stripeCheckoutUrl) {
     buttonRows.push(
-      '<tr><td style="padding:0 0 10px;"><a href="' + stripeCheckoutUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">&#9889;&#xFE0E; Pay with Stripe</a></td></tr>'
+      '<tr><td style="padding:0 0 10px;"><a href="' + stripeCheckoutUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">Pay with Stripe</a></td></tr>'
     );
   }
 
@@ -111,13 +111,13 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
   if (yocoEnabled && paymentLinks?.yoco_payment_link && normalizedCurrency === 'ZAR') {
     const yocoUrl = paymentLinks.yoco_payment_link + (paymentLinks.yoco_payment_link.includes('?') ? '&' : '?') + 'amount=' + Number(invoiceTotal || 0).toFixed(2);
     buttonRows.push(
-      '<tr><td style="padding:0 0 10px;"><a href="' + yocoUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">&#9675;&#xFE0E; Pay with Yoco</a></td></tr>'
+      '<tr><td style="padding:0 0 10px;"><a href="' + yocoUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">Pay with Yoco</a></td></tr>'
     );
   }
 
   if (paymentLinks?.wise_payment_link) {
     buttonRows.push(
-      '<tr><td style="padding:0;"><a href="' + paymentLinks.wise_payment_link + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#9fe870;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">&#8599;&#xFE0E; Pay with Wise</a></td></tr>'
+      '<tr><td style="padding:0;"><a href="' + paymentLinks.wise_payment_link + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#9fe870;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">Pay with Wise</a></td></tr>'
     );
   }
 
@@ -284,8 +284,8 @@ notesBlock +
 // CTA buttons — stacked, full-width, matching payment button style
 '<tr><td style="padding:32px 32px 0;">' +
 '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:360px;margin:0 auto;border-collapse:collapse;">' +
-'<tr><td style="padding:0 0 10px;"><a href="' + dashboardUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#0a0a0a;color:#00e5ff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">&#9654;&#xFE0E; View &amp; Pay Invoice</a></td></tr>' +
-'<tr><td style="padding:0;"><a href="https://digiiworks.lovable.app/invoice/' + invoice.id + '?token=' + pdfToken + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#ffffff;color:#0891b2;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;border:2px solid #e5e7eb;">&#8681;&#xFE0E; Download PDF</a></td></tr>' +
+'<tr><td style="padding:0 0 10px;"><a href="' + dashboardUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#0a0a0a;color:#00e5ff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">View &amp; Pay Invoice</a></td></tr>' +
+'<tr><td style="padding:0;"><a href="https://digiiworks.lovable.app/invoice/' + invoice.id + '?token=' + pdfToken + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#ffffff;color:#0891b2;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;border:2px solid #e5e7eb;">Download PDF</a></td></tr>' +
 '</table>' +
 '</td></tr>' +
 
