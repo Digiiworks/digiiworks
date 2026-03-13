@@ -85,7 +85,7 @@ const ClientDashboard = () => {
   // Invoice detail
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
-
+  const [dialogView, setDialogView] = useState<'invoice' | 'pay'>('invoice');
   // Payment loading
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
   const [payingMethod, setPayingMethod] = useState<string | null>(null);
