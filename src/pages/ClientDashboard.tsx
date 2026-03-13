@@ -69,8 +69,7 @@ const fmtDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
 const ClientDashboard = () => {
-  const { user, profile, signOut, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const { user, profile, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
