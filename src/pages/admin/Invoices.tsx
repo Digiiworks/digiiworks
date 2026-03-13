@@ -668,9 +668,9 @@ export default function Invoices() {
                               size="sm"
                               className="h-7 gap-1 font-mono text-xs border-primary/50 text-primary hover:bg-primary/10"
                               onClick={() => handleSendEmail(inv.id)}
-                              disabled={sending}
+                              disabled={sendingId === inv.id}
                             >
-                              {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                              {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                               Email
                             </Button>
                           )}
