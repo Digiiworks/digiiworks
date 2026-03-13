@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
+import {
   FileText,
   DollarSign,
   Clock,
@@ -14,9 +17,14 @@ import {
   AlertCircle,
   LogOut,
   ChevronRight,
+  ChevronDown,
   User,
   Landmark,
   Download,
+  CreditCard,
+  ExternalLink,
+  Building2,
+  Loader2,
 } from 'lucide-react';
 
 interface InvoiceRow {
@@ -29,6 +37,7 @@ interface InvoiceRow {
   created_at: string;
   paid_at: string | null;
   payment_method: string | null;
+  client_company_id: string | null;
 }
 
 interface InvoiceItemRow {
@@ -39,6 +48,13 @@ interface InvoiceItemRow {
   total: number;
 }
 
+interface ClientCompany {
+  id: string;
+  company_name: string;
+  currency: string;
+  address: string | null;
+}
+
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
   draft: { label: 'Draft', variant: 'outline', icon: FileText },
   sent: { label: 'Awaiting Payment', variant: 'secondary', icon: Clock },
@@ -47,21 +63,37 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
   cancelled: { label: 'Cancelled', variant: 'outline', icon: FileText },
 };
 
+const fmtCurrency = (amount: number, currency: string = 'USD') => {
+  const symbol = currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
+  return `${symbol}${Number(amount).toFixed(2)}`;
+};
+
+const fmtDate = (d: string | null) =>
+  d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
 const ClientDashboard = () => {
   const { user, profile, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
-  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
-  const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
+  const [companies, setCompanies] = useState<ClientCompany[]>([]);
   const [loading, setLoading] = useState(true);
-  const [yocoLoading, setYocoLoading] = useState(false);
-  const [stripeLoading, setStripeLoading] = useState(false);
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
-  const [clientCurrency, setClientCurrency] = useState('USD');
   const [paymentMessage, setPaymentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Handle Yoco redirect back
+  // Invoice detail
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItemRow[]>([]);
+
+  // Payment loading
+  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
+  const [payingMethod, setPayingMethod] = useState<string | null>(null);
+
+  // Expanded businesses
+  const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
+
+  // Handle payment redirect
   useEffect(() => {
     const payment = searchParams.get('payment');
     const invoiceNum = searchParams.get('invoice');
@@ -73,76 +105,76 @@ const ClientDashboard = () => {
       } else if (payment === 'cancelled') {
         setPaymentMessage({ type: 'error', text: `Payment for invoice #${invoiceNum} was cancelled.` });
       }
-      // Clear query params
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
 
-  const handleYocoPayment = async (invoiceId: string) => {
-    setYocoLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-yoco-checkout', {
-        body: { invoice_id: invoiceId },
-      });
-      if (error) throw error;
-      if (data?.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      } else {
-        throw new Error('No redirect URL received');
-      }
-    } catch (err: any) {
-      console.error('Yoco payment error:', err);
-      alert(err.message || 'Failed to initiate payment');
-      setYocoLoading(false);
-    }
-  };
-
-  const handleStripePayment = async (invoiceId: string) => {
-    setStripeLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
-        body: { invoice_id: invoiceId },
-      });
-      if (error) throw error;
-      if (data?.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      } else {
-        throw new Error('No redirect URL received');
-      }
-    } catch (err: any) {
-      console.error('Stripe payment error:', err);
-      alert(err.message || 'Failed to initiate payment');
-      setStripeLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
+    if (!authLoading && !user) navigate('/auth');
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [invoicesRes, settingsRes, profileRes] = await Promise.all([
+      const [invoicesRes, companiesRes, settingsRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
-        supabase.from('page_content').select('content').eq('page_key', 'payment_settings').single(),
-        supabase.from('profiles').select('currency').eq('user_id', user.id).single(),
+        supabase.from('client_companies').select('id, company_name, currency, address').eq('active', true),
+        supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
       ]);
       setInvoices((invoicesRes.data as any[]) ?? []);
+      setCompanies((companiesRes.data as any[]) ?? []);
       if (settingsRes.data) setPaymentSettings(settingsRes.data.content);
-      if (profileRes.data) setClientCurrency(profileRes.data.currency || 'USD');
+      
+      // Expand all companies by default
+      const companyIds = new Set((companiesRes.data ?? []).map((c: any) => c.id));
+      setExpandedCompanies(companyIds);
       setLoading(false);
     };
     fetchData();
   }, [user]);
 
+  // Group invoices by company
+  const companiesWithInvoices = useMemo(() => {
+    const companyMap = new Map<string, { company: ClientCompany; invoices: InvoiceRow[] }>();
+    
+    companies.forEach(c => {
+      companyMap.set(c.id, { company: c, invoices: [] });
+    });
+
+    // Invoices not linked to a company (legacy)
+    const unlinked: InvoiceRow[] = [];
+
+    invoices.forEach(inv => {
+      if (inv.client_company_id && companyMap.has(inv.client_company_id)) {
+        companyMap.get(inv.client_company_id)!.invoices.push(inv);
+      } else {
+        unlinked.push(inv);
+      }
+    });
+
+    const result = [...companyMap.values()].filter(g => g.invoices.length > 0 || true);
+    
+    // Add unlinked invoices as a virtual group if any
+    if (unlinked.length > 0) {
+      result.push({
+        company: { id: '__unlinked__', company_name: 'Other Invoices', currency: 'USD', address: null },
+        invoices: unlinked,
+      });
+    }
+
+    return result;
+  }, [companies, invoices]);
+
+  const toggleCompany = (id: string) => {
+    setExpandedCompanies(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
   const fetchItems = async (invoiceId: string) => {
-    const { data } = await supabase
-      .from('invoice_items')
-      .select('*')
-      .eq('invoice_id', invoiceId);
+    const { data } = await supabase.from('invoice_items').select('*').eq('invoice_id', invoiceId);
     setInvoiceItems((data as any[]) ?? []);
   };
 
@@ -151,19 +183,58 @@ const ClientDashboard = () => {
     fetchItems(inv.id);
   };
 
-  const totalOwed = invoices
-    .filter((i) => i.status === 'sent' || i.status === 'overdue')
+  // Payment handlers
+  const handleStripePayment = async (invoiceId: string) => {
+    setPayingInvoiceId(invoiceId);
+    setPayingMethod('stripe');
+    try {
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: { invoice_id: invoiceId },
+      });
+      if (error) throw error;
+      if (data?.redirectUrl) window.location.href = data.redirectUrl;
+      else throw new Error('No redirect URL received');
+    } catch (err: any) {
+      setPaymentMessage({ type: 'error', text: err.message || 'Failed to initiate Stripe payment' });
+    }
+    setPayingInvoiceId(null);
+    setPayingMethod(null);
+  };
+
+  const handleYocoPayment = async (invoiceId: string) => {
+    setPayingInvoiceId(invoiceId);
+    setPayingMethod('yoco');
+    try {
+      const { data, error } = await supabase.functions.invoke('create-yoco-checkout', {
+        body: { invoice_id: invoiceId },
+      });
+      if (error) throw error;
+      if (data?.redirectUrl) window.location.href = data.redirectUrl;
+      else throw new Error('No redirect URL received');
+    } catch (err: any) {
+      setPaymentMessage({ type: 'error', text: err.message || 'Failed to initiate Yoco payment' });
+    }
+    setPayingInvoiceId(null);
+    setPayingMethod(null);
+  };
+
+  // Get currency for a given invoice
+  const getCurrencyForInvoice = (inv: InvoiceRow): string => {
+    if (inv.client_company_id) {
+      const company = companies.find(c => c.id === inv.client_company_id);
+      return company?.currency ?? 'USD';
+    }
+    return 'USD';
+  };
+
+  // Overall stats
+  const totalOutstanding = invoices
+    .filter(i => ['sent', 'overdue'].includes(i.status))
     .reduce((s, i) => s + Number(i.total), 0);
 
   const totalPaid = invoices
-    .filter((i) => i.status === 'paid')
+    .filter(i => i.status === 'paid')
     .reduce((s, i) => s + Number(i.total), 0);
-
-  const fmt = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-
-  const fmtDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
   if (authLoading || loading) {
     return (
@@ -172,6 +243,56 @@ const ClientDashboard = () => {
       </div>
     );
   }
+
+  const stripeEnabled = paymentSettings?.stripe_enabled || paymentSettings?.payment_methods?.stripe_enabled === true || paymentSettings?.payment_methods?.stripe_enabled === 'true';
+  const yocoEnabled = paymentSettings?.yoco_enabled || paymentSettings?.payment_methods?.yoco_enabled === true || paymentSettings?.payment_methods?.yoco_enabled === 'true' || paymentSettings?.payment_methods?.yoco_enabled === undefined;
+  const wiseLink = paymentSettings?.wise_payment_link || paymentSettings?.payment_links?.wise_payment_link;
+
+  const renderPaymentButtons = (inv: InvoiceRow, currency: string) => {
+    if (!['sent', 'overdue'].includes(inv.status)) return null;
+    const isLoading = payingInvoiceId === inv.id;
+    
+    return (
+      <div className="flex flex-wrap gap-2 pt-2">
+        {stripeEnabled && (
+          <Button
+            size="sm"
+            className="gap-1.5 font-mono text-xs"
+            disabled={isLoading}
+            onClick={(e) => { e.stopPropagation(); handleStripePayment(inv.id); }}
+          >
+            {isLoading && payingMethod === 'stripe' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
+            Stripe
+          </Button>
+        )}
+        {yocoEnabled && currency === 'ZAR' && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 font-mono text-xs"
+            disabled={isLoading}
+            onClick={(e) => { e.stopPropagation(); handleYocoPayment(inv.id); }}
+          >
+            {isLoading && payingMethod === 'yoco' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
+            Yoco
+          </Button>
+        )}
+        {wiseLink && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 font-mono text-xs"
+            asChild
+            onClick={(e) => e.stopPropagation()}
+          >
+            <a href={wiseLink} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-3.5 w-3.5" /> Wise
+            </a>
+          </Button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -214,244 +335,293 @@ const ClientDashboard = () => {
           <h1 className="font-mono text-2xl font-bold text-foreground">
             Welcome back, <span className="text-primary">{profile?.display_name || 'Client'}</span>
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Your invoices and project overview</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {companies.length > 0
+              ? `You have ${companies.length} business${companies.length > 1 ? 'es' : ''} linked to your account`
+              : 'Your invoices and project overview'}
+          </p>
         </div>
 
-        {/* Summary Cards */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-3">
-          <Card className="border-border bg-card">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs font-mono uppercase text-muted-foreground tracking-wider">Invoices</p>
-                <p className="text-2xl font-bold text-foreground">{invoices.length}</p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Businesses with Invoices */}
+        <div className="space-y-6">
+          {companiesWithInvoices.map(({ company, invoices: companyInvoices }) => {
+            const isExpanded = expandedCompanies.has(company.id);
+            const outstanding = companyInvoices.filter(i => ['sent', 'overdue'].includes(i.status));
+            const paid = companyInvoices.filter(i => i.status === 'paid');
+            const overdueCount = companyInvoices.filter(i => i.status === 'overdue').length;
+            const outstandingTotal = outstanding.reduce((s, i) => s + Number(i.total), 0);
+            const paidTotal = paid.reduce((s, i) => s + Number(i.total), 0);
 
-          <Card className="border-border bg-card">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10">
-                <DollarSign className="h-5 w-5 text-secondary" />
-              </div>
-              <div>
-                <p className="text-xs font-mono uppercase text-muted-foreground tracking-wider">Outstanding</p>
-                <p className="text-2xl font-bold text-foreground">{fmt(totalOwed)}</p>
-              </div>
-            </CardContent>
-          </Card>
+            return (
+              <Card key={company.id} className="border-border bg-card overflow-hidden">
+                {/* Business Header */}
+                <button
+                  className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/20 transition-colors"
+                  onClick={() => toggleCompany(company.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 font-mono text-sm font-bold text-primary">
+                      {company.company_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h2 className="font-mono text-lg font-bold text-foreground">{company.company_name}</h2>
+                      <p className="text-xs text-muted-foreground">{company.currency} · {companyInvoices.length} invoice{companyInvoices.length !== 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {overdueCount > 0 && (
+                      <Badge variant="destructive" className="text-xs">
+                        {overdueCount} Overdue
+                      </Badge>
+                    )}
+                    {outstanding.length > 0 && (
+                      <div className="text-right hidden sm:block">
+                        <p className="text-xs text-muted-foreground">Outstanding</p>
+                        <p className="font-mono text-sm font-bold text-foreground">{fmtCurrency(outstandingTotal, company.currency)}</p>
+                      </div>
+                    )}
+                    {paid.length > 0 && (
+                      <div className="text-right hidden sm:block">
+                        <p className="text-xs text-muted-foreground">Paid</p>
+                        <p className="font-mono text-sm font-bold text-primary">{fmtCurrency(paidTotal, company.currency)}</p>
+                      </div>
+                    )}
+                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
 
-          <Card className="border-border bg-card">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs font-mono uppercase text-muted-foreground tracking-wider">Total Paid</p>
-                <p className="text-2xl font-bold text-foreground">{fmt(totalPaid)}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                {/* Invoices List */}
+                {isExpanded && (
+                  <div className="border-t border-border">
+                    {/* Mobile summary */}
+                    <div className="flex gap-4 px-5 py-3 sm:hidden border-b border-border/50 bg-muted/10">
+                      {outstanding.length > 0 && (
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Outstanding</p>
+                          <p className="font-mono text-sm font-bold">{fmtCurrency(outstandingTotal, company.currency)}</p>
+                        </div>
+                      )}
+                      {paid.length > 0 && (
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Paid</p>
+                          <p className="font-mono text-sm font-bold text-primary">{fmtCurrency(paidTotal, company.currency)}</p>
+                        </div>
+                      )}
+                    </div>
 
-        {/* Invoice Detail Modal / Panel */}
-        {selectedInvoice && (
-          <Card className="mb-8 border-primary/20 bg-card">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-mono text-lg">
-                Invoice #{selectedInvoice.invoice_number}
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setSelectedInvoice(null)}>
-                Close
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Status:</span>{' '}
-                  <Badge variant={statusConfig[selectedInvoice.status]?.variant ?? 'outline'}>
-                    {statusConfig[selectedInvoice.status]?.label ?? selectedInvoice.status}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Due:</span> {fmtDate(selectedInvoice.due_date)}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Total:</span>{' '}
-                  <span className="font-bold text-foreground">{fmt(Number(selectedInvoice.total))}</span>
-                </div>
-              </div>
+                    {companyInvoices.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <FileText className="mx-auto h-8 w-8 text-muted-foreground/30" />
+                        <p className="mt-2 text-sm text-muted-foreground">No invoices yet</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border/50">
+                        {companyInvoices.map(inv => {
+                          const cfg = statusConfig[inv.status] ?? statusConfig.draft;
+                          const Icon = cfg.icon;
+                          const isUnpaid = ['sent', 'overdue'].includes(inv.status);
 
-              {selectedInvoice.notes && (
-                <p className="text-sm text-muted-foreground italic">{selectedInvoice.notes}</p>
-              )}
-
-              <Separator />
-
-              <div className="space-y-2">
-                <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Line Items</p>
-                {invoiceItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No items</p>
-                ) : (
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="px-4 py-2 text-left font-mono text-xs uppercase text-muted-foreground">Description</th>
-                          <th className="px-4 py-2 text-right font-mono text-xs uppercase text-muted-foreground">Qty</th>
-                          <th className="px-4 py-2 text-right font-mono text-xs uppercase text-muted-foreground">Price</th>
-                          <th className="px-4 py-2 text-right font-mono text-xs uppercase text-muted-foreground">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {invoiceItems.map((item) => (
-                          <tr key={item.id} className="border-t border-border">
-                            <td className="px-4 py-2 text-foreground">{item.description}</td>
-                            <td className="px-4 py-2 text-right text-muted-foreground">{item.quantity}</td>
-                            <td className="px-4 py-2 text-right text-muted-foreground">{fmt(Number(item.unit_price))}</td>
-                            <td className="px-4 py-2 text-right font-medium text-foreground">{fmt(Number(item.total))}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                          return (
+                            <div key={inv.id} className="px-5 py-4 hover:bg-muted/10 transition-colors">
+                              <button
+                                className="flex w-full items-center justify-between text-left"
+                                onClick={() => openInvoice(inv)}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Icon className={`h-4 w-4 shrink-0 ${inv.status === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`} />
+                                  <div>
+                                    <p className="font-mono text-sm font-medium text-foreground">
+                                      #{inv.invoice_number}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {fmtDate(inv.created_at)}
+                                      {inv.due_date && <> · Due {fmtDate(inv.due_date)}</>}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Badge variant={cfg.variant} className="text-xs">
+                                    {cfg.label}
+                                  </Badge>
+                                  <span className={`font-mono text-sm font-bold ${inv.status === 'overdue' ? 'text-destructive' : 'text-foreground'}`}>
+                                    {fmtCurrency(Number(inv.total), company.currency)}
+                                  </span>
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              </button>
+                              {/* Inline payment buttons for unpaid invoices */}
+                              {isUnpaid && renderPaymentButtons(inv, company.currency)}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
+              </Card>
+            );
+          })}
 
-              {/* Banking Details */}
-              {paymentSettings && (selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue') && (() => {
-                const currency = clientCurrency;
-                const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
-                const bank = paymentSettings[bankKey];
-                const links = paymentSettings.payment_links;
-                if (!bank?.bank_name) return null;
-                const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
-                return (
-                  <>
-                    <Separator />
-                    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1.5">
-                      <p className="font-mono text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
-                        <Landmark className="h-3.5 w-3.5" /> Direct Deposit — {regionLabel}
-                      </p>
-                      {bank.bank_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Bank:</span> {bank.bank_name}</p>}
-                      {bank.account_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account Name:</span> {bank.account_name}</p>}
-                      {bank.account_number && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account:</span> {bank.account_number}</p>}
-                      {bank.swift_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">SWIFT:</span> {bank.swift_code}</p>}
-                      {bank.routing_number && <p className="text-sm text-foreground"><span className="text-muted-foreground">Routing Number:</span> {bank.routing_number}</p>}
-                      {bank.branch_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch Code:</span> {bank.branch_code}</p>}
-                      {bank.branch && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch:</span> {bank.branch}</p>}
-                      {bank.account_type && <p className="text-sm text-foreground"><span className="text-muted-foreground">Type:</span> {bank.account_type}</p>}
-                      {bank.reference_note && <p className="text-xs text-muted-foreground italic mt-2">{bank.reference_note}</p>}
+          {companiesWithInvoices.length === 0 && (
+            <Card className="border-border bg-card">
+              <CardContent className="py-12 text-center">
+                <Building2 className="mx-auto h-10 w-10 text-muted-foreground/40" />
+                <p className="mt-3 text-sm text-muted-foreground">No businesses or invoices linked to your account yet</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Invoice Detail Dialog */}
+        <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="font-mono">Invoice #{selectedInvoice?.invoice_number}</DialogTitle>
+            </DialogHeader>
+            {selectedInvoice && (() => {
+              const currency = getCurrencyForInvoice(selectedInvoice);
+              return (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Status:</span>{' '}
+                      <Badge variant={statusConfig[selectedInvoice.status]?.variant ?? 'outline'}>
+                        {statusConfig[selectedInvoice.status]?.label ?? selectedInvoice.status}
+                      </Badge>
                     </div>
-                  </>
-                );
-              })()}
+                    <div>
+                      <span className="text-muted-foreground">Due:</span> {fmtDate(selectedInvoice.due_date)}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Total:</span>{' '}
+                      <span className="font-bold text-foreground">{fmtCurrency(Number(selectedInvoice.total), currency)}</span>
+                    </div>
+                  </div>
 
-              {/* Download PDF */}
-              <div className="flex flex-wrap gap-3 pt-2">
-                <Button variant="outline" className="font-mono" onClick={async () => {
-                  try {
-                    const { data, error } = await supabase.functions.invoke('generate-invoice-token', {
-                      body: { invoice_id: selectedInvoice.id },
-                    });
-                    if (error || !data?.token) { alert('Could not generate PDF link'); return; }
-                    window.open(`/invoice/${selectedInvoice.id}?token=${data.token}`, '_blank');
-                  } catch { alert('Could not generate PDF link'); }
-                }}>
-                  <Download className="h-4 w-4 mr-1" /> Download PDF
-                </Button>
-              </div>
+                  {selectedInvoice.notes && (
+                    <p className="text-sm text-muted-foreground italic">{selectedInvoice.notes}</p>
+                  )}
 
-              {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue') && (
-                <div className="flex flex-wrap gap-3 pt-2">
-                  {(paymentSettings?.payment_methods?.stripe_enabled === true || paymentSettings?.payment_methods?.stripe_enabled === 'true') && (
-                    <Button
-                      className="font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90"
-                      disabled={stripeLoading}
-                      onClick={() => handleStripePayment(selectedInvoice.id)}
-                    >
-                      {stripeLoading ? 'Redirecting…' : 'Pay with Stripe'}
+                  <Separator />
+
+                  {/* Line Items */}
+                  <div className="space-y-2">
+                    <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Line Items</p>
+                    {invoiceItems.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No items</p>
+                    ) : (
+                      <div className="rounded-lg border border-border overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50">
+                            <tr>
+                              <th className="px-4 py-2 text-left font-mono text-xs uppercase text-muted-foreground">Description</th>
+                              <th className="px-4 py-2 text-right font-mono text-xs uppercase text-muted-foreground">Qty</th>
+                              <th className="px-4 py-2 text-right font-mono text-xs uppercase text-muted-foreground">Price</th>
+                              <th className="px-4 py-2 text-right font-mono text-xs uppercase text-muted-foreground">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {invoiceItems.map((item) => (
+                              <tr key={item.id} className="border-t border-border">
+                                <td className="px-4 py-2 text-foreground">{item.description}</td>
+                                <td className="px-4 py-2 text-right text-muted-foreground">{item.quantity}</td>
+                                <td className="px-4 py-2 text-right text-muted-foreground">{fmtCurrency(Number(item.unit_price), currency)}</td>
+                                <td className="px-4 py-2 text-right font-medium text-foreground">{fmtCurrency(Number(item.total), currency)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Banking Details */}
+                  {paymentSettings && ['sent', 'overdue'].includes(selectedInvoice.status) && (() => {
+                    const bankKey = currency === 'ZAR' ? 'south_africa' : currency === 'THB' ? 'thai' : 'global';
+                    const bank = paymentSettings[bankKey];
+                    if (!bank?.bank_name) return null;
+                    const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
+                    return (
+                      <>
+                        <Separator />
+                        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1.5">
+                          <p className="font-mono text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
+                            <Landmark className="h-3.5 w-3.5" /> Direct Deposit — {regionLabel}
+                          </p>
+                          {bank.bank_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Bank:</span> {bank.bank_name}</p>}
+                          {bank.account_name && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account Name:</span> {bank.account_name}</p>}
+                          {bank.account_number && <p className="text-sm text-foreground"><span className="text-muted-foreground">Account:</span> {bank.account_number}</p>}
+                          {bank.swift_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">SWIFT:</span> {bank.swift_code}</p>}
+                          {bank.routing_number && <p className="text-sm text-foreground"><span className="text-muted-foreground">Routing Number:</span> {bank.routing_number}</p>}
+                          {bank.branch_code && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch Code:</span> {bank.branch_code}</p>}
+                          {bank.branch && <p className="text-sm text-foreground"><span className="text-muted-foreground">Branch:</span> {bank.branch}</p>}
+                          {bank.account_type && <p className="text-sm text-foreground"><span className="text-muted-foreground">Type:</span> {bank.account_type}</p>}
+                          {bank.reference_note && <p className="text-xs text-muted-foreground italic mt-2">{bank.reference_note}</p>}
+                        </div>
+                      </>
+                    );
+                  })()}
+
+                  {/* Download PDF */}
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <Button variant="outline" className="font-mono" onClick={async () => {
+                      try {
+                        const { data, error } = await supabase.functions.invoke('generate-invoice-token', {
+                          body: { invoice_id: selectedInvoice.id },
+                        });
+                        if (error || !data?.token) { alert('Could not generate PDF link'); return; }
+                        window.open(`/invoice/${selectedInvoice.id}?token=${data.token}`, '_blank');
+                      } catch { alert('Could not generate PDF link'); }
+                    }}>
+                      <Download className="h-4 w-4 mr-1" /> Download PDF
                     </Button>
-                  )}
-                  {(paymentSettings?.payment_methods?.yoco_enabled === true || paymentSettings?.payment_methods?.yoco_enabled === 'true' || paymentSettings?.payment_methods?.yoco_enabled === undefined) && clientCurrency === 'ZAR' && (
-                    <Button
-                      variant="outline"
-                      className="font-mono border-secondary text-secondary hover:bg-secondary/10"
-                      disabled={yocoLoading}
-                      onClick={() => handleYocoPayment(selectedInvoice.id)}
-                    >
-                      {yocoLoading ? 'Redirecting…' : 'Pay with Yoco'}
-                    </Button>
-                  )}
-                  {paymentSettings?.payment_links?.wise_payment_link && (
-                    <Button
-                      variant="outline"
-                      className="font-mono"
-                      asChild
-                    >
-                      <a href={paymentSettings.payment_links.wise_payment_link} target="_blank" rel="noopener noreferrer">
-                        Pay with Wise
-                      </a>
-                    </Button>
+                  </div>
+
+                  {/* Payment Buttons in Detail */}
+                  {['sent', 'overdue'].includes(selectedInvoice.status) && (
+                    <div className="space-y-2 pt-2">
+                      <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Pay Now</p>
+                      <div className="flex flex-wrap gap-3">
+                        {stripeEnabled && (
+                          <Button
+                            className="font-mono gap-2"
+                            disabled={payingInvoiceId === selectedInvoice.id}
+                            onClick={() => handleStripePayment(selectedInvoice.id)}
+                          >
+                            {payingInvoiceId === selectedInvoice.id && payingMethod === 'stripe'
+                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                              : <CreditCard className="h-4 w-4" />}
+                            Pay with Stripe
+                          </Button>
+                        )}
+                        {yocoEnabled && currency === 'ZAR' && (
+                          <Button
+                            variant="outline"
+                            className="font-mono gap-2"
+                            disabled={payingInvoiceId === selectedInvoice.id}
+                            onClick={() => handleYocoPayment(selectedInvoice.id)}
+                          >
+                            {payingInvoiceId === selectedInvoice.id && payingMethod === 'yoco'
+                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                              : <CreditCard className="h-4 w-4" />}
+                            Pay with Yoco
+                          </Button>
+                        )}
+                        {wiseLink && (
+                          <Button variant="outline" className="font-mono gap-2" asChild>
+                            <a href={wiseLink} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4" /> Pay via Wise
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Invoice List */}
-        <Card className="border-border bg-card">
-          <CardHeader>
-            <CardTitle className="font-mono text-lg">Your Invoices</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {invoices.length === 0 ? (
-              <div className="py-12 text-center">
-                <FileText className="mx-auto h-10 w-10 text-muted-foreground/40" />
-                <p className="mt-3 text-sm text-muted-foreground">No invoices yet</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {invoices.map((inv) => {
-                  const cfg = statusConfig[inv.status] ?? statusConfig.draft;
-                  const Icon = cfg.icon;
-                  return (
-                    <button
-                      key={inv.id}
-                      onClick={() => openInvoice(inv)}
-                      className="flex w-full items-center justify-between rounded-lg border border-border p-4 text-left transition-colors hover:border-primary/30 hover:bg-muted/30"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-mono text-sm font-medium text-foreground">
-                            #{inv.invoice_number}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {fmtDate(inv.created_at)}
-                            {inv.due_date && <> · Due {fmtDate(inv.due_date)}</>}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant={cfg.variant} className="text-xs">
-                          {cfg.label}
-                        </Badge>
-                        <span className="font-mono text-sm font-bold text-foreground">
-                          {fmt(Number(inv.total))}
-                        </span>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
