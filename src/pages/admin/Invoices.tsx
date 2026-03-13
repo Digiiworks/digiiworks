@@ -128,6 +128,7 @@ export default function Invoices() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const visibleStatuses = isAdmin ? STATUSES : STATUSES.filter((s) => s !== 'draft');
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
