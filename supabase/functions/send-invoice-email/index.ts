@@ -36,10 +36,20 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
   const regionLabel = currency === 'ZAR' ? 'South Africa' : currency === 'THB' ? 'Thailand' : 'International';
 
   let linksHTML = '';
-  if (paymentLinks?.yoco_payment_link && currency === 'ZAR') {
+
+  // Stripe button (if enabled)
+  const stripeEnabled = paymentMethods?.stripe_enabled === true || paymentMethods?.stripe_enabled === 'true';
+  if (stripeEnabled) {
+    linksHTML += '<a href="https://digiiworks.lovable.app/dashboard" style="display:inline-block;padding:11px 28px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:10px;letter-spacing:0.5px;">Pay with Stripe</a>';
+  }
+
+  // Yoco button (if enabled and ZAR)
+  const yocoEnabled = paymentMethods?.yoco_enabled === true || paymentMethods?.yoco_enabled === 'true' || paymentMethods?.yoco_enabled === undefined;
+  if (yocoEnabled && paymentLinks?.yoco_payment_link && currency === 'ZAR') {
     const yocoUrl = paymentLinks.yoco_payment_link + (paymentLinks.yoco_payment_link.includes('?') ? '&' : '?') + 'amount=' + Number(invoiceTotal || 0).toFixed(2);
     linksHTML += '<a href="' + yocoUrl + '" style="display:inline-block;padding:11px 28px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;margin-right:10px;letter-spacing:0.5px;">Pay with Yoco</a>';
   }
+
   if (paymentLinks?.wise_payment_link) {
     linksHTML += '<a href="' + paymentLinks.wise_payment_link + '" style="display:inline-block;padding:11px 28px;background:#9fe870;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:13px;border-radius:6px;letter-spacing:0.5px;">Pay with Wise</a>';
   }
