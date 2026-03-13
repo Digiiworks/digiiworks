@@ -349,6 +349,38 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="payment_methods">
+          <Card className="border-border bg-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-mono text-base">
+                <CreditCard className="h-4 w-4 text-primary" /> Payment Methods
+              </CardTitle>
+              <CardDescription>Enable or disable payment gateways shown on invoices and emails</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium text-foreground">Stripe Payments</Label>
+                  <p className="text-xs text-muted-foreground">Accept card payments via Stripe (all currencies)</p>
+                </div>
+                <Switch
+                  checked={data.payment_methods?.stripe_enabled ?? false}
+                  onCheckedChange={(checked) => update(['payment_methods', 'stripe_enabled'], checked ? 'true' : 'false')}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium text-foreground">Yoco Payments</Label>
+                  <p className="text-xs text-muted-foreground">Accept ZAR card payments via Yoco (South Africa)</p>
+                </div>
+                <Switch
+                  checked={data.payment_methods?.yoco_enabled ?? true}
+                  onCheckedChange={(checked) => update(['payment_methods', 'yoco_enabled'], checked ? 'true' : 'false')}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
