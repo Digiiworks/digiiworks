@@ -109,7 +109,7 @@ const Navbar = () => {
       {/* Mobile menu - CSS transition instead of AnimatePresence */}
       <div
         ref={menuRef}
-        className={`overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden transition-all duration-200 ease-out ${
+        className={`overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl lg:hidden transition-all duration-200 ease-out ${
           mobileOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 border-t-0'
         }`}
       >
