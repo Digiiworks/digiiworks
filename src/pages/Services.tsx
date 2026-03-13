@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { PILLARS } from '@/lib/constants';
 import { SERVICE_PAGES } from '@/lib/service-pages';
+import { cn } from '@/lib/utils';
 
 const getSlugForService = (name: string) => {
   const page = SERVICE_PAGES.find((p) => p.name === name);
@@ -12,6 +13,30 @@ const getSlugForService = (name: string) => {
 
 const Services = () => {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [activePillar, setActivePillar] = useState<string>(PILLARS[0].id);
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  // Track which section is in view
+  useEffect(() => {
+    const observers: IntersectionObserver[] = [];
+    PILLARS.forEach((pillar) => {
+      const el = sectionRefs.current[pillar.id];
+      if (!el) return;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) setActivePillar(pillar.id);
+        },
+        { rootMargin: '-40% 0px -50% 0px' }
+      );
+      observer.observe(el);
+      observers.push(observer);
+    });
+    return () => observers.forEach((o) => o.disconnect());
+  }, []);
+
+  const scrollTo = (id: string) => {
+    sectionRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -24,9 +49,37 @@ const Services = () => {
           </h1>
         </div>
 
+        {/* Sticky filter bar */}
+        <div className="sticky top-16 z-30 -mx-6 px-6 py-3 mb-8 backdrop-blur-xl bg-background/70 border-b border-border/40">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            {PILLARS.map((pillar) => (
+              <button
+                key={pillar.id}
+                onClick={() => scrollTo(pillar.id)}
+                className={cn(
+                  'shrink-0 rounded-full px-4 py-1.5 font-mono text-xs transition-all duration-300 border',
+                  activePillar === pillar.id
+                    ? pillar.id === 'autonomous'
+                      ? 'bg-neon-purple/10 border-neon-purple/40 text-neon-purple'
+                      : 'bg-primary/10 border-primary/40 text-primary'
+                    : 'border-border/50 text-muted-foreground hover:text-foreground hover:border-border'
+                )}
+              >
+                <span className="mr-1.5 opacity-60">{pillar.label}</span>
+                {pillar.title}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="space-y-14 md:space-y-20">
           {PILLARS.map((pillar) => (
-            <section key={pillar.id}>
+            <section
+              key={pillar.id}
+              id={pillar.id}
+              ref={(el) => { sectionRefs.current[pillar.id] = el; }}
+              className="scroll-mt-32"
+            >
               <div className="mb-6 flex items-center gap-3 md:mb-8">
                 <span className={`font-mono text-xs uppercase tracking-widest ${pillar.accentColor}`}>{pillar.label}</span>
                 <div className="h-px flex-1 bg-border" />
