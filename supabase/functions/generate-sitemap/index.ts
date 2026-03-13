@@ -74,7 +74,8 @@ Deno.serve(async (req) => {
       },
     });
   } catch (error) {
-    return new Response(`<error>${error.message}</error>`, {
+    console.error("generate-sitemap error:", error);
+    return new Response(`<?xml version="1.0" encoding="UTF-8"?><error>An unexpected error occurred.</error>`, {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/xml" },
     });
