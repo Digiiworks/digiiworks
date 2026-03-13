@@ -5,7 +5,7 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Bold, Italic, List, ListOrdered, Heading2, Heading3, Quote, Code, Link as LinkIcon, Image as ImageIcon, Undo, Redo } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { useCallback } from 'react';
 
 interface RichEditorProps {
