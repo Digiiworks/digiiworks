@@ -366,17 +366,25 @@ const ClientDashboard = () => {
 
               {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue') && (
                 <div className="flex flex-wrap gap-3 pt-2">
-                  <Button className="font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90">
-                    Pay with Stripe
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="font-mono border-secondary text-secondary hover:bg-secondary/10"
-                    disabled={yocoLoading}
-                    onClick={() => handleYocoPayment(selectedInvoice.id)}
-                  >
-                    {yocoLoading ? 'Redirecting…' : 'Pay with Yoco'}
-                  </Button>
+                  {(paymentSettings?.payment_methods?.stripe_enabled === true || paymentSettings?.payment_methods?.stripe_enabled === 'true') && (
+                    <Button
+                      className="font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90"
+                      disabled={stripeLoading}
+                      onClick={() => handleStripePayment(selectedInvoice.id)}
+                    >
+                      {stripeLoading ? 'Redirecting…' : 'Pay with Stripe'}
+                    </Button>
+                  )}
+                  {(paymentSettings?.payment_methods?.yoco_enabled === true || paymentSettings?.payment_methods?.yoco_enabled === 'true' || paymentSettings?.payment_methods?.yoco_enabled === undefined) && clientCurrency === 'ZAR' && (
+                    <Button
+                      variant="outline"
+                      className="font-mono border-secondary text-secondary hover:bg-secondary/10"
+                      disabled={yocoLoading}
+                      onClick={() => handleYocoPayment(selectedInvoice.id)}
+                    >
+                      {yocoLoading ? 'Redirecting…' : 'Pay with Yoco'}
+                    </Button>
+                  )}
                   {paymentSettings?.payment_links?.wise_payment_link && (
                     <Button
                       variant="outline"
