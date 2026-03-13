@@ -207,6 +207,7 @@ function buildEmailHTML(invoice: any, items: InvoiceItem[], client: any, dashboa
       invoice.total,
       paymentSettings.payment_methods,
       resolved?.regionLabel,
+      stripeCheckoutUrl,
     );
   }
 
