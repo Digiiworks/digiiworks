@@ -111,7 +111,7 @@ const ClientDashboard = () => {
     const fetchData = async () => {
       const [invoicesRes, companiesRes, settingsRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
-        supabase.from('client_companies').select('id, company_name, currency, address').eq('active', true),
+        supabase.from('client_companies').select('id, company_name, currency, address, logo_url').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
       ]);
       setInvoices(((invoicesRes.data as any[]) ?? []).filter((i: any) => i.status !== 'draft'));
