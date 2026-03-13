@@ -58,6 +58,7 @@ const BlogSkeletons = () => (
 
 const Blog = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
