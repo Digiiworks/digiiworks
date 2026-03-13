@@ -96,6 +96,8 @@ const EMAIL_STATUS_ICON: Record<string, React.ReactNode> = {
 const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
 
+const isPayableStatus = (status: Invoice['status']) => !['paid', 'cancelled'].includes(status);
+
 const fmtCurrency = (amount: number, currency: string = 'USD') => {
   const symbol = currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
   return `${symbol}${amount.toFixed(2)}`;
@@ -126,6 +128,7 @@ export default function Invoices() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const visibleStatuses = isAdmin ? STATUSES : STATUSES.filter((s) => s !== 'draft');
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
@@ -196,9 +199,14 @@ export default function Invoices() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const visibleInvoices = useMemo(
+    () => (isAdmin ? invoices : invoices.filter(i => i.status !== 'draft')),
+    [invoices, isAdmin]
+  );
+
   // Sort, filter, search, then paginate — overdue always on top
   const processed = useMemo(() => {
-    let list = [...invoices];
+    let list = [...visibleInvoices];
     if (filterStatus !== 'all') list = list.filter(i => i.status === filterStatus);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -228,47 +236,51 @@ export default function Invoices() {
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return list;
-  }, [invoices, filterStatus, search, sortField, sortDir]);
+  }, [visibleInvoices, filterStatus, search, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const paginated = processed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   useEffect(() => { setPage(1); }, [filterStatus, search, sortField, sortDir]);
 
+  useEffect(() => {
+    if (!isAdmin && filterStatus === 'draft') setFilterStatus('all');
+  }, [isAdmin, filterStatus]);
+
   const outstandingByCurrency = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
-    invoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).forEach(i => {
+    visibleInvoices.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).forEach(i => {
       const c = i.currency ?? 'USD';
       if (!map[c]) map[c] = { total: 0, count: 0 };
       map[c].total += i.total;
       map[c].count++;
     });
     return map;
-  }, [invoices]);
+  }, [visibleInvoices]);
 
   const paidByCurrency = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
-    invoices.filter(i => i.status === 'paid').forEach(i => {
+    visibleInvoices.filter(i => i.status === 'paid').forEach(i => {
       const c = i.currency ?? 'USD';
       if (!map[c]) map[c] = { total: 0, count: 0 };
       map[c].total += i.total;
       map[c].count++;
     });
     return map;
-  }, [invoices]);
+  }, [visibleInvoices]);
 
   const overdueByCurrency = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
-    invoices.filter(i => i.status === 'overdue').forEach(i => {
+    visibleInvoices.filter(i => i.status === 'overdue').forEach(i => {
       const c = i.currency ?? 'USD';
       if (!map[c]) map[c] = { total: 0, count: 0 };
       map[c].total += i.total;
       map[c].count++;
     });
     return map;
-  }, [invoices]);
+  }, [visibleInvoices]);
 
-  const overdueCount = invoices.filter(i => i.status === 'overdue').length;
+  const overdueCount = visibleInvoices.filter(i => i.status === 'overdue').length;
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -587,7 +599,7 @@ export default function Invoices() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+            {visibleStatuses.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
           </SelectContent>
         </Select>
         {isAdmin && (
@@ -608,7 +620,7 @@ export default function Invoices() {
           <div className="space-y-3 md:hidden">
             {paginated.map(inv => {
               const isOverdue = inv.status === 'overdue';
-              const isUnpaid = ['sent', 'overdue'].includes(inv.status);
+              const isUnpaid = isPayableStatus(inv.status);
               return (
                 <div key={inv.id} className={`rounded-lg border bg-card/50 p-3 space-y-2 ${isOverdue ? 'border-orange-500/40' : 'border-border'}`}>
                   <div className="flex items-center justify-between">
@@ -672,7 +684,7 @@ export default function Invoices() {
               <TableBody>
                 {paginated.map(inv => {
                   const isOverdue = inv.status === 'overdue';
-                  const isUnpaid = ['sent', 'overdue'].includes(inv.status);
+                  const isUnpaid = isPayableStatus(inv.status);
                   return (
                     <TableRow
                       key={inv.id}
@@ -1123,7 +1135,7 @@ export default function Invoices() {
                 </div>
               )}
 
-              {['sent', 'overdue'].includes(showDetail.status) && (
+              {isPayableStatus(showDetail.status) && (
                 <Button
                   className={`w-full gap-2 font-mono ${
                     showDetail.status === 'overdue'
