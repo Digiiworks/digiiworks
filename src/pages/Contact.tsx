@@ -56,7 +56,7 @@ const Contact = () => {
     if (honeypot) return; // Bot filled hidden field
     const elapsed = Date.now() - formLoadTime.current;
     if (elapsed < 3000) {
-      toast({ title: 'Please slow down', description: 'Form submitted too quickly.', variant: 'destructive' });
+      toast.error('Please slow down', { description: 'Form submitted too quickly.' });
       return;
     }
 
