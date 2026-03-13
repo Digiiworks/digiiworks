@@ -285,8 +285,26 @@ export default function Clients() {
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const src = URL.createObjectURL(file);
+    setCropperSrc(src);
+    setShowCropper(true);
+    // Reset file input so the same file can be re-selected
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    const file = new File([croppedBlob], 'logo.png', { type: 'image/png' });
     setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+    setLogoPreview(URL.createObjectURL(croppedBlob));
+    setShowCropper(false);
+    if (cropperSrc) URL.revokeObjectURL(cropperSrc);
+    setCropperSrc(null);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    if (cropperSrc) URL.revokeObjectURL(cropperSrc);
+    setCropperSrc(null);
   };
 
   const clearLogo = () => {
