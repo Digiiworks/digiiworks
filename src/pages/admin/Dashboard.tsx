@@ -78,9 +78,9 @@ const AdminDashboardContent = () => {
       <AdminToolbar title="Dashboard" subtitle="Overview of your agency operations" />
 
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Leads" value={leadCount ?? 0} icon={Mail} iconColor="text-neon-blue" />
-        <StatCard label="New Leads" value={newLeads ?? 0} icon={TrendingUp} iconColor="text-neon-mint" />
-        <StatCard label="Blog Posts" value={postCount ?? 0} icon={FileText} iconColor="text-neon-purple" />
+        <StatCard label="Total Leads" value={leadCount} icon={Mail} iconColor="text-neon-blue" />
+        <StatCard label="New Leads" value={newLeads} icon={TrendingUp} iconColor="text-neon-mint" />
+        <StatCard label="Blog Posts" value={postCount} icon={FileText} iconColor="text-neon-purple" />
         <StatCard label="Conversion Rate" value={conversionRate} icon={Users} iconColor="text-primary" />
       </div>
 
