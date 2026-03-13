@@ -102,7 +102,7 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
   const stripeEnabled = paymentMethods?.stripe_enabled === true || paymentMethods?.stripe_enabled === 'true';
   if (stripeEnabled && stripeCheckoutUrl) {
     buttonRows.push(
-      '<tr><td style="padding:0 0 10px;"><a href="' + stripeCheckoutUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">&#9889;&#xFE0E; Pay with Stripe</a></td></tr>'
+      '<tr><td style="padding:0 0 10px;"><a href="' + stripeCheckoutUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#635bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">Pay with Stripe</a></td></tr>'
     );
   }
 
