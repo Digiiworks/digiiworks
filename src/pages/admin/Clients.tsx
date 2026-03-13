@@ -642,9 +642,13 @@ export default function Clients() {
               <div key={client.id} className="rounded-lg border border-border bg-card/50 p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-mono text-sm font-bold shrink-0">
-                      {(client.company_name ?? '?')[0].toUpperCase()}
-                    </div>
+                    {client.logo_url ? (
+                      <img src={client.logo_url} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-mono text-sm font-bold shrink-0">
+                        {(client.company_name ?? '?')[0].toUpperCase()}
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{client.company_name}</p>
                       <p className="text-xs text-muted-foreground truncate">{client.display_name} · {client.email}</p>
