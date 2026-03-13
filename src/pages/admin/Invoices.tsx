@@ -759,7 +759,11 @@ export default function Invoices() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">{inv.client_name}</span>
-                        <span className="block text-xs text-muted-foreground">{inv.client_email}</span>
+                        {inv.client_email && (
+                          <a href={`mailto:${inv.client_email}`} className="block text-xs text-muted-foreground hover:text-primary transition-colors underline-offset-2 hover:underline">
+                            {inv.client_email}
+                          </a>
+                        )}
                       </TableCell>
                       <TableCell>
                         {isAdmin ? (
