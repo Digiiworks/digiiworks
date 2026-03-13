@@ -29,7 +29,7 @@ const Auth = () => {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
-        toast({ title: 'Check your email', description: 'Password reset link sent.' });
+        toast.success('Check your email', { description: 'Password reset link sent.' });
         setForgotPassword(false);
       } else if (isLogin) {
         const { error, data } = await supabase.auth.signInWithPassword({ email, password });
