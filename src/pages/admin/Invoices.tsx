@@ -30,7 +30,7 @@ import StatCard from '@/components/admin/StatCard';
 import AdminToolbar from '@/components/admin/AdminToolbar';
 import AdminPagination from '@/components/admin/AdminPagination';
 import PageLoader from '@/components/admin/PageLoader';
-import EmptyState from '@/components/admin/EmptyState';
+import EmptyState, { ErrorState } from '@/components/admin/EmptyState';
 import ProductCombobox from '@/components/admin/ProductCombobox';
 
 type Invoice = {
