@@ -33,7 +33,7 @@ const Leads = () => {
   const [openId, setOpenId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: leads, isLoading } = useQuery({
+  const { data: leads, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-leads', filterStatus],
     queryFn: async () => {
       let query = supabase.from('leads').select('*').order('created_at', { ascending: false });
