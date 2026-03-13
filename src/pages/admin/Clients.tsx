@@ -1106,6 +1106,17 @@ export default function Clients() {
           }
         }}
       />
+
+      {/* Image Cropper Modal */}
+      {cropperSrc && (
+        <ImageCropper
+          open={showCropper}
+          imageSrc={cropperSrc}
+          onClose={handleCropCancel}
+          onCropComplete={handleCropComplete}
+          title="Crop Company Logo"
+        />
+      )}
     </div>
   );
 }
