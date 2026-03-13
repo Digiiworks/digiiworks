@@ -150,7 +150,7 @@ const ClientDashboard = () => {
     // Add unlinked invoices as a virtual group if any
     if (unlinked.length > 0) {
       result.push({
-        company: { id: '__unlinked__', company_name: 'Other Invoices', currency: 'USD', address: null },
+        company: { id: '__unlinked__', company_name: 'Other Invoices', currency: 'USD', address: null, logo_url: null },
         invoices: unlinked,
       });
     }
