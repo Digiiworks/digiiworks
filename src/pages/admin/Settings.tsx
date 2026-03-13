@@ -62,6 +62,7 @@ const defaultData: BankingInfo = {
   south_africa: { bank_name: '', account_name: '', account_number: '', branch_code: '', account_type: 'Cheque', currency: 'ZAR', reference_note: '' },
   payment_links: { yoco_payment_link: '', wise_payment_link: '' },
   tracking: { google_pixel_id: '', meta_pixel_id: '' },
+  payment_methods: { stripe_enabled: false, yoco_enabled: true },
 };
 
 const SettingsPage = () => {
