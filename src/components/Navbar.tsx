@@ -94,7 +94,7 @@ const Navbar = () => {
 
           {/* Mobile burger */}
           <button
-            className="flex flex-col gap-1.5 md:hidden"
+            className="flex flex-col gap-1.5 lg:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
