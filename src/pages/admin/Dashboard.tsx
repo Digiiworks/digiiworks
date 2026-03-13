@@ -69,7 +69,7 @@ const AdminDashboardContent = () => {
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   })();
 
-  const conversionRate = leadCount && leadCount > 0 && convertedCount
+  const conversionRate = leadCount > 0 && convertedCount
     ? `${Math.round((convertedCount / leadCount) * 100)}%`
     : '0%';
 
