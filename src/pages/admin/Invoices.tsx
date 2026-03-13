@@ -699,14 +699,14 @@ export default function Invoices() {
                     <span className="text-muted-foreground">Due: {inv.due_date ? format(new Date(inv.due_date), 'MMM d') : '—'}</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/30">
-                    {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
-                      <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs" onClick={() => handleSendEmail(inv.id)} disabled={sendingId === inv.id}>
-                        {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                      </Button>
-                    )}
                     {isUnpaid && (
                       <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs" onClick={() => handlePayClick(inv)}>
-                        <CreditCard className="h-3 w-3" /> Pay
+                        <CreditCard className="h-3 w-3" /> Pay Now
+                      </Button>
+                    )}
+                    {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
+                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSendEmail(inv.id)} disabled={sendingId === inv.id}>
+                        {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                       </Button>
                     )}
                     <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto" onClick={() => viewDetail(inv)}>
