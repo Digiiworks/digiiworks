@@ -27,6 +27,7 @@ import EmptyState from '@/components/admin/EmptyState';
 import PageLoader from '@/components/admin/PageLoader';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import RecurringServicesSelector, { type RecurringService } from '@/components/admin/RecurringServicesSelector';
+import ImageCropper from '@/components/admin/ImageCropper';
 
 type ClientCompany = {
   id: string;
