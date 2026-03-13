@@ -445,8 +445,22 @@ export default function Invoices() {
     setSending(false);
   };
 
-  const handlePayClick = (inv: Invoice) => {
-    toast({ title: 'Payment', description: `Payment link for ${inv.invoice_number} (${fmtCurrency(inv.total, inv.currency)}) coming soon.` });
+  const handlePayClick = async (inv: Invoice) => {
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: 'paid', paid_at: now, payment_method: 'manual' })
+        .eq('id', inv.id);
+      if (error) throw error;
+      toast({ title: 'Invoice marked as paid', description: `${inv.invoice_number} has been marked as paid.` });
+      fetchAll();
+      if (showDetail?.id === inv.id) {
+        setShowDetail({ ...inv, status: 'paid', paid_at: now, payment_method: 'manual' } as any);
+      }
+    } catch (err: any) {
+      toast({ title: 'Failed to mark as paid', description: err.message, variant: 'destructive' });
+    }
   };
 
   const SortHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
