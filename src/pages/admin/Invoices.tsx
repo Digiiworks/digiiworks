@@ -1175,6 +1175,109 @@ export default function Invoices() {
         </DialogContent>
       </Dialog>
 
+      {/* Payment Options Dialog */}
+      <Dialog open={!!payDialog} onOpenChange={() => setPayDialog(null)}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-mono flex items-center gap-2">
+              <CircleDollarSign className="h-5 w-5 text-primary" />
+              Pay {payDialog?.invoice_number}
+            </DialogTitle>
+          </DialogHeader>
+          {payDialog && (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border/50 bg-background/50 p-3 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Client</span>
+                  <span>{payDialog.client_name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Amount</span>
+                  <span className="font-mono font-bold">{fmtCurrency(payDialog.total, payDialog.currency)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Currency</span>
+                  <span className="font-mono">{payDialog.currency ?? 'USD'}</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground">Choose a payment method:</p>
+
+              <div className="space-y-2">
+                {/* Stripe */}
+                {paymentSettings?.stripe_enabled && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-12 font-mono text-sm border-border hover:border-primary/50 hover:bg-primary/5"
+                    onClick={handleStripeCheckout}
+                    disabled={!!payingMethod}
+                  >
+                    {payingMethod === 'stripe' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4 text-primary" />}
+                    <div className="text-left">
+                      <span className="block">Pay with Stripe</span>
+                      <span className="text-[10px] text-muted-foreground">Credit / Debit Card</span>
+                    </div>
+                    <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                  </Button>
+                )}
+
+                {/* Yoco - only for ZAR */}
+                {paymentSettings?.yoco_enabled && (payDialog.currency === 'ZAR') && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-12 font-mono text-sm border-border hover:border-primary/50 hover:bg-primary/5"
+                    onClick={handleYocoCheckout}
+                    disabled={!!payingMethod}
+                  >
+                    {payingMethod === 'yoco' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4 text-primary" />}
+                    <div className="text-left">
+                      <span className="block">Pay with Yoco</span>
+                      <span className="text-[10px] text-muted-foreground">South Africa (ZAR)</span>
+                    </div>
+                    <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                  </Button>
+                )}
+
+                {/* Wise */}
+                {paymentSettings?.wise_payment_link && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-12 font-mono text-sm border-border hover:border-primary/50 hover:bg-primary/5"
+                    onClick={handleWisePayment}
+                    disabled={!!payingMethod}
+                  >
+                    <ExternalLink className="h-4 w-4 text-primary" />
+                    <div className="text-left">
+                      <span className="block">Pay via Wise</span>
+                      <span className="text-[10px] text-muted-foreground">Bank Transfer</span>
+                    </div>
+                    <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                  </Button>
+                )}
+
+                {/* Manual */}
+                {isAdmin && (
+                  <div className="pt-2 border-t border-border/50">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3 h-10 font-mono text-xs text-muted-foreground hover:text-foreground"
+                      onClick={handleManualPay}
+                      disabled={!!payingMethod}
+                    >
+                      {payingMethod === 'manual' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                      Mark as Paid (Manual Override)
+                    </Button>
+                    <p className="text-[10px] text-muted-foreground px-3 mt-1">
+                      ⚠ This marks the invoice as paid without processing an actual payment.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDialog
         open={!!deleteId}
         onOpenChange={() => setDeleteId(null)}
