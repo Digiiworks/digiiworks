@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfMonth, addMonths } from 'date-fns';
@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import {
   Plus, Trash2, Pencil, Loader2, Search,
-  User, Mail, Phone, Building2, MapPin, FileText, Check, ArrowUpDown,
+  User, Mail, Phone, Building2, MapPin, FileText, Check, ArrowUpDown, Upload, X,
 } from 'lucide-react';
 import StatCard from '@/components/admin/StatCard';
 import AdminToolbar from '@/components/admin/AdminToolbar';
@@ -39,6 +39,7 @@ type ClientCompany = {
   active: boolean;
   created_at: string;
   updated_at: string;
+  logo_url: string | null;
   // enriched from profile
   email: string | null;
   display_name: string | null;
@@ -82,6 +83,10 @@ export default function Clients() {
   const [form, setForm] = useState({
     email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa' | 'thailand',
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [startDate, setStartDate] = useState<string | null>(null);
@@ -274,6 +279,30 @@ export default function Clients() {
 
   const [originalRecurringIds, setOriginalRecurringIds] = useState<Set<string>>(new Set());
 
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const clearLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    setExistingLogoUrl(null);
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
+
+  const uploadLogo = async (companyId: string): Promise<string | null> => {
+    if (!logoFile) return existingLogoUrl;
+    const ext = logoFile.name.split('.').pop() ?? 'png';
+    const path = `${companyId}.${ext}`;
+    const { error } = await supabase.storage.from('client-logos').upload(path, logoFile, { upsert: true });
+    if (error) { console.error('Logo upload error:', error); return existingLogoUrl; }
+    const { data: urlData } = supabase.storage.from('client-logos').getPublicUrl(path);
+    return urlData.publicUrl + '?v=' + Date.now();
+  };
+
   const openEdit = async (client: ClientCompany) => {
     setEditClient(client);
     setForm({
@@ -285,6 +314,9 @@ export default function Clients() {
       notes: client.notes ?? '',
       country: client.currency === 'ZAR' ? 'south_africa' : client.currency === 'THB' ? 'thailand' : 'global',
     });
+    setLogoFile(null);
+    setLogoPreview(null);
+    setExistingLogoUrl(client.logo_url ?? null);
     // Load existing recurring services for this company
     const { data } = await supabase
       .from('client_recurring_services')
@@ -336,6 +368,9 @@ export default function Clients() {
     setSelectedExistingUser(null);
     setEmailQuery('');
     setEmailMatches([]);
+    setLogoFile(null);
+    setLogoPreview(null);
+    setExistingLogoUrl(null);
   };
 
   const saveRecurringServices = async (clientId: string, companyId: string) => {
@@ -366,6 +401,7 @@ export default function Clients() {
   const handleUpdate = async () => {
     if (!editClient) return;
     setSaving(true);
+    const logoUrl = await uploadLogo(editClient.id);
     const { error } = await supabase
       .from('client_companies')
       .update({
@@ -374,6 +410,7 @@ export default function Clients() {
         currency: countryToCurrency(form.country),
         phone: form.phone || null,
         notes: form.notes || null,
+        logo_url: logoUrl,
       })
       .eq('id', editClient.id);
 
@@ -472,6 +509,13 @@ export default function Clients() {
     } else if (data?.error) {
       toast({ title: 'Error creating client', description: data.error, variant: 'destructive' });
     } else {
+      // Upload logo if provided
+      if (data?.client_company_id && logoFile) {
+        const logoUrl = await uploadLogo(data.client_company_id);
+        if (logoUrl) {
+          await supabase.from('client_companies').update({ logo_url: logoUrl }).eq('id', data.client_company_id);
+        }
+      }
       // Save recurring services
       const activeServices = recurringServices.filter(s => s.active);
       if (data?.user_id && data?.client_company_id && recurringServices.length > 0) {
@@ -598,9 +642,13 @@ export default function Clients() {
               <div key={client.id} className="rounded-lg border border-border bg-card/50 p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-mono text-sm font-bold shrink-0">
-                      {(client.company_name ?? '?')[0].toUpperCase()}
-                    </div>
+                    {client.logo_url ? (
+                      <img src={client.logo_url} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-mono text-sm font-bold shrink-0">
+                        {(client.company_name ?? '?')[0].toUpperCase()}
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{client.company_name}</p>
                       <p className="text-xs text-muted-foreground truncate">{client.display_name} · {client.email}</p>
@@ -666,9 +714,13 @@ export default function Clients() {
                   <TableRow key={client.id} className="border-border/30">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-mono text-sm font-bold">
-                          {client.company_name[0].toUpperCase()}
-                        </div>
+                        {client.logo_url ? (
+                          <img src={client.logo_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-mono text-sm font-bold">
+                            {client.company_name[0].toUpperCase()}
+                          </div>
+                        )}
                         <div>
                           <p className="text-sm font-medium text-foreground">{client.company_name}</p>
                           <p className="text-xs text-muted-foreground">{client.currency}</p>
@@ -742,6 +794,27 @@ export default function Clients() {
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><User className="h-3 w-3" /> Contact Name</Label>
               <Input value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} className="bg-background border-border" />
+            </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5"><Upload className="h-3 w-3" /> Company Logo</Label>
+              <div className="flex items-center gap-3 mt-1.5">
+                {(logoPreview || existingLogoUrl) ? (
+                  <div className="relative">
+                    <img src={logoPreview || existingLogoUrl!} alt="" className="h-12 w-12 rounded-lg object-cover border border-border" />
+                    <button type="button" onClick={clearLogo} className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="h-12 w-12 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                )}
+                <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => logoInputRef.current?.click()}>
+                  {(logoPreview || existingLogoUrl) ? 'Change' : 'Upload'}
+                </Button>
+                <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
+              </div>
             </div>
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><Building2 className="h-3 w-3" /> Company Name *</Label>
@@ -868,6 +941,27 @@ export default function Clients() {
                 <Input value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} className="bg-background border-border" placeholder="John Doe" />
               </div>
             )}
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5"><Upload className="h-3 w-3" /> Company Logo</Label>
+              <div className="flex items-center gap-3 mt-1.5">
+                {logoPreview ? (
+                  <div className="relative">
+                    <img src={logoPreview} alt="" className="h-12 w-12 rounded-lg object-cover border border-border" />
+                    <button type="button" onClick={clearLogo} className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="h-12 w-12 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                )}
+                <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => logoInputRef.current?.click()}>
+                  {logoPreview ? 'Change' : 'Upload'}
+                </Button>
+                <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
+              </div>
+            </div>
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><Building2 className="h-3 w-3" /> Company Name *</Label>
               <Input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} className="bg-background border-border" placeholder="Acme Inc." />

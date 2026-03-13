@@ -22,6 +22,7 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          logo_url: string | null
           notes: string | null
           phone: string | null
           updated_at: string
@@ -34,6 +35,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          logo_url?: string | null
           notes?: string | null
           phone?: string | null
           updated_at?: string
@@ -46,6 +48,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          logo_url?: string | null
           notes?: string | null
           phone?: string | null
           updated_at?: string

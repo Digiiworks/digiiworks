@@ -51,6 +51,7 @@ interface ClientCompany {
   company_name: string;
   currency: string;
   address: string | null;
+  logo_url: string | null;
 }
 
 const clientStatusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
@@ -110,7 +111,7 @@ const ClientDashboard = () => {
     const fetchData = async () => {
       const [invoicesRes, companiesRes, settingsRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
-        supabase.from('client_companies').select('id, company_name, currency, address').eq('active', true),
+        supabase.from('client_companies').select('id, company_name, currency, address, logo_url').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
       ]);
       setInvoices(((invoicesRes.data as any[]) ?? []).filter((i: any) => i.status !== 'draft'));
@@ -149,7 +150,7 @@ const ClientDashboard = () => {
     // Add unlinked invoices as a virtual group if any
     if (unlinked.length > 0) {
       result.push({
-        company: { id: '__unlinked__', company_name: 'Other Invoices', currency: 'USD', address: null },
+        company: { id: '__unlinked__', company_name: 'Other Invoices', currency: 'USD', address: null, logo_url: null },
         invoices: unlinked,
       });
     }
@@ -320,9 +321,13 @@ const ClientDashboard = () => {
                   onClick={() => toggleCompany(company.id)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 font-mono text-sm font-bold text-primary">
-                      {company.company_name.charAt(0).toUpperCase()}
-                    </div>
+                    {company.logo_url ? (
+                      <img src={company.logo_url} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 font-mono text-sm font-bold text-primary">
+                        {company.company_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <h2 className="font-mono text-lg font-bold text-foreground">{company.company_name}</h2>
                       <p className="text-xs text-muted-foreground">{company.currency} · {companyInvoices.length} invoice{companyInvoices.length !== 1 ? 's' : ''}</p>
