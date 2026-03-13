@@ -167,20 +167,52 @@ export default function Clients() {
   useEffect(() => { fetchClients(); }, []);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return clients;
-    const q = search.toLowerCase();
-    return clients.filter(c =>
-      (c.display_name ?? '').toLowerCase().includes(q) ||
-      (c.email ?? '').toLowerCase().includes(q) ||
-      c.company_name.toLowerCase().includes(q) ||
-      (c.phone ?? '').toLowerCase().includes(q)
-    );
-  }, [clients, search]);
+    let list = [...clients];
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(c =>
+        (c.display_name ?? '').toLowerCase().includes(q) ||
+        (c.email ?? '').toLowerCase().includes(q) ||
+        c.company_name.toLowerCase().includes(q) ||
+        (c.phone ?? '').toLowerCase().includes(q)
+      );
+    }
+    list.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'company':
+          cmp = a.company_name.localeCompare(b.company_name);
+          break;
+        case 'contact':
+          cmp = (a.display_name ?? '').localeCompare(b.display_name ?? '');
+          break;
+        case 'invoices':
+          cmp = (a.invoice_count ?? 0) - (b.invoice_count ?? 0);
+          break;
+        case 'recurring':
+          cmp = (a.recurring_count ?? 0) - (b.recurring_count ?? 0);
+          break;
+        case 'outstanding':
+          cmp = (a.outstanding ?? 0) - (b.outstanding ?? 0);
+          break;
+        case 'created':
+          cmp = a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0;
+          break;
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  }, [clients, search, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  useEffect(() => { setPage(1); }, [search]);
+  useEffect(() => { setPage(1); }, [search, sortField, sortDir]);
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('asc'); }
+  };
 
   // Fuzzy email search
   const searchEmails = useCallback(async (query: string) => {
