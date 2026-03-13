@@ -25,7 +25,7 @@ const contactSchema = z.object({
 });
 
 const Contact = () => {
-  const { toast } = useToast();
+  
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
