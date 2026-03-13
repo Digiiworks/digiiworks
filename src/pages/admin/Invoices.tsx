@@ -454,7 +454,7 @@ export default function Invoices() {
         .eq('id', inv.id);
       if (error) throw error;
       toast({ title: 'Invoice marked as paid', description: `${inv.invoice_number} has been marked as paid.` });
-      fetchInvoices();
+      fetchAll();
       if (showDetail?.id === inv.id) {
         setShowDetail({ ...inv, status: 'paid', paid_at: now, payment_method: 'manual' } as any);
       }
