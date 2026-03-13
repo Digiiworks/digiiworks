@@ -6,11 +6,15 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { format, subDays, startOfDay } from 'date-fns';
 import StatCard from '@/components/admin/StatCard';
 import AdminToolbar from '@/components/admin/AdminToolbar';
+import ClientDashboard from '@/pages/ClientDashboard';
 
 const COLORS = ['hsl(184, 100%, 50%)', 'hsl(280, 99%, 53%)', 'hsl(106, 100%, 55%)', 'hsl(0, 72%, 51%)', 'hsl(45, 100%, 60%)'];
 
 const Dashboard = () => {
   const { isClient } = useAuth();
+
+  // If client, render the client dashboard content
+  if (isClient) return <ClientDashboard />;
 
   const { data: leadCount } = useQuery({
     queryKey: ['admin-lead-count'],
