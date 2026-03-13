@@ -139,6 +139,9 @@ export default function Invoices() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [payDialog, setPayDialog] = useState<Invoice | null>(null);
+  const [paymentSettings, setPaymentSettings] = useState<any>(null);
+  const [payingMethod, setPayingMethod] = useState<string | null>(null);
 
   // Create/Edit form
   const [form, setForm] = useState({ client_id: '', client_company_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
