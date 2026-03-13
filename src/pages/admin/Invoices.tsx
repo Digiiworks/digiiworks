@@ -879,8 +879,17 @@ export default function Invoices() {
                       key={inv.id}
                       className={`border-border/30 transition-colors ${
                         isOverdue ? 'bg-orange-500/5 border-l-2 border-l-orange-500' : ''
-                      }`}
+                      } ${selectedIds.has(inv.id) ? 'bg-primary/5' : ''}`}
                     >
+                      {isAdmin && (
+                        <TableCell className="w-10">
+                          <Checkbox
+                            checked={selectedIds.has(inv.id)}
+                            onCheckedChange={() => toggleSelect(inv.id)}
+                            className="border-muted-foreground/50"
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-mono text-sm">
                         {isOverdue && <AlertTriangle className="inline h-3.5 w-3.5 text-orange-400 mr-1.5 -mt-0.5" />}
                         {inv.invoice_number}
