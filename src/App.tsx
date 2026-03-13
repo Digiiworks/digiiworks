@@ -127,7 +127,7 @@ const App = () => (
                 </Route>
 
                 <Route path="*" element={<Layout />}>
-                  <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
+                  <Route path="*" element={<Suspense fallback={<ContentPageSkeleton />}><NotFound /></Suspense>} />
                 </Route>
               </Routes>
           </AuthProvider>
