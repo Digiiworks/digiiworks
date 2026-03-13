@@ -651,7 +651,8 @@ export default function Clients() {
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{client.company_name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{client.display_name} · {client.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">{client.display_name ?? '—'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{client.email ?? '—'}</p>
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
@@ -663,7 +664,7 @@ export default function Clients() {
                     </Button>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-muted-foreground block">Invoices</span>
                     <Badge variant="outline" className="font-mono text-xs mt-0.5">{client.invoice_count}</Badge>
@@ -672,8 +673,8 @@ export default function Clients() {
                     <span className="text-muted-foreground block">Recurring</span>
                     <span className="font-mono">{client.recurring_count ?? 0}</span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-muted-foreground block">Outstanding</span>
+                  <div className="col-span-2 mt-1 flex items-center justify-between border-t border-border/40 pt-2">
+                    <span className="text-muted-foreground">Outstanding</span>
                     <span className={`font-mono font-medium ${(client.outstanding ?? 0) > 0 ? 'text-orange-400' : 'text-muted-foreground'}`}>
                       {fmtCurrency(client.outstanding ?? 0, client.currency)}
                     </span>
