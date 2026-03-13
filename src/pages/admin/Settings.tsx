@@ -50,6 +50,10 @@ interface BankingInfo {
     google_pixel_id: string;
     meta_pixel_id: string;
   };
+  payment_methods: {
+    stripe_enabled: boolean;
+    yoco_enabled: boolean;
+  };
 }
 
 const defaultData: BankingInfo = {
