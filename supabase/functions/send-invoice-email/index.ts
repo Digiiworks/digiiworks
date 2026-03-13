@@ -111,7 +111,7 @@ function buildBankingHTML(bankInfo: any, paymentLinks: any, currency: string, in
   if (yocoEnabled && paymentLinks?.yoco_payment_link && normalizedCurrency === 'ZAR') {
     const yocoUrl = paymentLinks.yoco_payment_link + (paymentLinks.yoco_payment_link.includes('?') ? '&' : '?') + 'amount=' + Number(invoiceTotal || 0).toFixed(2);
     buttonRows.push(
-      '<tr><td style="padding:0 0 10px;"><a href="' + yocoUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">&#9675;&#xFE0E; Pay with Yoco</a></td></tr>'
+      '<tr><td style="padding:0 0 10px;"><a href="' + yocoUrl + '" style="display:block;width:100%;box-sizing:border-box;padding:14px 16px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">Pay with Yoco</a></td></tr>'
     );
   }
 
