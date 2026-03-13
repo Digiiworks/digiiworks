@@ -120,7 +120,7 @@ const ClientDashboard = () => {
         supabase.from('client_companies').select('id, company_name, currency, address').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
       ]);
-      setInvoices((invoicesRes.data as any[]) ?? []);
+      setInvoices(((invoicesRes.data as any[]) ?? []).filter((i: any) => i.status !== 'draft'));
       setCompanies((companiesRes.data as any[]) ?? []);
       if (settingsRes.data) setPaymentSettings(settingsRes.data.content);
       
