@@ -594,7 +594,7 @@ export default function Clients() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {(() => {
         const byCurrency: Record<string, number> = {};
         clients.forEach(c => {
