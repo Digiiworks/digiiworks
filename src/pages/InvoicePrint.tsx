@@ -192,18 +192,28 @@ const InvoicePrint = () => {
           </div>
         )}
 
-        {/* Payment links */}
-        {(invoice.status === 'sent' || invoice.status === 'overdue') && (links?.yoco_payment_link || links?.wise_payment_link) && (
-          <div style={{ padding: '24px 32px 0', textAlign: 'center' }}>
-            {links.yoco_payment_link && currency === 'ZAR' && (
-              <a href={links.yoco_payment_link + (links.yoco_payment_link.includes('?') ? '&' : '?') + 'amount=' + Number(invoice.total).toFixed(2)} style={{ display: 'inline-block', padding: '11px 28px', background: '#0a0a0a', color: '#ffffff', textDecoration: 'none', fontWeight: 700, fontSize: 13, borderRadius: 6, marginRight: 10, letterSpacing: 0.5 }}>Pay with Yoco</a>
-            )}
-            {links.wise_payment_link && (
-              <a href={links.wise_payment_link} style={{ display: 'inline-block', padding: '11px 28px', background: '#9fe870', color: '#0a0a0a', textDecoration: 'none', fontWeight: 700, fontSize: 13, borderRadius: 6, letterSpacing: 0.5 }}>Pay with Wise</a>
-            )}
-            <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Don't have a Wise account? <a href="https://wise.com/invite/dic/justind507" style={{ color: '#0d9488', textDecoration: 'underline' }}>Sign up today</a> for fee-free transfers.</p>
-          </div>
-        )}
+        {/* Payment buttons */}
+        {(invoice.status === 'sent' || invoice.status === 'overdue') && (() => {
+          const methods = paymentSettings?.payment_methods;
+          const stripeOn = methods?.stripe_enabled === true || methods?.stripe_enabled === 'true';
+          const yocoOn = (methods?.yoco_enabled === true || methods?.yoco_enabled === 'true' || methods?.yoco_enabled === undefined) && currency === 'ZAR';
+          const hasLinks = stripeOn || (yocoOn && links?.yoco_payment_link) || links?.wise_payment_link;
+          if (!hasLinks) return null;
+          return (
+            <div className="no-print" style={{ padding: '24px 32px 0', textAlign: 'center' }}>
+              {stripeOn && (
+                <a href="/client" style={{ display: 'inline-block', padding: '11px 28px', background: '#635bff', color: '#ffffff', textDecoration: 'none', fontWeight: 700, fontSize: 13, borderRadius: 6, marginRight: 10, letterSpacing: 0.5 }}>💳 Pay with Stripe</a>
+              )}
+              {yocoOn && links?.yoco_payment_link && (
+                <a href={links.yoco_payment_link + (links.yoco_payment_link.includes('?') ? '&' : '?') + 'amount=' + Number(invoice.total).toFixed(2)} style={{ display: 'inline-block', padding: '11px 28px', background: '#0a0a0a', color: '#ffffff', textDecoration: 'none', fontWeight: 700, fontSize: 13, borderRadius: 6, marginRight: 10, letterSpacing: 0.5 }}>Pay with Yoco</a>
+              )}
+              {links?.wise_payment_link && (
+                <a href={links.wise_payment_link} style={{ display: 'inline-block', padding: '11px 28px', background: '#9fe870', color: '#0a0a0a', textDecoration: 'none', fontWeight: 700, fontSize: 13, borderRadius: 6, letterSpacing: 0.5 }}>Pay with Wise</a>
+              )}
+              <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Don't have a Wise account? <a href="https://wise.com/invite/dic/justind507" style={{ color: '#0d9488', textDecoration: 'underline' }}>Sign up today</a> for fee-free transfers.</p>
+            </div>
+          );
+        })()}
 
         {/* Footer */}
         <div style={{ padding: '40px 32px 32px', textAlign: 'center' }}>
