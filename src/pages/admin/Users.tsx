@@ -8,6 +8,7 @@ import { Trash2 } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import AdminToolbar from '@/components/admin/AdminToolbar';
 import PageLoader from '@/components/admin/PageLoader';
+import { ErrorState } from '@/components/admin/EmptyState';
 
 const ROLES = ['admin', 'editor', 'client'] as const;
 
