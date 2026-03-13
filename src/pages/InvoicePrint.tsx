@@ -83,11 +83,11 @@ const InvoicePrint = () => {
         </Button>
       </div>
 
-      <div style={{ maxWidth: 600, margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif', color: '#111827', background: '#ffffff' }}>
+      <div style={{ maxWidth: '100%', margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif', color: '#111827', background: '#ffffff' }}>
         {/* Header */}
-        <div style={{ background: '#0a0a0a', padding: '28px 32px', textAlign: 'center' }}>
-          <img src="/logo.svg" alt="Digiiworks" style={{ width: 175, height: 'auto' }} />
-          <p style={{ margin: '10px 0 0', fontSize: 10, color: '#9ca3af', letterSpacing: 4, textTransform: 'uppercase' }}>Digital Agency</p>
+        <div style={{ background: '#0a0a0a', padding: '28px 32px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <img src="/logo.svg" alt="Digiiworks" style={{ width: 175, height: 'auto', display: 'block', margin: '0 auto' }} />
+          <p style={{ margin: '10px 0 0', fontSize: 10, color: '#9ca3af', letterSpacing: 4, textTransform: 'uppercase', textAlign: 'center', width: '100%' }}>Digital Agency</p>
         </div>
         <div style={{ height: 3, background: '#0891b2' }} />
 
