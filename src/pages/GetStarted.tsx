@@ -61,7 +61,7 @@ const slideVariants = {
 };
 
 const GetStarted = () => {
-  const { toast } = useToast();
+  
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
   const [submitting, setSubmitting] = useState(false);

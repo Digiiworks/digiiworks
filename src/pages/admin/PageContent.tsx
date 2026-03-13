@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Plus, Pencil } from 'lucide-react';
 
 const PageContent = () => {
-  const { toast } = useToast();
+  
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<any>(null);

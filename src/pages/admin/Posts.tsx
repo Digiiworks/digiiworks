@@ -18,7 +18,7 @@ import PageLoader from '@/components/admin/PageLoader';
 import EmptyState from '@/components/admin/EmptyState';
 
 const Posts = () => {
-  const { toast } = useToast();
+  
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [editingPost, setEditingPost] = useState<any>(null);

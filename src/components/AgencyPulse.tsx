@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import type { AgentLog } from '@/lib/types';
 import { useEffect, useRef, useState } from 'react';
 import { MOCK_AGENT_LOGS } from '@/lib/constants';

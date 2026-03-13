@@ -25,7 +25,7 @@ const ToolbarButton = ({ active, onClick, children, title }: { active?: boolean;
 );
 
 const RichEditor = ({ content, onChange }: RichEditorProps) => {
-  const { toast } = useToast();
+  
 
   const editor = useEditor({
     extensions: [

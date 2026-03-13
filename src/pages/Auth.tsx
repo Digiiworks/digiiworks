@@ -124,6 +124,38 @@ const Auth = () => {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                {!isLogin && password.length > 0 && (() => {
+                  const checks = [
+                    { label: '6+ characters', pass: password.length >= 6 },
+                    { label: 'Uppercase', pass: /[A-Z]/.test(password) },
+                    { label: 'Number', pass: /\d/.test(password) },
+                    { label: 'Special char', pass: /[^A-Za-z0-9]/.test(password) },
+                  ];
+                  const score = checks.filter(c => c.pass).length;
+                  const colors = ['bg-destructive', 'bg-destructive', 'bg-orange-500', 'bg-neon-mint', 'bg-neon-mint'];
+                  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+                  return (
+                    <div className="space-y-2 pt-1">
+                      <div className="flex gap-1">
+                        {[1,2,3,4].map(i => (
+                          <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= score ? colors[score] : 'bg-muted'}`} />
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className={`font-mono text-[10px] ${score <= 1 ? 'text-destructive' : score <= 2 ? 'text-orange-500' : 'text-neon-mint'}`}>
+                          {labels[score]}
+                        </span>
+                        <div className="flex gap-2">
+                          {checks.map(c => (
+                            <span key={c.label} className={`font-mono text-[10px] ${c.pass ? 'text-neon-mint' : 'text-muted-foreground'}`}>
+                              {c.pass ? '✓' : '○'} {c.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
