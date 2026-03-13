@@ -55,9 +55,8 @@ interface ClientCompany {
   address: string | null;
 }
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
-  draft: { label: 'Draft', variant: 'outline', icon: FileText },
-  sent: { label: 'Awaiting Payment', variant: 'secondary', icon: Clock },
+const clientStatusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
+  sent: { label: 'New', variant: 'secondary', icon: Clock },
   paid: { label: 'Paid', variant: 'default', icon: CheckCircle2 },
   overdue: { label: 'Overdue', variant: 'destructive', icon: AlertCircle },
   cancelled: { label: 'Cancelled', variant: 'outline', icon: FileText },
@@ -121,7 +120,7 @@ const ClientDashboard = () => {
         supabase.from('client_companies').select('id, company_name, currency, address').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
       ]);
-      setInvoices((invoicesRes.data as any[]) ?? []);
+      setInvoices(((invoicesRes.data as any[]) ?? []).filter((i: any) => i.status !== 'draft'));
       setCompanies((companiesRes.data as any[]) ?? []);
       if (settingsRes.data) setPaymentSettings(settingsRes.data.content);
       
@@ -418,7 +417,7 @@ const ClientDashboard = () => {
                     ) : (
                       <div className="divide-y divide-border/50">
                         {companyInvoices.map(inv => {
-                          const cfg = statusConfig[inv.status] ?? statusConfig.draft;
+                          const cfg = clientStatusConfig[inv.status] ?? clientStatusConfig.sent;
                           const Icon = cfg.icon;
                           const isUnpaid = ['sent', 'overdue'].includes(inv.status);
 
@@ -444,6 +443,14 @@ const ClientDashboard = () => {
                                   <Badge variant={cfg.variant} className="text-xs">
                                     {cfg.label}
                                   </Badge>
+                                  {isUnpaid && (
+                                    <span
+                                      className="text-xs font-medium text-primary hover:underline cursor-pointer"
+                                      onClick={(e) => { e.stopPropagation(); openInvoice(inv); setDialogView('pay'); }}
+                                    >
+                                      Pay Now
+                                    </span>
+                                  )}
                                   <span className={`font-mono text-sm font-bold ${inv.status === 'overdue' ? 'text-destructive' : 'text-foreground'}`}>
                                     {fmtCurrency(Number(inv.total), company.currency)}
                                   </span>
@@ -583,8 +590,8 @@ const ClientDashboard = () => {
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Status:</span>{' '}
-                      <Badge variant={statusConfig[selectedInvoice.status]?.variant ?? 'outline'}>
-                        {statusConfig[selectedInvoice.status]?.label ?? selectedInvoice.status}
+                      <Badge variant={clientStatusConfig[selectedInvoice.status]?.variant ?? 'outline'}>
+                        {clientStatusConfig[selectedInvoice.status]?.label ?? selectedInvoice.status}
                       </Badge>
                     </div>
                     <div>
