@@ -10,12 +10,7 @@ import ClientDashboard from '@/pages/ClientDashboard';
 
 const COLORS = ['hsl(184, 100%, 50%)', 'hsl(280, 99%, 53%)', 'hsl(106, 100%, 55%)', 'hsl(0, 72%, 51%)', 'hsl(45, 100%, 60%)'];
 
-const Dashboard = () => {
-  const { isClient } = useAuth();
-
-  // If client, render the client dashboard content
-  if (isClient) return <ClientDashboard />;
-
+const AdminDashboardContent = () => {
   const { data: leadCount } = useQuery({
     queryKey: ['admin-lead-count'],
     queryFn: async () => {
@@ -30,7 +25,6 @@ const Dashboard = () => {
       const { count } = await supabase.from('posts').select('*', { count: 'exact', head: true });
       return count ?? 0;
     },
-    enabled: !isClient,
   });
 
   const { data: newLeads } = useQuery({
@@ -65,7 +59,6 @@ const Dashboard = () => {
     },
   });
 
-  // Leads per day (last 14 days)
   const leadsPerDay = (() => {
     if (!allLeads) return [];
     const days: { date: string; count: number }[] = [];
@@ -78,7 +71,6 @@ const Dashboard = () => {
     return days;
   })();
 
-  // Status distribution
   const statusDist = (() => {
     if (!allLeads) return [];
     const counts: Record<string, number> = {};
@@ -86,7 +78,6 @@ const Dashboard = () => {
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   })();
 
-  // Service interest breakdown
   const serviceDist = (() => {
     if (!allLeads) return [];
     const counts: Record<string, number> = {};
@@ -108,69 +99,59 @@ const Dashboard = () => {
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Leads" value={leadCount ?? 0} icon={Mail} iconColor="text-neon-blue" />
         <StatCard label="New Leads" value={newLeads ?? 0} icon={TrendingUp} iconColor="text-neon-mint" />
-        {!isClient && (
-          <>
-            <StatCard label="Blog Posts" value={postCount ?? 0} icon={FileText} iconColor="text-neon-purple" />
-            <StatCard label="Conversion Rate" value={conversionRate} icon={Users} iconColor="text-primary" />
-          </>
-        )}
+        <StatCard label="Blog Posts" value={postCount ?? 0} icon={FileText} iconColor="text-neon-purple" />
+        <StatCard label="Conversion Rate" value={conversionRate} icon={Users} iconColor="text-primary" />
       </div>
 
-      {/* Charts row */}
-      {!isClient && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {/* Leads over time */}
-          <div className="glass-card p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <BarChart3 className="h-4 w-4 text-neon-blue" />
-              <h3 className="font-mono text-sm font-semibold">Leads (Last 14 Days)</h3>
-            </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={leadsPerDay}>
-                <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: 'monospace', fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 10, fontFamily: 'monospace', fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontFamily: 'monospace', fontSize: 12 }}
-                  labelStyle={{ color: 'hsl(var(--foreground))' }}
-                />
-                <Bar dataKey="count" fill="hsl(184, 100%, 50%)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="glass-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-4 w-4 text-neon-blue" />
+            <h3 className="font-mono text-sm font-semibold">Leads (Last 14 Days)</h3>
           </div>
-
-          {/* Status distribution */}
-          <div className="glass-card p-5">
-            <h3 className="font-mono text-sm font-semibold mb-4">Lead Status</h3>
-            {statusDist.length > 0 ? (
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                <ResponsiveContainer width={140} height={140}>
-                  <PieChart>
-                    <Pie data={statusDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} strokeWidth={0}>
-                      {statusDist.map((_, i) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="flex flex-wrap gap-x-4 gap-y-1.5 sm:flex-col sm:space-y-2 sm:gap-0 justify-center">
-                  {statusDist.map((item, i) => (
-                    <div key={item.name} className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                      <span className="font-mono text-xs capitalize text-muted-foreground">{item.name}</span>
-                      <span className="font-mono text-xs font-bold text-foreground">{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <p className="font-mono text-sm text-muted-foreground text-center py-12">No data yet</p>
-            )}
-          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={leadsPerDay}>
+              <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: 'monospace', fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10, fontFamily: 'monospace', fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontFamily: 'monospace', fontSize: 12 }}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+              />
+              <Bar dataKey="count" fill="hsl(184, 100%, 50%)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-      )}
 
-      {/* Service Interest Breakdown */}
-      {!isClient && serviceDist.length > 0 && (
+        <div className="glass-card p-5">
+          <h3 className="font-mono text-sm font-semibold mb-4">Lead Status</h3>
+          {statusDist.length > 0 ? (
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+              <ResponsiveContainer width={140} height={140}>
+                <PieChart>
+                  <Pie data={statusDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} strokeWidth={0}>
+                    {statusDist.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 sm:flex-col sm:space-y-2 sm:gap-0 justify-center">
+                {statusDist.map((item, i) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                    <span className="font-mono text-xs capitalize text-muted-foreground">{item.name}</span>
+                    <span className="font-mono text-xs font-bold text-foreground">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="font-mono text-sm text-muted-foreground text-center py-12">No data yet</p>
+          )}
+        </div>
+      </div>
+
+      {serviceDist.length > 0 && (
         <div className="glass-card p-5">
           <h3 className="font-mono text-sm font-semibold mb-4">Leads by Service Interest</h3>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -184,7 +165,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Recent Leads */}
       <div className="glass-card overflow-hidden">
         <div className="border-b border-border/50 px-5 py-3">
           <h2 className="font-mono text-sm font-semibold">Recent Leads</h2>
@@ -216,6 +196,12 @@ const Dashboard = () => {
       </div>
     </div>
   );
+};
+
+const Dashboard = () => {
+  const { isClient } = useAuth();
+  if (isClient) return <ClientDashboard />;
+  return <AdminDashboardContent />;
 };
 
 export default Dashboard;
