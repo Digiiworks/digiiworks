@@ -1058,7 +1058,7 @@ export default function Invoices() {
                       variant="outline"
                       className="gap-2 font-mono"
                       onClick={() => handleSendEmail(showDetail.id, true)}
-                      disabled={sending}
+                      disabled={sendingId === showDetail.id}
                     >
                       <RefreshCw className="h-4 w-4" />
                       Resend
