@@ -74,11 +74,11 @@ const App = () => (
                 </Route>
 
                 {/* Auth */}
-                <Route path="/auth" element={<Suspense fallback={<PageLoader />}><Auth /></Suspense>} />
-                <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
+                <Route path="/auth" element={<Suspense fallback={<FormPageSkeleton />}><Auth /></Suspense>} />
+                <Route path="/reset-password" element={<Suspense fallback={<FormPageSkeleton />}><ResetPassword /></Suspense>} />
                 <Route path="/client" element={<Navigate to="/admin" replace />} />
                 <Route path="/invoice/:id" element={
-                  <Suspense fallback={<PageLoader />}><InvoicePrint /></Suspense>
+                  <Suspense fallback={<ContentPageSkeleton />}><InvoicePrint /></Suspense>
                 } />
 
                 {/* Admin CRM */}
