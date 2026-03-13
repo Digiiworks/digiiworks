@@ -106,10 +106,6 @@ const ClientDashboard = () => {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
-    if (!authLoading && !user) navigate('/auth');
-  }, [user, authLoading, navigate]);
-
-  useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
       const [invoicesRes, companiesRes, settingsRes] = await Promise.all([
