@@ -138,7 +138,7 @@ export default function Invoices() {
   const [detailEmails, setDetailEmails] = useState<InvoiceEmail[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [sendingId, setSendingId] = useState<string | null>(null);
 
   // Create/Edit form
   const [form, setForm] = useState({ client_id: '', client_company_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
@@ -426,7 +426,7 @@ export default function Invoices() {
   };
 
   const handleSendEmail = async (invoiceId: string, isResend = false) => {
-    setSending(true);
+    setSendingId(invoiceId);
     try {
       const { data, error } = await supabase.functions.invoke('send-invoice-email', {
         body: { invoice_id: invoiceId, force_resend: isResend },
@@ -442,7 +442,7 @@ export default function Invoices() {
     } catch (err: any) {
       toast({ title: 'Failed to send email', description: err.message, variant: 'destructive' });
     }
-    setSending(false);
+    setSendingId(null);
   };
 
   const handlePayClick = async (inv: Invoice) => {
@@ -570,8 +570,8 @@ export default function Invoices() {
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/30">
                     {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
-                      <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs" onClick={() => handleSendEmail(inv.id)} disabled={sending}>
-                        <Send className="h-3 w-3" /> Email
+                      <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs" onClick={() => handleSendEmail(inv.id)} disabled={sendingId === inv.id}>
+                        {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />} Email
                       </Button>
                     )}
                     {isUnpaid && (
@@ -667,9 +667,9 @@ export default function Invoices() {
                               size="sm"
                               className="h-7 gap-1 font-mono text-xs border-primary/50 text-primary hover:bg-primary/10"
                               onClick={() => handleSendEmail(inv.id)}
-                              disabled={sending}
+                              disabled={sendingId === inv.id}
                             >
-                              {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                              {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                               Email
                             </Button>
                           )}
@@ -1047,9 +1047,9 @@ export default function Invoices() {
                   <Button
                     className="flex-1 gap-2 font-mono"
                     onClick={() => handleSendEmail(showDetail.id)}
-                    disabled={sending}
+                    disabled={sendingId === showDetail.id}
                   >
-                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {sendingId === showDetail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     Send Email Now
                   </Button>
                   {detailEmails.some(e => e.status === 'sent') && (
@@ -1057,7 +1057,7 @@ export default function Invoices() {
                       variant="outline"
                       className="gap-2 font-mono"
                       onClick={() => handleSendEmail(showDetail.id, true)}
-                      disabled={sending}
+                      disabled={sendingId === showDetail.id}
                     >
                       <RefreshCw className="h-4 w-4" />
                       Resend
