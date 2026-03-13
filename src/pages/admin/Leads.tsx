@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import AdminToolbar from '@/components/admin/AdminToolbar';
 import PageLoader from '@/components/admin/PageLoader';
-import EmptyState from '@/components/admin/EmptyState';
+import EmptyState, { ErrorState } from '@/components/admin/EmptyState';
 
 const STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'] as const;
 

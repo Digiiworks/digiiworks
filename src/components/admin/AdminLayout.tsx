@@ -179,8 +179,9 @@ const AdminLayout = () => {
           <button
             onClick={() => setMobileOpen(true)}
             className="flex flex-1 flex-col items-center gap-0.5 py-2.5 font-mono text-[10px] text-muted-foreground"
+            aria-label="Open full navigation menu"
           >
-            <MoreHorizontal className="h-5 w-5" />
+            <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
             More
           </button>
         </div>
