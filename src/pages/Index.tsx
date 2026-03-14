@@ -88,7 +88,7 @@ const Index = () => (
     </section>
 
     {/* Content sections — elevated above fixed bg */}
-    <div className="relative z-10 bg-background">
+    <div className="relative z-10">
       <div className="mx-auto max-w-6xl px-6 py-20 md:py-28 space-y-24 md:space-y-32">
 
         {/* ── STATS ── */}
