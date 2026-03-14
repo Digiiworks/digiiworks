@@ -13,7 +13,6 @@ const Navbar = () => {
   const showAdmin = user && (isAdmin || isEditor || isClient);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
@@ -25,24 +24,13 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link to="/">
           <img src="/logo.svg" alt="Digiiworks — Autonomous Digital Agency" style={{ width: 175 }} />
         </Link>
 
         <div className="flex items-center gap-8">
-          {/* Engine Status */}
-          <div className="hidden items-center gap-2 lg:flex">
-            <div className="relative flex items-center gap-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-mint opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-neon-mint" style={{ boxShadow: '0 0 8px hsl(106 100% 55% / 0.8)' }} />
-              </span>
-              <span className="font-mono text-xs uppercase tracking-widest text-neon-mint">Engine Active</span>
-            </div>
-          </div>
-
           {/* Desktop Nav */}
           <div className="hidden gap-6 lg:flex items-center">
             {NAV_LINKS.map((link) => (
@@ -50,7 +38,7 @@ const Navbar = () => {
                 key={link.to}
                 to={link.to}
                 aria-current={pathname === link.to ? 'page' : undefined}
-                className={`font-mono text-sm font-medium transition-all duration-300 hover:text-primary ${
+                className={`text-sm font-medium transition-colors duration-300 hover:text-primary ${
                   pathname === link.to ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
@@ -61,7 +49,7 @@ const Navbar = () => {
             {showAdmin ? (
               <Link
                 to="/admin"
-                className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-mono text-xs font-medium transition-all duration-300 ${
+                className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all duration-300 ${
                   pathname.startsWith('/admin')
                     ? 'border-primary/50 bg-primary/10 text-primary'
                     : 'border-border/50 text-muted-foreground hover:border-primary/30 hover:text-primary'
@@ -73,7 +61,7 @@ const Navbar = () => {
             ) : (
               <Link
                 to="/auth"
-                className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
               >
                 <LogIn className="h-3 w-3" />
                 Login
@@ -106,10 +94,10 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile menu - CSS transition instead of AnimatePresence */}
+      {/* Mobile menu */}
       <div
         ref={menuRef}
-        className={`overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl lg:hidden transition-all duration-200 ease-out ${
+        className={`overflow-hidden border-t border-border/40 bg-background/95 backdrop-blur-xl lg:hidden transition-all duration-200 ease-out ${
           mobileOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 border-t-0'
         }`}
       >
@@ -120,7 +108,7 @@ const Navbar = () => {
               to={link.to}
               onClick={() => setMobileOpen(false)}
               aria-current={pathname === link.to ? 'page' : undefined}
-              className={`rounded-md px-3 py-2.5 font-mono text-sm font-medium transition-colors ${
+              className={`rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
                 pathname === link.to
                   ? 'bg-muted text-primary'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -133,7 +121,7 @@ const Navbar = () => {
             <Link
               to="/admin"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-primary bg-primary/10"
+              className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-primary bg-primary/10"
             >
               <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
             </Link>
@@ -141,7 +129,7 @@ const Navbar = () => {
             <Link
               to="/auth"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-muted-foreground hover:bg-muted"
+              className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted"
             >
               <LogIn className="h-3.5 w-3.5" /> Login
             </Link>
@@ -149,7 +137,7 @@ const Navbar = () => {
           {user && (
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             >
               <LogOut className="h-3.5 w-3.5" /> Sign Out
             </button>

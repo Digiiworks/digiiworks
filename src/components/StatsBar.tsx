@@ -2,13 +2,14 @@ import { motion, useInView } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import { STATS } from '@/lib/constants';
 
+const ease = [0.25, 0.1, 0.25, 1] as const;
+
 const AnimatedNumber = ({ value, suffix, live }: { value: number; suffix: string; live?: boolean }) => {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true });
   const [display, setDisplay] = useState(0);
   const [doneCountUp, setDoneCountUp] = useState(false);
 
-  // Initial count-up
   useEffect(() => {
     if (!inView) return;
     const duration = 1500;
@@ -28,15 +29,12 @@ const AnimatedNumber = ({ value, suffix, live }: { value: number; suffix: string
     return () => clearInterval(interval);
   }, [inView, value]);
 
-  // Live fluctuation after count-up
   useEffect(() => {
     if (!live || !doneCountUp) return;
     const interval = setInterval(() => {
       setDisplay((prev) => {
         const delta = Math.random() < 0.5 ? -1 : 1;
-        const next = prev + delta;
-        // Keep within ±5 of base value
-        return Math.max(value - 5, Math.min(value + 5, next));
+        return Math.max(value - 5, Math.min(value + 5, prev + delta));
       });
     }, 2000 + Math.random() * 3000);
     return () => clearInterval(interval);
@@ -51,24 +49,23 @@ const AnimatedNumber = ({ value, suffix, live }: { value: number; suffix: string
 };
 
 const StatsBar = () => (
-  <motion.div
-    className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5, delay: 0.4 }}
-  >
-    {STATS.map((stat) => (
-      <div
+  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+    {STATS.map((stat, i) => (
+      <motion.div
         key={stat.label}
-        className="glass-card flex flex-col items-center gap-1 p-4 text-center md:p-5"
+        className="flex flex-col items-center gap-1.5 rounded-xl bg-card border border-border/50 p-5 text-center"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: i * 0.1, ease }}
       >
         <AnimatedNumber value={stat.value} suffix={stat.suffix} live={stat.label === 'Automations Running'} />
         <span className="text-xs text-muted-foreground font-mono uppercase tracking-wider">
           {stat.label}
         </span>
-      </div>
+      </motion.div>
     ))}
-  </motion.div>
+  </div>
 );
 
 export default StatsBar;
