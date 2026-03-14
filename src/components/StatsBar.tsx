@@ -55,7 +55,7 @@ const StatsBar = () => (
     viewport={{ once: true, margin: '-60px' }}
     transition={{ duration: 0.6, ease }}
   >
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5 rounded-2xl bg-background/70 backdrop-blur-2xl border border-border/30 shadow-lg shadow-background/20 p-4 sm:p-5">
       {STATS.map((stat, i) => (
         <motion.div
           key={stat.label}
