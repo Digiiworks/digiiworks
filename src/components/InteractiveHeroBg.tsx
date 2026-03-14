@@ -136,7 +136,7 @@ const InteractiveHeroBg = () => {
         for (let j = i + 1; j < nodes.length; j++) {
           const dx = nodes[i].x - nodes[j].x;
           const dy = nodes[i].y - nodes[j].y;
-          if (dx * dx + dy * dy < EDGE_DIST * EDGE_DIST) {
+          if (dx * dx + dy * dy < edgeDistRef.current * edgeDistRef.current) {
             edges.push([i, j]);
           }
         }
