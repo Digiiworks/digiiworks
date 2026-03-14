@@ -290,7 +290,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     pillarId: 'autonomous',
     pillarLabel: 'Pillar 03 — Autonomous Agency',
     accentColor: 'text-neon-purple',
-    glowHsl: '280 99% 53%',
+    glowHsl: '175 100% 42%',
     name: 'AI-Powered Social Media',
     headline: 'AI-Powered Social Media',
     subtitle: 'Content creation and scheduling driven by AI agents.',
