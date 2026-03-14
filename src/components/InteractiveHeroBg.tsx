@@ -59,7 +59,7 @@ const InteractiveHeroBg = () => {
 
       // Seed nodes across full viewport
       const nodes: Node[] = [];
-      for (let i = 0; i < NODE_COUNT; i++) {
+      for (let i = 0; i < getNodeCount(w); i++) {
         nodes.push({
           x: Math.random() * w,
           y: Math.random() * h,
