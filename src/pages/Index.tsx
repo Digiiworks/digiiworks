@@ -20,8 +20,8 @@ const PILLAR_ACCENTS: Record<string, string> = {
 };
 
 const Index = () => (
-  <div className="relative min-h-screen overflow-hidden">
-    {/* Interactive background */}
+  <div className="relative min-h-screen">
+    {/* Fixed interactive background */}
     <InteractiveHeroBg />
 
     <div className="relative mx-auto max-w-6xl px-6 pt-20 pb-16 md:pt-32 md:pb-24">

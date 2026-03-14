@@ -1,254 +1,204 @@
-import { useRef, useEffect, useCallback } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useRef, useEffect } from 'react';
 
-interface NodePoint {
+interface Node {
   x: number;
   y: number;
-  baseX: number;
-  baseY: number;
+  z: number;
   vx: number;
   vy: number;
   size: number;
-  row: number;
-  col: number;
 }
 
-interface Edge {
-  a: number;
-  b: number;
-}
-
-const DEFAULT_COLS = 10;
-const DEFAULT_ROWS = 6;
-const MOBILE_COLS = 7;
-const MOBILE_ROWS = 4;
-const MOUSE_RADIUS = 180;
-
-const parseHslVar = (value: string): { h: number; s: number; l: number } => {
-  const [h, s, l] = value
-    .trim()
-    .split(/\s+/)
-    .map((part) => Number(part.replace('%', '')));
-
-  return {
-    h: Number.isFinite(h) ? h : 330,
-    s: Number.isFinite(s) ? s : 85,
-    l: Number.isFinite(l) ? l : 65,
-  };
-};
-
-const hsla = (color: { h: number; s: number; l: number }, alpha: number) =>
-  `hsla(${color.h}, ${color.s}%, ${color.l}%, ${alpha})`;
+const NODE_COUNT = 60;
+const EDGE_DIST = 220;
+const MOUSE_RADIUS = 280;
+const TRIANGLE_CHANCE = 0.35;
 
 const InteractiveHeroBg = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const nodesRef = useRef<NodePoint[]>([]);
-  const edgesRef = useRef<Edge[]>([]);
+  const nodesRef = useRef<Node[]>([]);
+  const rafRef = useRef(0);
   const mouseRef = useRef({ x: -9999, y: -9999 });
-  const rafRef = useRef<number>(0);
-  const dprRef = useRef(typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1);
-
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
-  const smoothX = useSpring(mouseX, { stiffness: 50, damping: 26, mass: 1.1 });
-  const smoothY = useSpring(mouseY, { stiffness: 50, damping: 26, mass: 1.1 });
-
-  const layerX = useTransform(smoothX, [0, 1], [-10, 10]);
-  const layerY = useTransform(smoothY, [0, 1], [-8, 8]);
-
-  const buildMesh = useCallback((width: number, height: number) => {
-    const isMobile = width < 768;
-    const cols = isMobile ? MOBILE_COLS : DEFAULT_COLS;
-    const rows = isMobile ? MOBILE_ROWS : DEFAULT_ROWS;
-
-    const paddingX = width * 0.08;
-    const paddingY = height * 0.14;
-    const gridWidth = width - paddingX * 2;
-    const gridHeight = height - paddingY * 2;
-
-    const stepX = cols > 1 ? gridWidth / (cols - 1) : 0;
-    const stepY = rows > 1 ? gridHeight / (rows - 1) : 0;
-
-    const points: NodePoint[] = [];
-
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const stagger = row % 2 === 0 ? 0 : stepX * 0.16;
-        const jitterX = (Math.random() - 0.5) * 10;
-        const jitterY = (Math.random() - 0.5) * 8;
-
-        const baseX = paddingX + col * stepX + stagger + jitterX;
-        const baseY = paddingY + row * stepY + jitterY;
-
-        points.push({
-          x: baseX,
-          y: baseY,
-          baseX,
-          baseY,
-          vx: 0,
-          vy: 0,
-          size: 1.1 + Math.random() * 1.2,
-          row,
-          col,
-        });
-      }
-    }
-
-    const edges: Edge[] = [];
-    const index = (r: number, c: number) => r * cols + c;
-
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const current = index(row, col);
-
-        if (col < cols - 1) edges.push({ a: current, b: index(row, col + 1) });
-        if (row < rows - 1) edges.push({ a: current, b: index(row + 1, col) });
-
-        if (row < rows - 1 && col < cols - 1) {
-          edges.push({ a: current, b: index(row + 1, col + (row % 2 === 0 ? 0 : 1)) });
-        }
-
-        if (row < rows - 1 && col > 0) {
-          edges.push({ a: current, b: index(row + 1, col - (row % 2 === 0 ? 1 : 0)) });
-        }
-      }
-    }
-
-    nodesRef.current = points;
-    edgesRef.current = edges.filter((edge) => edge.a >= 0 && edge.b >= 0 && edge.a < points.length && edge.b < points.length);
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
-    const dpr = dprRef.current;
-    const rootStyles = getComputedStyle(document.documentElement);
-    const primary = parseHslVar(rootStyles.getPropertyValue('--primary'));
-    const secondary = parseHslVar(rootStyles.getPropertyValue('--secondary'));
-    const foreground = parseHslVar(rootStyles.getPropertyValue('--foreground'));
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    const resize = () => {
+    const init = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
-
-      const width = parent.clientWidth;
-      const height = parent.clientHeight;
-
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
+      const w = parent.clientWidth;
+      const h = parent.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      buildMesh(width, height);
+      // Seed nodes across full viewport
+      const nodes: Node[] = [];
+      for (let i = 0; i < NODE_COUNT; i++) {
+        nodes.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          z: 0.4 + Math.random() * 0.6, // depth for parallax
+          vx: (Math.random() - 0.5) * 0.15,
+          vy: (Math.random() - 0.5) * 0.12,
+          size: 1.5 + Math.random() * 2,
+        });
+      }
+      nodesRef.current = nodes;
     };
 
-    const onMouseMove = (event: MouseEvent) => {
+    init();
+    window.addEventListener('resize', init);
+
+    const onMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      mouseRef.current = { x, y };
-      mouseX.set(Math.max(0, Math.min(1, x / rect.width)));
-      mouseY.set(Math.max(0, Math.min(1, y / rect.height)));
+      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
+    const onLeave = () => { mouseRef.current = { x: -9999, y: -9999 }; };
 
-    const onMouseLeave = () => {
-      mouseRef.current = { x: -9999, y: -9999 };
-      mouseX.set(0.5);
-      mouseY.set(0.5);
-    };
+    window.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseleave', onLeave);
 
-    resize();
-    window.addEventListener('resize', resize);
-    canvas.addEventListener('mousemove', onMouseMove);
-    canvas.addEventListener('mouseleave', onMouseLeave);
+    // Cyan / teal palette matching the reference
+    const CYAN = { h: 175, s: 100, l: 50 };
+    const TEAL = { h: 185, s: 90, l: 45 };
+    const hsla = (c: typeof CYAN, a: number) => `hsla(${c.h},${c.s}%,${c.l}%,${a})`;
 
     const draw = (time: number) => {
-      const width = canvas.width / dpr;
-      const height = canvas.height / dpr;
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+      ctx.clearRect(0, 0, w, h);
+
       const nodes = nodesRef.current;
-      const edges = edgesRef.current;
       const mouse = mouseRef.current;
 
-      ctx.clearRect(0, 0, width, height);
+      // Update
+      for (const n of nodes) {
+        n.x += n.vx;
+        n.y += n.vy;
 
-      for (const node of nodes) {
-        const waveX = Math.sin(time * 0.00045 + node.row * 0.75 + node.col * 0.45) * 4;
-        const waveY = Math.cos(time * 0.0004 + node.col * 0.7 + node.row * 0.35) * 3;
+        // Gentle sine drift
+        n.x += Math.sin(time * 0.0003 + n.y * 0.005) * 0.08;
+        n.y += Math.cos(time * 0.00025 + n.x * 0.004) * 0.06;
 
-        const targetX = node.baseX + waveX;
-        const targetY = node.baseY + waveY;
+        // Bounce off edges with padding
+        if (n.x < -40) n.x = w + 40;
+        if (n.x > w + 40) n.x = -40;
+        if (n.y < -40) n.y = h + 40;
+        if (n.y > h + 40) n.y = -40;
 
-        node.vx += (targetX - node.x) * 0.02;
-        node.vy += (targetY - node.y) * 0.02;
-
-        const dx = mouse.x - node.x;
-        const dy = mouse.y - node.y;
+        // Mouse repel (push away like the reference)
+        const dx = n.x - mouse.x;
+        const dy = n.y - mouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-
         if (dist < MOUSE_RADIUS && dist > 0) {
-          const influence = (1 - dist / MOUSE_RADIUS) * 0.045;
-          node.vx += dx * influence;
-          node.vy += dy * influence;
+          const force = (1 - dist / MOUSE_RADIUS) * 1.8;
+          n.x += (dx / dist) * force;
+          n.y += (dy / dist) * force;
         }
-
-        node.vx *= 0.88;
-        node.vy *= 0.88;
-        node.x += node.vx;
-        node.y += node.vy;
       }
 
-      for (let i = 0; i < edges.length; i++) {
-        const edge = edges[i];
-        const a = nodes[edge.a];
-        const b = nodes[edge.b];
-        if (!a || !b) continue;
+      // Find edges and triangles
+      const edges: [number, number][] = [];
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          if (dx * dx + dy * dy < EDGE_DIST * EDGE_DIST) {
+            edges.push([i, j]);
+          }
+        }
+      }
 
-        const midX = (a.x + b.x) / 2;
-        const midY = (a.y + b.y) / 2;
-        const mouseDist = Math.hypot(mouse.x - midX, mouse.y - midY);
-        const highlight = mouseDist < MOUSE_RADIUS ? (1 - mouseDist / MOUSE_RADIUS) * 0.18 : 0;
+      // Draw filled triangles (subtle)
+      const adjacency = new Map<number, Set<number>>();
+      for (const [a, b] of edges) {
+        if (!adjacency.has(a)) adjacency.set(a, new Set());
+        if (!adjacency.has(b)) adjacency.set(b, new Set());
+        adjacency.get(a)!.add(b);
+        adjacency.get(b)!.add(a);
+      }
+
+      const drawnTriangles = new Set<string>();
+      for (const [a, b] of edges) {
+        const common = adjacency.get(a);
+        const bNeighbors = adjacency.get(b);
+        if (!common || !bNeighbors) continue;
+
+        for (const c of common) {
+          if (c <= b) continue;
+          if (!bNeighbors.has(c)) continue;
+
+          const key = [a, b, c].sort().join(',');
+          if (drawnTriangles.has(key)) continue;
+          drawnTriangles.add(key);
+
+          if (Math.random() > TRIANGLE_CHANCE) continue;
+
+          const na = nodes[a], nb = nodes[b], nc = nodes[c];
+          const cx = (na.x + nb.x + nc.x) / 3;
+          const cy = (na.y + nb.y + nc.y) / 3;
+          const md = Math.hypot(mouse.x - cx, mouse.y - cy);
+          const mouseBoost = md < MOUSE_RADIUS ? (1 - md / MOUSE_RADIUS) * 0.06 : 0;
+
+          ctx.beginPath();
+          ctx.moveTo(na.x, na.y);
+          ctx.lineTo(nb.x, nb.y);
+          ctx.lineTo(nc.x, nc.y);
+          ctx.closePath();
+          ctx.fillStyle = hsla(CYAN, 0.02 + mouseBoost);
+          ctx.fill();
+        }
+      }
+
+      // Draw edges
+      for (const [i, j] of edges) {
+        const a = nodes[i], b = nodes[j];
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const alpha = (1 - dist / EDGE_DIST) * 0.25;
+
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2;
+        const md = Math.hypot(mouse.x - mx, mouse.y - my);
+        const mouseBoost = md < MOUSE_RADIUS ? (1 - md / MOUSE_RADIUS) * 0.35 : 0;
 
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
-
-        const color = i % 2 === 0 ? primary : secondary;
-        ctx.strokeStyle = hsla(color, 0.08 + highlight);
-        ctx.lineWidth = 0.9;
+        ctx.strokeStyle = hsla(CYAN, alpha + mouseBoost);
+        ctx.lineWidth = 0.8 + mouseBoost * 0.6;
         ctx.stroke();
       }
 
-      for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i];
-        const color = i % 2 === 0 ? primary : secondary;
+      // Draw nodes
+      for (const n of nodes) {
+        const md = Math.hypot(mouse.x - n.x, mouse.y - n.y);
+        const isHot = md < MOUSE_RADIUS;
+        const boost = isHot ? (1 - md / MOUSE_RADIUS) : 0;
 
-        const distToMouse = Math.hypot(mouse.x - node.x, mouse.y - node.y);
-        const isHot = distToMouse < MOUSE_RADIUS;
-        const boost = isHot ? (1 - distToMouse / MOUSE_RADIUS) * 0.6 : 0;
+        // Outer glow
+        if (boost > 0.2) {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.size * 3 * boost, 0, Math.PI * 2);
+          ctx.fillStyle = hsla(CYAN, boost * 0.15);
+          ctx.fill();
+        }
 
+        // Node dot
         ctx.beginPath();
-        ctx.arc(node.x, node.y, node.size + boost * 1.6, 0, Math.PI * 2);
-        ctx.fillStyle = hsla(color, 0.25 + boost * 0.4);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.size * 0.65, 0, Math.PI * 2);
-        ctx.fillStyle = hsla(foreground, 0.4 + boost * 0.35);
+        ctx.arc(n.x, n.y, n.size * (1 + boost * 0.8), 0, Math.PI * 2);
+        ctx.fillStyle = hsla(isHot ? CYAN : TEAL, 0.5 + boost * 0.5);
         ctx.fill();
       }
-
-      const spotlight = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 260);
-      spotlight.addColorStop(0, hsla(primary, 0.12));
-      spotlight.addColorStop(0.4, hsla(secondary, 0.08));
-      spotlight.addColorStop(1, hsla(primary, 0));
-      ctx.fillStyle = spotlight;
-      ctx.fillRect(0, 0, width, height);
 
       rafRef.current = requestAnimationFrame(draw);
     };
@@ -257,23 +207,23 @@ const InteractiveHeroBg = () => {
 
     return () => {
       cancelAnimationFrame(rafRef.current);
-      window.removeEventListener('resize', resize);
-      canvas.removeEventListener('mousemove', onMouseMove);
-      canvas.removeEventListener('mouseleave', onMouseLeave);
+      window.removeEventListener('resize', init);
+      window.removeEventListener('mousemove', onMove);
+      canvas.removeEventListener('mouseleave', onLeave);
     };
-  }, [buildMesh, mouseX, mouseY]);
+  }, []);
 
   return (
-    <motion.div
-      className="absolute inset-0 pointer-events-auto"
-      style={{ x: layerX, y: layerY }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
-    >
+    <div className="fixed inset-0 z-0 pointer-events-auto">
       <canvas ref={canvasRef} className="absolute inset-0" />
-      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background to-transparent" />
-    </motion.div>
+      {/* Vignette */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at center, transparent 30%, hsl(230 25% 7% / 0.7) 100%)',
+        }}
+      />
+    </div>
   );
 };
 
