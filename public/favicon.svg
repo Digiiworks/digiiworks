@@ -4,15 +4,7 @@
       <stop offset="0%" stop-color="#00f3ff"/>
       <stop offset="100%" stop-color="#00d4aa"/>
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="0.8" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
-  <rect width="32" height="32" rx="7" fill="#0d0f14"/>
-  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="url(#g)" stroke-opacity="0.25"/>
-  <text x="16" y="23.5" text-anchor="middle" font-family="'JetBrains Mono','SF Mono',monospace" font-weight="800" font-size="20" fill="url(#g)" filter="url(#glow)">D</text>
+  <rect width="32" height="32" rx="6" fill="#0d0f14"/>
+  <text x="16" y="26" text-anchor="middle" font-family="'Arial Black','Impact',sans-serif" font-weight="900" font-size="28" fill="url(#g)">D</text>
 </svg>
