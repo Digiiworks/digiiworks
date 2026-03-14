@@ -9,13 +9,18 @@ const Navbar = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { user, isAdmin, isEditor, isClient } = useAuth();
   const showAdmin = user && (isAdmin || isEditor || isClient);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+
   useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleLogout = async () => {
     setMobileOpen(false);
@@ -24,21 +29,25 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      scrolled
+        ? 'bg-background/70 backdrop-blur-2xl border-b border-border/30 shadow-lg shadow-background/20'
+        : 'bg-transparent'
+    }`}>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link to="/">
-          <img src="/logo.svg" alt="Digiiworks — Autonomous Digital Agency" style={{ width: 175 }} />
+        <Link to="/" className="transition-opacity hover:opacity-80">
+          <img src="/logo.svg" alt="Digiiworks — Autonomous Digital Agency" style={{ width: 150 }} />
         </Link>
 
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-6">
           {/* Desktop Nav */}
-          <div className="hidden gap-6 lg:flex items-center">
+          <div className="hidden gap-7 lg:flex items-center">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 aria-current={pathname === link.to ? 'page' : undefined}
-                className={`text-sm font-medium transition-colors duration-300 hover:text-primary ${
+                className={`text-[13px] font-medium transition-colors duration-300 hover:text-primary ${
                   pathname === link.to ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
@@ -49,10 +58,10 @@ const Navbar = () => {
             {showAdmin ? (
               <Link
                 to="/admin"
-                className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all duration-300 ${
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-300 ${
                   pathname.startsWith('/admin')
-                    ? 'border-primary/50 bg-primary/10 text-primary'
-                    : 'border-border/50 text-muted-foreground hover:border-primary/30 hover:text-primary'
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-border/40 text-muted-foreground hover:border-primary/30 hover:text-primary'
                 }`}
               >
                 <LayoutDashboard className="h-3 w-3" />
@@ -71,11 +80,11 @@ const Navbar = () => {
             {user && (
               <button
                 onClick={handleLogout}
-                className="ml-2 flex items-center justify-center rounded-md border border-border/50 p-1.5 text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
+                className="flex items-center justify-center rounded-lg border border-border/40 p-1.5 text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
                 aria-label="Sign out"
                 title="Sign out"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
@@ -97,7 +106,7 @@ const Navbar = () => {
       {/* Mobile menu */}
       <div
         ref={menuRef}
-        className={`overflow-hidden border-t border-border/40 bg-background/95 backdrop-blur-xl lg:hidden transition-all duration-200 ease-out ${
+        className={`overflow-hidden border-t border-border/30 bg-background/95 backdrop-blur-2xl lg:hidden transition-all duration-300 ease-out ${
           mobileOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 border-t-0'
         }`}
       >
@@ -108,9 +117,9 @@ const Navbar = () => {
               to={link.to}
               onClick={() => setMobileOpen(false)}
               aria-current={pathname === link.to ? 'page' : undefined}
-              className={`rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 pathname === link.to
-                  ? 'bg-muted text-primary'
+                  ? 'bg-primary/10 text-primary'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
@@ -121,7 +130,7 @@ const Navbar = () => {
             <Link
               to="/admin"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-primary bg-primary/10"
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-primary bg-primary/10"
             >
               <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
             </Link>
@@ -129,7 +138,7 @@ const Navbar = () => {
             <Link
               to="/auth"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted"
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted"
             >
               <LogIn className="h-3.5 w-3.5" /> Login
             </Link>
@@ -137,7 +146,7 @@ const Navbar = () => {
           {user && (
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             >
               <LogOut className="h-3.5 w-3.5" /> Sign Out
             </button>

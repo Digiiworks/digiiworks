@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { AGENTS } from '@/lib/constants';
+import { ArrowRight } from 'lucide-react';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
@@ -12,38 +13,43 @@ const AgentPreview = () => (
       viewport={{ once: true, margin: '-60px' }}
       transition={{ duration: 0.6, ease }}
     >
-      <h2 className="mb-2 font-mono text-2xl font-bold text-foreground md:text-3xl">Our Agents</h2>
-      <p className="mb-6 text-sm text-muted-foreground">Autonomous AI agents working 24/7 for your brand.</p>
+      <span className="section-label">AI Workforce</span>
+      <h2 className="section-title">Our Agents</h2>
+      <p className="section-subtitle">Autonomous AI agents working around the clock for your brand.</p>
     </motion.div>
 
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
       {AGENTS.map((agent, i) => (
         <motion.div
           key={agent.name}
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.4, delay: i * 0.08, ease }}
-          whileHover={{ y: -4 }}
+          transition={{ duration: 0.45, delay: i * 0.08, ease }}
+          whileHover={{ y: -6, transition: { duration: 0.3 } }}
         >
-          <Link
-            to="/ai"
-            className="glass-card group flex items-center gap-3 p-4 transition-all duration-300"
-          >
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
-              <span
-                className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
-                style={{ background: `hsl(${agent.glowHsl})` }}
-              />
-              <span
-                className="relative inline-flex h-2.5 w-2.5 rounded-full"
-                style={{ background: `hsl(${agent.glowHsl})` }}
-              />
-            </span>
-            <div className="min-w-0">
-              <p className="font-mono text-sm font-semibold text-foreground">{agent.name}</p>
-              <p className="truncate text-xs text-muted-foreground">{agent.role}</p>
+          <Link to="/ai" className="glass-card group flex flex-col p-5 h-full">
+            {/* Status dot + name */}
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span
+                  className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-50"
+                  style={{ background: `hsl(${agent.glowHsl})` }}
+                />
+                <span
+                  className="relative inline-flex h-2 w-2 rounded-full"
+                  style={{ background: `hsl(${agent.glowHsl})` }}
+                />
+              </span>
+              <span className="font-mono text-xs uppercase tracking-[0.15em] text-muted-foreground">Online</span>
             </div>
+
+            <h3 className="font-mono text-base font-bold text-foreground mb-1">{agent.name}</h3>
+            <p className="text-xs text-muted-foreground mb-4 flex-1">{agent.role}</p>
+
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-primary/60 group-hover:text-primary transition-colors">
+              Details <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+            </span>
           </Link>
         </motion.div>
       ))}
