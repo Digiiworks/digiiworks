@@ -18,6 +18,7 @@ const TRIANGLE_CHANCE = 0.35;
 const InteractiveHeroBg = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const nodesRef = useRef<Node[]>([]);
+  const edgeDistRef = useRef(220);
   const rafRef = useRef(0);
   const mouseRef = useRef({ x: -9999, y: -9999 });
 
