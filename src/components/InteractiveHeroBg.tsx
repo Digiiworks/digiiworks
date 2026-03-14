@@ -9,8 +9,9 @@ interface Node {
   size: number;
 }
 
-const NODE_COUNT = 60;
-const EDGE_DIST = 220;
+const MOBILE_BP = 640;
+const getNodeCount = (w: number) => w < MOBILE_BP ? 25 : 60;
+const getEdgeDist = (w: number) => w < MOBILE_BP ? 160 : 220;
 const MOUSE_RADIUS = 280;
 const TRIANGLE_CHANCE = 0.35;
 
