@@ -27,12 +27,29 @@ const InteractiveHeroBg = () => {
     if (!ctx) return;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let lastW = 0;
+    let lastH = 0;
+    let resizeTimer: ReturnType<typeof setTimeout>;
 
     const init = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
       const w = parent.clientWidth;
       const h = parent.clientHeight;
+
+      // Skip resize if only height changed slightly (mobile address bar)
+      if (lastW === w && Math.abs(h - lastH) < 100 && nodesRef.current.length > 0) {
+        // Just update canvas size without regenerating nodes
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return;
+      }
+
+      lastW = w;
+      lastH = h;
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       canvas.style.width = `${w}px`;
@@ -45,7 +62,7 @@ const InteractiveHeroBg = () => {
         nodes.push({
           x: Math.random() * w,
           y: Math.random() * h,
-          z: 0.4 + Math.random() * 0.6, // depth for parallax
+          z: 0.4 + Math.random() * 0.6,
           vx: (Math.random() - 0.5) * 0.15,
           vy: (Math.random() - 0.5) * 0.12,
           size: 1.5 + Math.random() * 2,
@@ -54,8 +71,13 @@ const InteractiveHeroBg = () => {
       nodesRef.current = nodes;
     };
 
+    const debouncedResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(init, 150);
+    };
+
     init();
-    window.addEventListener('resize', init);
+    window.addEventListener('resize', debouncedResize);
 
     const onMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
