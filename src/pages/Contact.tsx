@@ -204,7 +204,7 @@ const Contact = () => {
                 onValueChange={(val) => setForm({ ...form, service_interest: val })}
               >
                 <SelectTrigger className={`border-border bg-background/50 font-sans transition-all duration-300 ${
-                  isAI ? 'border-neon-purple/50 glow-purple' : 'focus:border-primary/50'
+                  isAI ? 'border-primary/50 glow-primary' : 'focus:border-primary/50'
                 }`}>
                   <SelectValue placeholder="Select a service" />
                 </SelectTrigger>
@@ -236,7 +236,7 @@ const Contact = () => {
               type="submit"
               className={`w-full font-mono transition-all duration-300 ${
                 isAI
-                  ? 'glow-purple bg-secondary text-secondary-foreground hover:bg-secondary/90'
+                  ? 'glow-primary bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'glow-blue bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
               disabled={loading}

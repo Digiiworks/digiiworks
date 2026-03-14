@@ -25,8 +25,8 @@ const SERVICE_GROUPS = [
   },
   {
     pillar: 'Autonomous Agency',
-    accent: 'border-neon-purple/40 hover:border-neon-purple',
-    glowHsl: '280 99% 53%',
+    accent: 'border-primary/40 hover:border-primary',
+    glowHsl: '175 100% 42%',
     services: ['AI-Powered Social Media', 'n8n Workflow Automation', 'Content Strategy'],
   },
 ];

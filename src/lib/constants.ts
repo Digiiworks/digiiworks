@@ -53,7 +53,7 @@ export const AGENTS = [
     desc: "Generates social media assets, blog visuals, and marketing collateral on demand. Pixel turns Vantage's data into scroll-stopping content — no human bottleneck required.",
     color: 'text-neon-purple' as const,
     bgColor: 'bg-neon-purple' as const,
-    glowHsl: '280 99% 53%',
+    glowHsl: '175 100% 42%',
   },
   {
     name: 'Forge',
@@ -106,7 +106,7 @@ export const PILLARS = [
     title: 'Autonomous Agency',
     label: 'Pillar 03',
     accentColor: 'text-neon-purple',
-    glowHsl: '280 99% 53%',
+    glowHsl: '175 100% 42%',
     link: '/ai',
     description: 'AI-Powered Social Media, n8n Workflow Automation, and Content Strategy by Vantage & Pixel.',
     services: [
