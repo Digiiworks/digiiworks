@@ -204,7 +204,7 @@ const Contact = () => {
                 onValueChange={(val) => setForm({ ...form, service_interest: val })}
               >
                 <SelectTrigger className={`border-border bg-background/50 font-sans transition-all duration-300 ${
-                  isAI ? 'border-neon-purple/50 glow-purple' : 'focus:border-primary/50'
+                  isAI ? 'border-primary/50 glow-primary' : 'focus:border-primary/50'
                 }`}>
                   <SelectValue placeholder="Select a service" />
                 </SelectTrigger>
