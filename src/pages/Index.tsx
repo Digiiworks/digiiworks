@@ -85,6 +85,27 @@ const Index = () => (
           Trusted by 50+ brands worldwide
         </motion.p>
       </motion.div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.5, duration: 0.8 }}
+      >
+        <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/40">Scroll</span>
+        <motion.div
+          className="w-5 h-8 rounded-full border border-border/40 flex items-start justify-center p-1"
+          animate={{ borderColor: ['hsl(var(--border) / 0.4)', 'hsl(var(--primary) / 0.3)', 'hsl(var(--border) / 0.4)'] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        >
+          <motion.div
+            className="w-1 h-1.5 rounded-full bg-primary/60"
+            animate={{ y: [0, 12, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </motion.div>
+      </motion.div>
     </section>
 
     {/* Content sections — elevated above fixed bg */}
