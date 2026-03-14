@@ -319,7 +319,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     pillarId: 'autonomous',
     pillarLabel: 'Pillar 03 — Autonomous Agency',
     accentColor: 'text-neon-purple',
-    glowHsl: '280 99% 53%',
+    glowHsl: '175 100% 42%',
     name: 'n8n Workflow Automation',
     headline: 'n8n Workflow Automation',
     subtitle: 'Automate repetitive tasks across your entire tech stack.',
