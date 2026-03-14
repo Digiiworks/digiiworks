@@ -172,19 +172,6 @@ const Index = () => (
           <LatestArticles />
         </LazySection>
 
-        {/* ── AGENCY PULSE ── */}
-        <LazySection className="mx-auto max-w-2xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease }}
-          >
-            <span className="section-label">Real-Time</span>
-            <h2 className="section-title text-lg md:text-xl mb-4">Agent Activity</h2>
-            <AgencyPulse />
-          </motion.div>
-        </LazySection>
 
         {/* ── CTA ── */}
         <LazySection>
