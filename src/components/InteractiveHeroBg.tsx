@@ -191,7 +191,7 @@ const InteractiveHeroBg = () => {
         const dx = a.x - b.x;
         const dy = a.y - b.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const alpha = (1 - dist / EDGE_DIST) * 0.25;
+        const alpha = (1 - dist / edgeDistRef.current) * 0.25;
 
         const mx = (a.x + b.x) / 2;
         const my = (a.y + b.y) / 2;
