@@ -697,7 +697,7 @@ export default function Clients() {
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-muted-foreground block">Invoices</span>
-                    <Badge variant="outline" className="font-mono text-xs mt-0.5">{client.invoice_count}</Badge>
+                    <Badge className="font-mono text-xs mt-0.5 border-0 bg-primary/20 text-primary">{client.invoice_count}</Badge>
                   </div>
                   <div>
                     <span className="text-muted-foreground block">Recurring</span>
@@ -768,13 +768,13 @@ export default function Clients() {
                       )}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="font-mono text-xs">
+                      <Badge className="font-mono text-xs border-0 bg-primary/20 text-primary">
                         {client.invoice_count}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center hidden lg:table-cell">
                       {(client.recurring_count ?? 0) > 0 ? (
-                        <Badge variant="secondary" className="font-mono text-xs">
+                        <Badge className="font-mono text-xs border-0 bg-primary/20 text-primary">
                           {client.recurring_count}
                         </Badge>
                       ) : (
