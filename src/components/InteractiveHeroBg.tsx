@@ -58,6 +58,7 @@ const InteractiveHeroBg = () => {
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+      edgeDistRef.current = getEdgeDist(w);
       // Seed nodes across full viewport
       const nodes: Node[] = [];
       for (let i = 0; i < getNodeCount(w); i++) {
