@@ -9,14 +9,16 @@ interface Node {
   size: number;
 }
 
-const NODE_COUNT = 60;
-const EDGE_DIST = 220;
+const MOBILE_BP = 640;
+const getNodeCount = (w: number) => w < MOBILE_BP ? 25 : 60;
+const getEdgeDist = (w: number) => w < MOBILE_BP ? 160 : 220;
 const MOUSE_RADIUS = 280;
 const TRIANGLE_CHANCE = 0.35;
 
 const InteractiveHeroBg = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const nodesRef = useRef<Node[]>([]);
+  const edgeDistRef = useRef(220);
   const rafRef = useRef(0);
   const mouseRef = useRef({ x: -9999, y: -9999 });
 
@@ -56,9 +58,10 @@ const InteractiveHeroBg = () => {
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+      edgeDistRef.current = getEdgeDist(w);
       // Seed nodes across full viewport
       const nodes: Node[] = [];
-      for (let i = 0; i < NODE_COUNT; i++) {
+      for (let i = 0; i < getNodeCount(w); i++) {
         nodes.push({
           x: Math.random() * w,
           y: Math.random() * h,
@@ -133,7 +136,7 @@ const InteractiveHeroBg = () => {
         for (let j = i + 1; j < nodes.length; j++) {
           const dx = nodes[i].x - nodes[j].x;
           const dy = nodes[i].y - nodes[j].y;
-          if (dx * dx + dy * dy < EDGE_DIST * EDGE_DIST) {
+          if (dx * dx + dy * dy < edgeDistRef.current * edgeDistRef.current) {
             edges.push([i, j]);
           }
         }
@@ -188,7 +191,7 @@ const InteractiveHeroBg = () => {
         const dx = a.x - b.x;
         const dy = a.y - b.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const alpha = (1 - dist / EDGE_DIST) * 0.25;
+        const alpha = (1 - dist / edgeDistRef.current) * 0.25;
 
         const mx = (a.x + b.x) / 2;
         const my = (a.y + b.y) / 2;
