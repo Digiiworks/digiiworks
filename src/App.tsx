@@ -59,6 +59,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <RouteScrollToTop />
             <PageMeta />
             <Routes>
               {/* Public site */}
