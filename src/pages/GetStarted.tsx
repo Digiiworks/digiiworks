@@ -220,7 +220,7 @@ const GetStarted = () => {
 
   return (
     <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
-      <ConstellationBg />
+      
       <div className="relative mx-auto max-w-3xl px-6 py-12 md:py-20">
         {/* Header */}
         <div className="mb-8 text-center">
