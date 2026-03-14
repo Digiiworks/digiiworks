@@ -231,7 +231,8 @@ const InteractiveHeroBg = () => {
 
     return () => {
       cancelAnimationFrame(rafRef.current);
-      window.removeEventListener('resize', init);
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', debouncedResize);
       window.removeEventListener('mousemove', onMove);
       canvas.removeEventListener('mouseleave', onLeave);
     };
