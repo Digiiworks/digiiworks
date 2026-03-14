@@ -395,7 +395,7 @@ export default function Products() {
                     <TableCell className="font-medium text-sm">{p.name}</TableCell>
                     <TableCell className="text-center">
                       {p.category ? (
-                        <Badge className={`border-0 text-xs ${getCategoryColor(p.category)}`}>{p.category}</Badge>
+                        <Badge className={`border-0 text-[10px] px-2 py-0 ${getCategoryColor(p.category)}`}>{p.category}</Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground/50">—</span>
                       )}
