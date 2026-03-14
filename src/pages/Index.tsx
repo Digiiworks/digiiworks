@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import InteractiveHeroBg from '@/components/InteractiveHeroBg';
 import StatsBar from '@/components/StatsBar';
 import TechMarquee from '@/components/TechMarquee';
 import AgentPreview from '@/components/AgentPreview';
@@ -20,15 +21,8 @@ const PILLAR_ACCENTS: Record<string, string> = {
 
 const Index = () => (
   <div className="relative min-h-screen overflow-hidden">
-    {/* Background glows */}
-    <div
-      className="hero-glow absolute -top-40 left-1/4"
-      style={{ background: 'radial-gradient(circle, hsl(330 85% 65% / 0.3), transparent 70%)' }}
-    />
-    <div
-      className="hero-glow absolute top-1/3 right-0"
-      style={{ background: 'radial-gradient(circle, hsl(280 80% 60% / 0.2), transparent 70%)' }}
-    />
+    {/* Interactive background */}
+    <InteractiveHeroBg />
 
     <div className="relative mx-auto max-w-6xl px-6 pt-20 pb-16 md:pt-32 md:pb-24">
       {/* Hero */}
