@@ -146,11 +146,6 @@ const Index = () => (
           <TechMarquee />
         </LazySection>
 
-        {/* ── AGENTS ── */}
-        <LazySection>
-          <AgentPreview />
-        </LazySection>
-
         {/* ── ARTICLES ── */}
         <LazySection>
           <motion.div
@@ -169,6 +164,11 @@ const Index = () => (
             </Link>
           </motion.div>
           <LatestArticles />
+        </LazySection>
+
+        {/* ── AGENTS ── */}
+        <LazySection>
+          <AgentPreview />
         </LazySection>
 
 
