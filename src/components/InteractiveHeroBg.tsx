@@ -239,7 +239,7 @@ const InteractiveHeroBg = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-0 pointer-events-auto">
+    <div className="fixed inset-x-0 top-0 z-0 pointer-events-auto" style={{ height: '100dvh' }}>
       <canvas ref={canvasRef} className="absolute inset-0" />
       {/* Vignette */}
       <div
