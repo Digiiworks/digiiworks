@@ -1,183 +1,254 @@
 import { useRef, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
-interface Particle {
+interface NodePoint {
   x: number;
   y: number;
-  vx: number;
-  vy: number;
   baseX: number;
   baseY: number;
+  vx: number;
+  vy: number;
   size: number;
+  row: number;
+  col: number;
 }
 
-const PARTICLE_COUNT = 80;
-const CONNECTION_DIST = 150;
-const MOUSE_RADIUS = 200;
-const MOUSE_PUSH = 0.02;
-const RETURN_SPEED = 0.015;
+interface Edge {
+  a: number;
+  b: number;
+}
+
+const DEFAULT_COLS = 10;
+const DEFAULT_ROWS = 6;
+const MOBILE_COLS = 7;
+const MOBILE_ROWS = 4;
+const MOUSE_RADIUS = 180;
+
+const parseHslVar = (value: string): { h: number; s: number; l: number } => {
+  const [h, s, l] = value
+    .trim()
+    .split(/\s+/)
+    .map((part) => Number(part.replace('%', '')));
+
+  return {
+    h: Number.isFinite(h) ? h : 330,
+    s: Number.isFinite(s) ? s : 85,
+    l: Number.isFinite(l) ? l : 65,
+  };
+};
+
+const hsla = (color: { h: number; s: number; l: number }, alpha: number) =>
+  `hsla(${color.h}, ${color.s}%, ${color.l}%, ${alpha})`;
 
 const InteractiveHeroBg = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const particlesRef = useRef<Particle[]>([]);
+  const nodesRef = useRef<NodePoint[]>([]);
+  const edgesRef = useRef<Edge[]>([]);
   const mouseRef = useRef({ x: -9999, y: -9999 });
   const rafRef = useRef<number>(0);
-  const dprRef = useRef(Math.min(window.devicePixelRatio || 1, 2));
+  const dprRef = useRef(typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1);
 
-  const initParticles = useCallback((w: number, h: number) => {
-    const particles: Particle[] = [];
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      const x = Math.random() * w;
-      const y = Math.random() * h;
-      particles.push({
-        x, y,
-        baseX: x,
-        baseY: y,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        size: 1.2 + Math.random() * 1.5,
-      });
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+  const smoothX = useSpring(mouseX, { stiffness: 50, damping: 26, mass: 1.1 });
+  const smoothY = useSpring(mouseY, { stiffness: 50, damping: 26, mass: 1.1 });
+
+  const layerX = useTransform(smoothX, [0, 1], [-10, 10]);
+  const layerY = useTransform(smoothY, [0, 1], [-8, 8]);
+
+  const buildMesh = useCallback((width: number, height: number) => {
+    const isMobile = width < 768;
+    const cols = isMobile ? MOBILE_COLS : DEFAULT_COLS;
+    const rows = isMobile ? MOBILE_ROWS : DEFAULT_ROWS;
+
+    const paddingX = width * 0.08;
+    const paddingY = height * 0.14;
+    const gridWidth = width - paddingX * 2;
+    const gridHeight = height - paddingY * 2;
+
+    const stepX = cols > 1 ? gridWidth / (cols - 1) : 0;
+    const stepY = rows > 1 ? gridHeight / (rows - 1) : 0;
+
+    const points: NodePoint[] = [];
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const stagger = row % 2 === 0 ? 0 : stepX * 0.16;
+        const jitterX = (Math.random() - 0.5) * 10;
+        const jitterY = (Math.random() - 0.5) * 8;
+
+        const baseX = paddingX + col * stepX + stagger + jitterX;
+        const baseY = paddingY + row * stepY + jitterY;
+
+        points.push({
+          x: baseX,
+          y: baseY,
+          baseX,
+          baseY,
+          vx: 0,
+          vy: 0,
+          size: 1.1 + Math.random() * 1.2,
+          row,
+          col,
+        });
+      }
     }
-    particlesRef.current = particles;
+
+    const edges: Edge[] = [];
+    const index = (r: number, c: number) => r * cols + c;
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const current = index(row, col);
+
+        if (col < cols - 1) edges.push({ a: current, b: index(row, col + 1) });
+        if (row < rows - 1) edges.push({ a: current, b: index(row + 1, col) });
+
+        if (row < rows - 1 && col < cols - 1) {
+          edges.push({ a: current, b: index(row + 1, col + (row % 2 === 0 ? 0 : 1)) });
+        }
+
+        if (row < rows - 1 && col > 0) {
+          edges.push({ a: current, b: index(row + 1, col - (row % 2 === 0 ? 1 : 0)) });
+        }
+      }
+    }
+
+    nodesRef.current = points;
+    edgesRef.current = edges.filter((edge) => edge.a >= 0 && edge.b >= 0 && edge.a < points.length && edge.b < points.length);
   }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
     const dpr = dprRef.current;
+    const rootStyles = getComputedStyle(document.documentElement);
+    const primary = parseHslVar(rootStyles.getPropertyValue('--primary'));
+    const secondary = parseHslVar(rootStyles.getPropertyValue('--secondary'));
+    const foreground = parseHslVar(rootStyles.getPropertyValue('--foreground'));
 
     const resize = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
-      const w = parent.clientWidth;
-      const h = parent.clientHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
+
+      const width = parent.clientWidth;
+      const height = parent.clientHeight;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      initParticles(w, h);
+
+      buildMesh(width, height);
+    };
+
+    const onMouseMove = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      mouseRef.current = { x, y };
+      mouseX.set(Math.max(0, Math.min(1, x / rect.width)));
+      mouseY.set(Math.max(0, Math.min(1, y / rect.height)));
+    };
+
+    const onMouseLeave = () => {
+      mouseRef.current = { x: -9999, y: -9999 };
+      mouseX.set(0.5);
+      mouseY.set(0.5);
     };
 
     resize();
     window.addEventListener('resize', resize);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseleave', onMouseLeave);
 
-    const handleMouse = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseRef.current = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      };
-    };
-
-    const handleLeave = () => {
-      mouseRef.current = { x: -9999, y: -9999 };
-    };
-
-    canvas.addEventListener('mousemove', handleMouse);
-    canvas.addEventListener('mouseleave', handleLeave);
-
-    // Colors from the design system
-    const primaryHsl = { h: 330, s: 85, l: 65 };   // pink
-    const secondaryHsl = { h: 280, s: 80, l: 60 };  // purple
-    const tertiaryHsl = { h: 210, s: 100, l: 65 };   // blue
-
-    const getParticleColor = (i: number, alpha: number) => {
-      const c = i % 3 === 0 ? primaryHsl : i % 3 === 1 ? secondaryHsl : tertiaryHsl;
-      return `hsla(${c.h}, ${c.s}%, ${c.l}%, ${alpha})`;
-    };
-
-    const draw = () => {
-      const w = canvas.width / dpr;
-      const h = canvas.height / dpr;
-      ctx.clearRect(0, 0, w, h);
-
-      const particles = particlesRef.current;
+    const draw = (time: number) => {
+      const width = canvas.width / dpr;
+      const height = canvas.height / dpr;
+      const nodes = nodesRef.current;
+      const edges = edgesRef.current;
       const mouse = mouseRef.current;
 
-      // Update particles
-      for (const p of particles) {
-        // Drift
-        p.x += p.vx;
-        p.y += p.vy;
+      ctx.clearRect(0, 0, width, height);
 
-        // Gentle return to base
-        p.vx += (p.baseX - p.x) * RETURN_SPEED * 0.01;
-        p.vy += (p.baseY - p.y) * RETURN_SPEED * 0.01;
+      for (const node of nodes) {
+        const waveX = Math.sin(time * 0.00045 + node.row * 0.75 + node.col * 0.45) * 4;
+        const waveY = Math.cos(time * 0.0004 + node.col * 0.7 + node.row * 0.35) * 3;
 
-        // Mouse interaction — attract gently
-        const dx = mouse.x - p.x;
-        const dy = mouse.y - p.y;
+        const targetX = node.baseX + waveX;
+        const targetY = node.baseY + waveY;
+
+        node.vx += (targetX - node.x) * 0.02;
+        node.vy += (targetY - node.y) * 0.02;
+
+        const dx = mouse.x - node.x;
+        const dy = mouse.y - node.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
+
         if (dist < MOUSE_RADIUS && dist > 0) {
-          const force = (1 - dist / MOUSE_RADIUS) * MOUSE_PUSH;
-          p.vx += dx * force;
-          p.vy += dy * force;
+          const influence = (1 - dist / MOUSE_RADIUS) * 0.045;
+          node.vx += dx * influence;
+          node.vy += dy * influence;
         }
 
-        // Damping
-        p.vx *= 0.985;
-        p.vy *= 0.985;
-
-        // Wrap edges
-        if (p.x < -20) p.x = w + 20;
-        if (p.x > w + 20) p.x = -20;
-        if (p.y < -20) p.y = h + 20;
-        if (p.y > h + 20) p.y = -20;
+        node.vx *= 0.88;
+        node.vy *= 0.88;
+        node.x += node.vx;
+        node.y += node.vy;
       }
 
-      // Draw connections
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+      for (let i = 0; i < edges.length; i++) {
+        const edge = edges[i];
+        const a = nodes[edge.a];
+        const b = nodes[edge.b];
+        if (!a || !b) continue;
 
-          if (dist < CONNECTION_DIST) {
-            const alpha = (1 - dist / CONNECTION_DIST) * 0.15;
-
-            // Brighter near mouse
-            const mx = (particles[i].x + particles[j].x) / 2;
-            const my = (particles[i].y + particles[j].y) / 2;
-            const mouseDist = Math.sqrt((mouse.x - mx) ** 2 + (mouse.y - my) ** 2);
-            const mouseBoost = mouseDist < MOUSE_RADIUS ? (1 - mouseDist / MOUSE_RADIUS) * 0.25 : 0;
-
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = getParticleColor(i, alpha + mouseBoost);
-            ctx.lineWidth = 0.6;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw particles
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-
-        // Glow near mouse
-        const dx = mouse.x - p.x;
-        const dy = mouse.y - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const isNearMouse = dist < MOUSE_RADIUS;
-        const glowAlpha = isNearMouse ? 0.6 + (1 - dist / MOUSE_RADIUS) * 0.4 : 0.4;
-        const glowSize = isNearMouse ? p.size * (1.5 + (1 - dist / MOUSE_RADIUS) * 1.5) : p.size;
+        const midX = (a.x + b.x) / 2;
+        const midY = (a.y + b.y) / 2;
+        const mouseDist = Math.hypot(mouse.x - midX, mouse.y - midY);
+        const highlight = mouseDist < MOUSE_RADIUS ? (1 - mouseDist / MOUSE_RADIUS) * 0.18 : 0;
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, glowSize, 0, Math.PI * 2);
-        ctx.fillStyle = getParticleColor(i, glowAlpha);
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+
+        const color = i % 2 === 0 ? primary : secondary;
+        ctx.strokeStyle = hsla(color, 0.08 + highlight);
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+      }
+
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+        const color = i % 2 === 0 ? primary : secondary;
+
+        const distToMouse = Math.hypot(mouse.x - node.x, mouse.y - node.y);
+        const isHot = distToMouse < MOUSE_RADIUS;
+        const boost = isHot ? (1 - distToMouse / MOUSE_RADIUS) * 0.6 : 0;
+
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.size + boost * 1.6, 0, Math.PI * 2);
+        ctx.fillStyle = hsla(color, 0.25 + boost * 0.4);
         ctx.fill();
 
-        // Bright core
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * 0.6, 0, Math.PI * 2);
-        ctx.fillStyle = getParticleColor(i, glowAlpha + 0.2);
+        ctx.arc(node.x, node.y, node.size * 0.65, 0, Math.PI * 2);
+        ctx.fillStyle = hsla(foreground, 0.4 + boost * 0.35);
         ctx.fill();
       }
+
+      const spotlight = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 260);
+      spotlight.addColorStop(0, hsla(primary, 0.12));
+      spotlight.addColorStop(0.4, hsla(secondary, 0.08));
+      spotlight.addColorStop(1, hsla(primary, 0));
+      ctx.fillStyle = spotlight;
+      ctx.fillRect(0, 0, width, height);
 
       rafRef.current = requestAnimationFrame(draw);
     };
@@ -187,20 +258,20 @@ const InteractiveHeroBg = () => {
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', resize);
-      canvas.removeEventListener('mousemove', handleMouse);
-      canvas.removeEventListener('mouseleave', handleLeave);
+      canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('mouseleave', onMouseLeave);
     };
-  }, [initParticles]);
+  }, [buildMesh, mouseX, mouseY]);
 
   return (
     <motion.div
       className="absolute inset-0 pointer-events-auto"
+      style={{ x: layerX, y: layerY }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
     >
       <canvas ref={canvasRef} className="absolute inset-0" />
-      {/* Bottom fade */}
       <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background to-transparent" />
     </motion.div>
   );
