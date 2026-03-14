@@ -110,9 +110,8 @@ const Services = () => {
                         className="glass-card group relative block overflow-hidden p-5 transition-all duration-500 hover:scale-[1.02] md:p-6"
                         style={{
                           boxShadow: isHovered
-                            ? isAi
-                              ? '0 0 30px hsl(280 99% 53% / 0.3), 0 0 60px hsl(280 99% 53% / 0.1)'
-                              : '0 0 30px hsl(184 100% 50% / 0.3), 0 0 60px hsl(184 100% 50% / 0.1)'
+                            ? '0 0 30px hsl(175 100% 42% / 0.3), 0 0 60px hsl(175 100% 42% / 0.1)'
+                            : 'none',
                             : 'none',
                         }}
                         onMouseEnter={() => setHoveredCard(cardKey)}

@@ -106,7 +106,7 @@ export const PILLARS = [
     title: 'Autonomous Agency',
     label: 'Pillar 03',
     accentColor: 'text-neon-purple',
-    glowHsl: '280 99% 53%',
+    glowHsl: '175 100% 42%',
     link: '/ai',
     description: 'AI-Powered Social Media, n8n Workflow Automation, and Content Strategy by Vantage & Pixel.',
     services: [

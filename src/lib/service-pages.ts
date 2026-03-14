@@ -348,7 +348,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     pillarId: 'autonomous',
     pillarLabel: 'Pillar 03 — Autonomous Agency',
     accentColor: 'text-neon-purple',
-    glowHsl: '280 99% 53%',
+    glowHsl: '175 100% 42%',
     name: 'Content Strategy',
     headline: 'Content Strategy',
     subtitle: 'AI-powered research, copywriting, and visuals by Vantage & Pixel.',

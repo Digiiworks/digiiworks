@@ -17,10 +17,8 @@ const ServiceDetail = () => {
   if (!service) return <Navigate to="/services" replace />;
 
   const isAutonomous = service.pillarId === 'autonomous';
-  const glowClass = isAutonomous ? 'glow-purple' : 'glow-blue';
-  const bgClass = isAutonomous
-    ? 'bg-secondary text-secondary-foreground hover:bg-secondary/90'
-    : 'bg-primary text-primary-foreground hover:bg-primary/90';
+  const glowClass = 'glow-primary';
+  const bgClass = 'bg-primary text-primary-foreground hover:bg-primary/90';
 
   return (
     <div className="relative min-h-screen">

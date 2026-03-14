@@ -236,7 +236,7 @@ const Contact = () => {
               type="submit"
               className={`w-full font-mono transition-all duration-300 ${
                 isAI
-                  ? 'glow-purple bg-secondary text-secondary-foreground hover:bg-secondary/90'
+                  ? 'glow-primary bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'glow-blue bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
               disabled={loading}
