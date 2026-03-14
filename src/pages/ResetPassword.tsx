@@ -86,7 +86,7 @@ const ResetPassword = () => {
 
   return (
     <div className="relative min-h-screen">
-      
+      <InteractiveHeroBg />
       <div className="relative mx-auto max-w-md px-6 py-16 md:py-24">
         <div className="mb-10 text-center">
           <Link to="/">
