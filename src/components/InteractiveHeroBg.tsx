@@ -140,20 +140,22 @@ const InteractiveHeroBg = () => {
           if (drawnTriangles.has(key)) continue;
           drawnTriangles.add(key);
 
-          if (Math.random() > TRIANGLE_CHANCE) continue;
+          // Stable hash to decide which triangles show (no flicker)
+          const hash = ((a * 73856093) ^ (b * 19349663) ^ (c * 83492791)) >>> 0;
+          if ((hash % 100) > 30) continue;
 
           const na = nodes[a], nb = nodes[b], nc = nodes[c];
           const cx = (na.x + nb.x + nc.x) / 3;
           const cy = (na.y + nb.y + nc.y) / 3;
           const md = Math.hypot(mouse.x - cx, mouse.y - cy);
-          const mouseBoost = md < MOUSE_RADIUS ? (1 - md / MOUSE_RADIUS) * 0.06 : 0;
+          const mouseBoost = md < MOUSE_RADIUS ? (1 - md / MOUSE_RADIUS) * 0.04 : 0;
 
           ctx.beginPath();
           ctx.moveTo(na.x, na.y);
           ctx.lineTo(nb.x, nb.y);
           ctx.lineTo(nc.x, nc.y);
           ctx.closePath();
-          ctx.fillStyle = hsla(CYAN, 0.02 + mouseBoost);
+          ctx.fillStyle = hsla(CYAN, 0.015 + mouseBoost);
           ctx.fill();
         }
       }
