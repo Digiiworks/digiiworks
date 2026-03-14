@@ -8,6 +8,7 @@ import PageMeta from "./components/PageMeta";
 import Layout from "./components/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import RouteScrollToTop from "./components/RouteScrollToTop";
 import AdminLayout from "./components/admin/AdminLayout";
 import { ContentPageSkeleton, FormPageSkeleton, LegalPageSkeleton, AdminPageSkeleton } from "./components/PageSkeleton";
 
