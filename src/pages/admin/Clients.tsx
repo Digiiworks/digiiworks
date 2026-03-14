@@ -768,7 +768,7 @@ export default function Clients() {
                       )}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="font-mono text-xs">
+                      <Badge className="font-mono text-xs border-0 bg-primary/20 text-primary">
                         {client.invoice_count}
                       </Badge>
                     </TableCell>
