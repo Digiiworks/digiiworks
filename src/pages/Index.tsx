@@ -20,7 +20,7 @@ const PILLAR_ICONS: Record<string, React.ReactNode> = {
 
 const Index = () => (
   <div className="relative min-h-screen">
-    <InteractiveHeroBg />
+    
 
     {/* ── HERO ── */}
     <section className="relative z-10 flex min-h-[90vh] items-center justify-center px-6">

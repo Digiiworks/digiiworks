@@ -95,7 +95,7 @@ const Contact = () => {
 
   return (
     <div className="relative min-h-screen">
-      <div className="absolute inset-0 grid-overlay opacity-20" />
+      
       <div className="relative mx-auto max-w-xl px-6 py-16 md:py-20">
         <Breadcrumbs items={[{ label: 'Contact' }]} />
 

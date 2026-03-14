@@ -1,6 +1,6 @@
 const Terms = () => (
   <div className="relative min-h-screen">
-    <div className="absolute inset-0 grid-overlay opacity-20" />
+    
     <div className="relative mx-auto max-w-3xl px-6 py-16 md:py-20">
       <div className="mb-10 text-center">
         <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// legal</p>

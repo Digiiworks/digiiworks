@@ -10,7 +10,7 @@ const NotFound = () => {
 
   return (
     <div className="relative flex min-h-[70vh] items-center justify-center">
-      <div className="absolute inset-0 grid-overlay opacity-10" />
+      
       <div className="relative z-10 mx-auto max-w-md px-6 text-center">
         <div className="glass-card p-10">
           <div className="mb-6 flex items-center justify-center gap-2">
