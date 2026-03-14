@@ -2,9 +2,18 @@
   <defs>
     <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="hsl(175,100%,42%)"/>
+      <stop offset="60%" stop-color="hsl(200,90%,50%)"/>
       <stop offset="100%" stop-color="hsl(280,80%,60%)"/>
     </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="0.8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect width="32" height="32" rx="6" fill="#0d0f14"/>
-  <text x="16" y="24" text-anchor="middle" font-family="monospace" font-weight="800" font-size="22" fill="url(#g)">D</text>
+  <rect width="32" height="32" rx="7" fill="#0d0f14"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="url(#g)" stroke-opacity="0.25"/>
+  <text x="16" y="23.5" text-anchor="middle" font-family="'JetBrains Mono','SF Mono',monospace" font-weight="800" font-size="20" fill="url(#g)" filter="url(#glow)">D</text>
 </svg>
