@@ -10,23 +10,23 @@
     </style>
     <linearGradient id="linear-gradient" x1="16.94" y1="321.65" x2="411.94" y2="321.65" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#00f3ff"/>
-      <stop offset="1" stop-color="#bc13fe"/>
+      <stop offset="1" stop-color="#00d4aa"/>
     </linearGradient>
     <linearGradient id="linear-gradient-2" x1="16.94" y1="195.54" x2="411.94" y2="195.54" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#00f3ff"/>
-      <stop offset="1" stop-color="#bc13fe"/>
+      <stop offset="1" stop-color="#00d4aa"/>
     </linearGradient>
     <linearGradient id="linear-gradient-3" x1="16.94" y1="239.99" x2="411.94" y2="239.99" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#00f3ff"/>
-      <stop offset="1" stop-color="#bc13fe"/>
+      <stop offset="1" stop-color="#00d4aa"/>
     </linearGradient>
     <linearGradient id="linear-gradient-4" x1="16.94" y1="210" x2="411.94" y2="210" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#00f3ff"/>
-      <stop offset="1" stop-color="#bc13fe"/>
+      <stop offset="1" stop-color="#00d4aa"/>
     </linearGradient>
     <linearGradient id="linear-gradient-5" x1="16.94" y1="273.25" x2="411.94" y2="273.25" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#00f3ff"/>
-      <stop offset="1" stop-color="#bc13fe"/>
+      <stop offset="1" stop-color="#00d4aa"/>
     </linearGradient>
   </defs>
   <g>
