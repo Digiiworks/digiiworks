@@ -393,7 +393,7 @@ export default function Products() {
                 {paginated.map(p => (
                   <TableRow key={p.id} className="border-border/30">
                     <TableCell className="font-medium text-sm">{p.name}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       {p.category ? (
                         <Badge className={`border-0 text-xs ${getCategoryColor(p.category)}`}>{p.category}</Badge>
                       ) : (
