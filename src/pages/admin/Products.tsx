@@ -380,7 +380,7 @@ export default function Products() {
               <TableHeader>
                 <TableRow className="border-border/50">
                   <TableHead className="font-mono text-xs">Name</TableHead>
-                  <TableHead className="font-mono text-xs">Category</TableHead>
+                  <TableHead className="font-mono text-xs text-center">Category</TableHead>
                   <TableHead className="font-mono text-xs">Description</TableHead>
                   <TableHead className="font-mono text-xs text-right">USD</TableHead>
                   <TableHead className="font-mono text-xs text-right">ZAR</TableHead>
