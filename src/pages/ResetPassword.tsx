@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import InteractiveHeroBg from '@/components/InteractiveHeroBg';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -85,7 +86,7 @@ const ResetPassword = () => {
 
   return (
     <div className="relative min-h-screen">
-      <div className="absolute inset-0 grid-overlay opacity-20" />
+      <InteractiveHeroBg />
       <div className="relative mx-auto max-w-md px-6 py-16 md:py-24">
         <div className="mb-10 text-center">
           <Link to="/">

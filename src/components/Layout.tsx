@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import ScrollToTop from './ScrollToTop';
+import InteractiveHeroBg from './InteractiveHeroBg';
 
 const InlineLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
@@ -13,8 +14,9 @@ const InlineLoader = () => (
 
 const Layout = () => (
   <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <InteractiveHeroBg />
     <Navbar />
-    <main className="flex-1">
+    <main className="relative z-10 flex-1">
       <Suspense fallback={<InlineLoader />}>
         <motion.div
           initial={{ opacity: 0 }}

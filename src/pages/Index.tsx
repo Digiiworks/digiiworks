@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Code2, TrendingUp, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import InteractiveHeroBg from '@/components/InteractiveHeroBg';
+
 import StatsBar from '@/components/StatsBar';
 import TechMarquee from '@/components/TechMarquee';
 import AgentPreview from '@/components/AgentPreview';
@@ -20,7 +20,7 @@ const PILLAR_ICONS: Record<string, React.ReactNode> = {
 
 const Index = () => (
   <div className="relative min-h-screen">
-    <InteractiveHeroBg />
+    
 
     {/* ── HERO ── */}
     <section className="relative z-10 flex min-h-[90vh] items-center justify-center px-6">

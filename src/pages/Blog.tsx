@@ -118,7 +118,7 @@ const Blog = () => {
   return (
     <div className="relative min-h-screen">
       <BlogJsonLd />
-      <div className="absolute inset-0 grid-overlay opacity-20" />
+      
       <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-20">
         <Breadcrumbs items={[{ label: 'Blog' }]} />
 

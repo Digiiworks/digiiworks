@@ -24,7 +24,7 @@ const ServiceDetail = () => {
 
   return (
     <div className="relative min-h-screen">
-      <div className="absolute inset-0 grid-overlay opacity-20" />
+      
       <div className="relative mx-auto max-w-4xl px-6 py-16 md:py-20">
         {/* Breadcrumb */}
         <nav className="mb-8 font-mono text-xs text-muted-foreground">

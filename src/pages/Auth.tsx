@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import InteractiveHeroBg from '@/components/InteractiveHeroBg';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -109,7 +110,7 @@ const Auth = () => {
 
   return (
     <div className="relative min-h-screen">
-      <div className="absolute inset-0 grid-overlay opacity-20" />
+      <InteractiveHeroBg />
       <div className="relative mx-auto max-w-md px-6 py-16 md:py-24">
         <div className="mb-10 text-center">
           <Link to="/">

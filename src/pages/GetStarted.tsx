@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import ConstellationBg from '@/components/ConstellationBg';
+
 
 const SERVICE_GROUPS = [
   {
@@ -156,7 +156,6 @@ const GetStarted = () => {
 
     return (
       <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
-        <ConstellationBg />
         <div className="relative mx-auto max-w-2xl px-6 py-16 md:py-24">
           {/* Success header */}
           <motion.div className="mb-10 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -221,7 +220,7 @@ const GetStarted = () => {
 
   return (
     <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
-      <ConstellationBg />
+      
       <div className="relative mx-auto max-w-3xl px-6 py-12 md:py-20">
         {/* Header */}
         <div className="mb-8 text-center">

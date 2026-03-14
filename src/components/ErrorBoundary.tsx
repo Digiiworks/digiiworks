@@ -26,7 +26,7 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex min-h-screen items-center justify-center bg-background">
-          <div className="absolute inset-0 grid-overlay opacity-10" />
+          
           <div className="relative z-10 mx-auto max-w-md px-6 text-center">
             <div className="glass-card p-10">
               <div className="mb-6 flex items-center justify-center gap-2">

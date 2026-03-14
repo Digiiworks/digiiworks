@@ -161,7 +161,7 @@ const BlogPost = () => {
     <div className="relative min-h-screen">
       {post && <ScrollProgress />}
       {post && <ArticleJsonLd post={post} />}
-      <div className="absolute inset-0 grid-overlay opacity-10" />
+      
       <div className="relative mx-auto max-w-3xl px-6 py-16 md:py-20">
         <Breadcrumbs items={[
           { label: 'Blog', to: '/blog' },
