@@ -85,7 +85,7 @@ const ResetPassword = () => {
 
   return (
     <div className="relative min-h-screen">
-      <div className="absolute inset-0 grid-overlay opacity-20" />
+      
       <div className="relative mx-auto max-w-md px-6 py-16 md:py-24">
         <div className="mb-10 text-center">
           <Link to="/">
