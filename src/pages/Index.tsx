@@ -141,11 +141,6 @@ const Index = () => (
           </div>
         </LazySection>
 
-        {/* ── TECH MARQUEE ── */}
-        <LazySection>
-          <TechMarquee />
-        </LazySection>
-
         {/* ── ARTICLES ── */}
         <LazySection>
           <motion.div
@@ -171,7 +166,6 @@ const Index = () => (
           <AgentPreview />
         </LazySection>
 
-
         {/* ── CTA ── */}
         <LazySection>
           <motion.div
@@ -181,7 +175,6 @@ const Index = () => (
             transition={{ duration: 0.7, ease }}
             className="glass-card relative overflow-hidden p-10 md:p-16 text-center"
           >
-            {/* Ambient glow */}
             <div
               className="absolute -top-20 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full pointer-events-none"
               style={{ background: 'radial-gradient(circle, hsl(175 100% 42% / 0.08), transparent 70%)' }}
@@ -200,6 +193,11 @@ const Index = () => (
               <Link to="/get-started">Get Started →</Link>
             </Button>
           </motion.div>
+        </LazySection>
+
+        {/* ── TECH MARQUEE ── */}
+        <LazySection>
+          <TechMarquee />
         </LazySection>
       </div>
     </div>
