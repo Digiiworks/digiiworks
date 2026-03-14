@@ -43,13 +43,13 @@ type Product = {
 };
 
 const COLOR_OPTIONS = [
-  { value: 'blue', label: 'Blue', class: 'bg-blue-500/20 text-blue-400' },
-  { value: 'green', label: 'Green', class: 'bg-green-500/20 text-green-400' },
-  { value: 'purple', label: 'Purple', class: 'bg-purple-500/20 text-purple-400' },
-  { value: 'orange', label: 'Orange', class: 'bg-orange-500/20 text-orange-400' },
-  { value: 'red', label: 'Red', class: 'bg-red-500/20 text-red-400' },
-  { value: 'yellow', label: 'Yellow', class: 'bg-yellow-500/20 text-yellow-400' },
-  { value: 'cyan', label: 'Cyan', class: 'bg-cyan-500/20 text-cyan-400' },
+  { value: 'blue', label: 'Blue', class: 'bg-blue-500/20 text-blue-300' },
+  { value: 'green', label: 'Green', class: 'bg-green-500/20 text-green-300' },
+  { value: 'purple', label: 'Purple', class: 'bg-purple-500/20 text-purple-300' },
+  { value: 'orange', label: 'Orange', class: 'bg-orange-500/20 text-orange-300' },
+  { value: 'red', label: 'Red', class: 'bg-red-500/20 text-red-300' },
+  { value: 'yellow', label: 'Yellow', class: 'bg-yellow-500/20 text-yellow-300' },
+  { value: 'cyan', label: 'Cyan', class: 'bg-cyan-500/20 text-cyan-300' },
   { value: 'gray', label: 'Gray', class: 'bg-muted text-muted-foreground' },
 ];
 
@@ -380,7 +380,7 @@ export default function Products() {
               <TableHeader>
                 <TableRow className="border-border/50">
                   <TableHead className="font-mono text-xs">Name</TableHead>
-                  <TableHead className="font-mono text-xs">Category</TableHead>
+                  <TableHead className="font-mono text-xs text-center">Category</TableHead>
                   <TableHead className="font-mono text-xs">Description</TableHead>
                   <TableHead className="font-mono text-xs text-right">USD</TableHead>
                   <TableHead className="font-mono text-xs text-right">ZAR</TableHead>
@@ -393,7 +393,7 @@ export default function Products() {
                 {paginated.map(p => (
                   <TableRow key={p.id} className="border-border/30">
                     <TableCell className="font-medium text-sm">{p.name}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       {p.category ? (
                         <Badge className={`border-0 text-xs ${getCategoryColor(p.category)}`}>{p.category}</Badge>
                       ) : (
