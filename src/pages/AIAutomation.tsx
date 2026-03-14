@@ -119,7 +119,7 @@ const AIAutomation = () => (
       <div className="text-center">
         <Link
           to="/contact"
-          className="inline-block glow-purple rounded-lg bg-secondary px-8 py-3 font-mono font-semibold text-secondary-foreground transition-all duration-300 hover:bg-secondary/90 md:px-10 md:py-4"
+          className="inline-block glow-primary rounded-lg bg-primary px-8 py-3 font-mono font-semibold text-primary-foreground transition-all duration-300 hover:bg-primary/90 md:px-10 md:py-4"
         >
           Initialize Consultation →
         </Link>
