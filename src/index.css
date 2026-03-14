@@ -94,7 +94,7 @@
   }
 
   .text-gradient-warm {
-    background: linear-gradient(135deg, hsl(var(--neon-purple)), hsl(330 85% 65%));
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(160 70% 50%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
