@@ -774,7 +774,7 @@ export default function Clients() {
                     </TableCell>
                     <TableCell className="text-center hidden lg:table-cell">
                       {(client.recurring_count ?? 0) > 0 ? (
-                        <Badge variant="secondary" className="font-mono text-xs">
+                        <Badge className="font-mono text-xs border-0 bg-primary/20 text-primary">
                           {client.recurring_count}
                         </Badge>
                       ) : (
