@@ -112,7 +112,6 @@ const Services = () => {
                           boxShadow: isHovered
                             ? '0 0 30px hsl(175 100% 42% / 0.3), 0 0 60px hsl(175 100% 42% / 0.1)'
                             : 'none',
-                            : 'none',
                         }}
                         onMouseEnter={() => setHoveredCard(cardKey)}
                         onMouseLeave={() => setHoveredCard(null)}
