@@ -25,12 +25,12 @@ const LatestArticles = () => {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-5">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3].map(i => (
-          <div key={i} className="rounded-xl bg-card border border-border/50 overflow-hidden">
-            <Skeleton className="h-40 w-full" />
+          <div key={i} className="glass-card overflow-hidden">
+            <Skeleton className="h-44 w-full" />
             <div className="p-5 space-y-3">
-              <Skeleton className="h-4 w-20 rounded-full" />
+              <Skeleton className="h-3 w-16 rounded-full" />
               <Skeleton className="h-5 w-4/5" />
               <Skeleton className="h-4 w-full" />
             </div>
@@ -43,51 +43,51 @@ const LatestArticles = () => {
   if (!posts?.length) return null;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-5">
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {posts.map((post, i) => (
         <motion.div
           key={post.id}
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 0.5, delay: i * 0.1, ease }}
-          whileHover={{ y: -4 }}
+          whileHover={{ y: -6, transition: { duration: 0.3 } }}
         >
           <Link to={`/blog/${post.slug}`} className="block group h-full">
             <article className="glass-card overflow-hidden h-full flex flex-col">
               {post.featured_image && (
-                <div className="relative h-40 overflow-hidden">
+                <div className="relative h-44 overflow-hidden">
                   <img
                     src={post.featured_image}
                     alt={post.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="h-full w-full object-cover transition-transform duration-600 group-hover:scale-105"
                     loading="lazy"
                     decoding="async"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
                 </div>
               )}
-              <div className="flex flex-1 flex-col p-4 md:p-5">
-                {(post.tags as string[] | null)?.length ? (
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {(post.tags as string[]).slice(0, 2).map(tag => (
-                      <span key={tag} className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] text-primary">
+              <div className="flex flex-1 flex-col p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  {(post.tags as string[] | null)?.length ? (
+                    (post.tags as string[]).slice(0, 1).map(tag => (
+                      <span key={tag} className="rounded-full bg-primary/10 px-2.5 py-0.5 font-mono text-[10px] text-primary tracking-wider uppercase">
                         {tag}
                       </span>
-                    ))}
-                  </div>
-                ) : null}
-                <span className="font-mono text-[11px] text-muted-foreground mb-2">
-                  {format(new Date(post.created_at), 'MMM d, yyyy')}
-                </span>
-                <h3 className="mb-2 font-mono text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                    ))
+                  ) : null}
+                  <span className="font-mono text-[10px] text-muted-foreground/60 tracking-wider">
+                    {format(new Date(post.created_at), 'MMM d, yyyy')}
+                  </span>
+                </div>
+                <h3 className="mb-2 font-mono text-base font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
                   {post.title}
                 </h3>
                 <p className="text-sm leading-relaxed text-muted-foreground line-clamp-2 flex-1">
                   {post.excerpt}
                 </p>
-                <span className="mt-3 inline-flex items-center gap-1 font-mono text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  Read more <ArrowRight className="h-3 w-3" />
+                <span className="mt-4 inline-flex items-center gap-1 font-mono text-xs text-primary/60 group-hover:text-primary transition-all duration-300 group-hover:gap-2">
+                  Read article <ArrowRight className="h-3 w-3" />
                 </span>
               </div>
             </article>
