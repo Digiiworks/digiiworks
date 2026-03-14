@@ -8,7 +8,6 @@ import TechMarquee from '@/components/TechMarquee';
 import AgentPreview from '@/components/AgentPreview';
 import LatestArticles from '@/components/LatestArticles';
 import LazySection from '@/components/LazySection';
-import AgencyPulse from '@/components/AgencyPulse';
 import { PILLARS } from '@/lib/constants';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
