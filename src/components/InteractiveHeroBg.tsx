@@ -1,142 +1,208 @@
-import { useRef, useEffect, useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useRef, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 
-const ORBS = [
-  { x: '15%', y: '25%', size: 500, color: '330 85% 65%', delay: 0 },
-  { x: '75%', y: '15%', size: 420, color: '280 80% 60%', delay: 0.5 },
-  { x: '50%', y: '65%', size: 350, color: '210 100% 65%', delay: 1 },
-  { x: '85%', y: '70%', size: 280, color: '330 85% 65%', delay: 1.5 },
-  { x: '25%', y: '80%', size: 300, color: '280 80% 60%', delay: 2 },
-];
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  baseX: number;
+  baseY: number;
+  size: number;
+}
 
-const GRID_LINES = 12;
+const PARTICLE_COUNT = 80;
+const CONNECTION_DIST = 150;
+const MOUSE_RADIUS = 200;
+const MOUSE_PUSH = 0.02;
+const RETURN_SPEED = 0.015;
 
 const InteractiveHeroBg = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particlesRef = useRef<Particle[]>([]);
+  const mouseRef = useRef({ x: -9999, y: -9999 });
+  const rafRef = useRef<number>(0);
+  const dprRef = useRef(Math.min(window.devicePixelRatio || 1, 2));
 
-  const smoothX = useSpring(mouseX, { stiffness: 40, damping: 30, mass: 1 });
-  const smoothY = useSpring(mouseY, { stiffness: 40, damping: 30, mass: 1 });
+  const initParticles = useCallback((w: number, h: number) => {
+    const particles: Particle[] = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      particles.push({
+        x, y,
+        baseX: x,
+        baseY: y,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        size: 1.2 + Math.random() * 1.5,
+      });
+    }
+    particlesRef.current = particles;
+  }, []);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const y = (e.clientY - rect.top) / rect.height;
-      mouseX.set(x);
-      mouseY.set(y);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) return;
+
+    const dpr = dprRef.current;
+
+    const resize = () => {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      const w = parent.clientWidth;
+      const h = parent.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      initParticles(w, h);
     };
 
-    const el = containerRef.current;
-    if (el) {
-      el.addEventListener('mousemove', handleMouseMove);
-      return () => el.removeEventListener('mousemove', handleMouseMove);
-    }
-  }, [mouseX, mouseY]);
+    resize();
+    window.addEventListener('resize', resize);
+
+    const handleMouse = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
+    };
+
+    const handleLeave = () => {
+      mouseRef.current = { x: -9999, y: -9999 };
+    };
+
+    canvas.addEventListener('mousemove', handleMouse);
+    canvas.addEventListener('mouseleave', handleLeave);
+
+    // Colors from the design system
+    const primaryHsl = { h: 330, s: 85, l: 65 };   // pink
+    const secondaryHsl = { h: 280, s: 80, l: 60 };  // purple
+    const tertiaryHsl = { h: 210, s: 100, l: 65 };   // blue
+
+    const getParticleColor = (i: number, alpha: number) => {
+      const c = i % 3 === 0 ? primaryHsl : i % 3 === 1 ? secondaryHsl : tertiaryHsl;
+      return `hsla(${c.h}, ${c.s}%, ${c.l}%, ${alpha})`;
+    };
+
+    const draw = () => {
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+      ctx.clearRect(0, 0, w, h);
+
+      const particles = particlesRef.current;
+      const mouse = mouseRef.current;
+
+      // Update particles
+      for (const p of particles) {
+        // Drift
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Gentle return to base
+        p.vx += (p.baseX - p.x) * RETURN_SPEED * 0.01;
+        p.vy += (p.baseY - p.y) * RETURN_SPEED * 0.01;
+
+        // Mouse interaction — attract gently
+        const dx = mouse.x - p.x;
+        const dy = mouse.y - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS && dist > 0) {
+          const force = (1 - dist / MOUSE_RADIUS) * MOUSE_PUSH;
+          p.vx += dx * force;
+          p.vy += dy * force;
+        }
+
+        // Damping
+        p.vx *= 0.985;
+        p.vy *= 0.985;
+
+        // Wrap edges
+        if (p.x < -20) p.x = w + 20;
+        if (p.x > w + 20) p.x = -20;
+        if (p.y < -20) p.y = h + 20;
+        if (p.y > h + 20) p.y = -20;
+      }
+
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < CONNECTION_DIST) {
+            const alpha = (1 - dist / CONNECTION_DIST) * 0.15;
+
+            // Brighter near mouse
+            const mx = (particles[i].x + particles[j].x) / 2;
+            const my = (particles[i].y + particles[j].y) / 2;
+            const mouseDist = Math.sqrt((mouse.x - mx) ** 2 + (mouse.y - my) ** 2);
+            const mouseBoost = mouseDist < MOUSE_RADIUS ? (1 - mouseDist / MOUSE_RADIUS) * 0.25 : 0;
+
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = getParticleColor(i, alpha + mouseBoost);
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw particles
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+
+        // Glow near mouse
+        const dx = mouse.x - p.x;
+        const dy = mouse.y - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const isNearMouse = dist < MOUSE_RADIUS;
+        const glowAlpha = isNearMouse ? 0.6 + (1 - dist / MOUSE_RADIUS) * 0.4 : 0.4;
+        const glowSize = isNearMouse ? p.size * (1.5 + (1 - dist / MOUSE_RADIUS) * 1.5) : p.size;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, glowSize, 0, Math.PI * 2);
+        ctx.fillStyle = getParticleColor(i, glowAlpha);
+        ctx.fill();
+
+        // Bright core
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = getParticleColor(i, glowAlpha + 0.2);
+        ctx.fill();
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    rafRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('resize', resize);
+      canvas.removeEventListener('mousemove', handleMouse);
+      canvas.removeEventListener('mouseleave', handleLeave);
+    };
+  }, [initParticles]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0 overflow-hidden pointer-events-auto">
-      {/* Floating grid */}
-      <motion.div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          x: useTransform(smoothX, [0, 1], [-8, 8]),
-          y: useTransform(smoothY, [0, 1], [-8, 8]),
-        }}
-      >
-        {Array.from({ length: GRID_LINES }).map((_, i) => (
-          <div
-            key={`h-${i}`}
-            className="absolute left-0 right-0 h-px bg-foreground/30"
-            style={{ top: `${(i + 1) * (100 / (GRID_LINES + 1))}%` }}
-          />
-        ))}
-        {Array.from({ length: GRID_LINES }).map((_, i) => (
-          <div
-            key={`v-${i}`}
-            className="absolute top-0 bottom-0 w-px bg-foreground/30"
-            style={{ left: `${(i + 1) * (100 / (GRID_LINES + 1))}%` }}
-          />
-        ))}
-      </motion.div>
-
-      {/* Reactive orbs */}
-      {ORBS.map((orb, i) => {
-        const parallaxFactor = 0.6 + i * 0.15;
-        return (
-          <motion.div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              left: orb.x,
-              top: orb.y,
-              width: orb.size,
-              height: orb.size,
-              x: useTransform(smoothX, [0, 1], [-30 * parallaxFactor, 30 * parallaxFactor]),
-              y: useTransform(smoothY, [0, 1], [-25 * parallaxFactor, 25 * parallaxFactor]),
-              background: `radial-gradient(circle, hsl(${orb.color} / 0.18) 0%, transparent 70%)`,
-              filter: 'blur(80px)',
-              transform: 'translate(-50%, -50%)',
-            }}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, delay: orb.delay, ease: [0.25, 0.1, 0.25, 1] }}
-          />
-        );
-      })}
-
-      {/* Floating particles */}
-      {Array.from({ length: 20 }).map((_, i) => {
-        const size = 2 + Math.random() * 3;
-        const startX = `${5 + Math.random() * 90}%`;
-        const startY = `${5 + Math.random() * 90}%`;
-        const parallax = 0.3 + Math.random() * 0.7;
-        const color = i % 3 === 0 ? '330 85% 65%' : i % 3 === 1 ? '280 80% 60%' : '210 100% 65%';
-
-        return (
-          <motion.div
-            key={`p-${i}`}
-            className="absolute rounded-full"
-            style={{
-              left: startX,
-              top: startY,
-              width: size,
-              height: size,
-              background: `hsl(${color} / 0.5)`,
-              boxShadow: `0 0 ${size * 3}px hsl(${color} / 0.3)`,
-              x: useTransform(smoothX, [0, 1], [-15 * parallax, 15 * parallax]),
-              y: useTransform(smoothY, [0, 1], [-15 * parallax, 15 * parallax]),
-            }}
-            initial={{ opacity: 0 }}
-            animate={{
-              opacity: [0, 0.6, 0.3, 0.7, 0.4],
-              scale: [1, 1.2, 0.9, 1.1, 1],
-            }}
-            transition={{
-              duration: 6 + Math.random() * 4,
-              delay: Math.random() * 2,
-              repeat: Infinity,
-              repeatType: 'reverse',
-              ease: 'easeInOut',
-            }}
-          />
-        );
-      })}
-
-      {/* Noise texture overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
-          backgroundSize: '128px 128px',
-        }}
-      />
-
-      {/* Bottom fade to content */}
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background to-transparent" />
-    </div>
+    <motion.div
+      className="absolute inset-0 pointer-events-auto"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
+    >
+      <canvas ref={canvasRef} className="absolute inset-0" />
+      {/* Bottom fade */}
+      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background to-transparent" />
+    </motion.div>
   );
 };
 
