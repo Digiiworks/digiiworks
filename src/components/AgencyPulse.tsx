@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 import { MOCK_AGENT_LOGS } from '@/lib/constants';
 
 const agentColors: Record<string, string> = {
-  Dex: 'text-neon-mint',
-  Vantage: 'text-neon-blue',
-  Forge: 'text-neon-purple',
-  Pixel: 'text-neon-purple',
+  Dex: 'text-[hsl(160,70%,50%)]',
+  Vantage: 'text-[hsl(210,100%,65%)]',
+  Forge: 'text-[hsl(280,80%,60%)]',
+  Pixel: 'text-[hsl(330,85%,65%)]',
 };
 
 const AgencyPulse = () => {
@@ -61,21 +61,15 @@ const AgencyPulse = () => {
   }, [visibleCount]);
 
   return (
-    <div className="glass-card overflow-hidden">
+    <div className="rounded-xl bg-card border border-border/50 overflow-hidden">
       {/* Terminal header */}
-      <div className="flex items-center gap-2 border-b border-border/50 px-4 py-2.5">
+      <div className="flex items-center gap-2 border-b border-border/40 px-4 py-2.5">
         <div className="flex gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-destructive/70" />
-          <span className="h-2.5 w-2.5 rounded-full bg-neon-mint/40" />
-          <span className="h-2.5 w-2.5 rounded-full bg-neon-blue/40" />
+          <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
+          <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
+          <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-mint opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-neon-mint" style={{ boxShadow: '0 0 6px hsl(106 100% 55% / 0.8)' }} />
-          </span>
-          <span className="font-mono text-xs text-muted-foreground">live_agency_pulse</span>
-        </div>
+        <span className="font-mono text-xs text-muted-foreground">live_agency_pulse</span>
       </div>
 
       {/* Log entries */}
@@ -88,7 +82,7 @@ const AgencyPulse = () => {
           >
             <span className="text-muted-foreground">{'>'} </span>
             <span className={agentColors[log.agent] || 'text-primary'}>[{log.agent}]</span>
-            <span className="text-foreground/80"> {log.message}</span>
+            <span className="text-foreground/70"> {log.message}</span>
           </div>
         ))}
         {visibleCount >= displayLogs.length && (

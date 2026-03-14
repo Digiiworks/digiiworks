@@ -6,6 +6,8 @@ import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const ease = [0.25, 0.1, 0.25, 1] as const;
+
 const LatestArticles = () => {
   const { data: posts, isLoading } = useQuery({
     queryKey: ['latest-posts'],
@@ -23,9 +25,9 @@ const LatestArticles = () => {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-5">
         {[1, 2, 3].map(i => (
-          <div key={i} className="glass-card overflow-hidden">
+          <div key={i} className="rounded-xl bg-card border border-border/50 overflow-hidden">
             <Skeleton className="h-40 w-full" />
             <div className="p-5 space-y-3">
               <Skeleton className="h-4 w-20 rounded-full" />
@@ -41,26 +43,28 @@ const LatestArticles = () => {
   if (!posts?.length) return null;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-5">
       {posts.map((post, i) => (
         <motion.div
           key={post.id}
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.4, delay: i * 0.12 }}
+          transition={{ duration: 0.5, delay: i * 0.1, ease }}
+          whileHover={{ y: -4 }}
         >
           <Link to={`/blog/${post.slug}`} className="block group h-full">
-            <article className="glass-card overflow-hidden transition-all duration-500 hover:glow-blue h-full flex flex-col">
+            <article className="glass-card overflow-hidden h-full flex flex-col">
               {post.featured_image && (
                 <div className="relative h-40 overflow-hidden">
                   <img
                     src={post.featured_image}
                     alt={post.title}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
+                    decoding="async"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
                 </div>
               )}
               <div className="flex flex-1 flex-col p-4 md:p-5">

@@ -1,140 +1,168 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, TrendingUp, Bot, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import AgencyPulse from '@/components/AgencyPulse';
-import ConstellationBg from '@/components/ConstellationBg';
-import HeroOrbs from '@/components/HeroOrbs';
 import StatsBar from '@/components/StatsBar';
 import TechMarquee from '@/components/TechMarquee';
 import AgentPreview from '@/components/AgentPreview';
 import LatestArticles from '@/components/LatestArticles';
 import LazySection from '@/components/LazySection';
+import AgencyPulse from '@/components/AgencyPulse';
 import { PILLARS } from '@/lib/constants';
 
-const PILLAR_ICONS: Record<string, React.ReactNode> = {
-  architecture: <Code2 className="h-5 w-5" />,
-  growth: <TrendingUp className="h-5 w-5" />,
-  autonomous: <Bot className="h-5 w-5" />,
+const ease = [0.25, 0.1, 0.25, 1] as const;
+
+const PILLAR_ACCENTS: Record<string, string> = {
+  architecture: 'border-l-[hsl(210,100%,65%)]',
+  growth: 'border-l-[hsl(330,85%,65%)]',
+  autonomous: 'border-l-[hsl(280,80%,60%)]',
 };
 
 const Index = () => (
-  <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
-    <ConstellationBg />
-    <HeroOrbs />
-    <div className="absolute inset-0 grid-overlay" style={{ animation: 'data-stream 8s linear infinite' }} />
-    <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/30 to-background" />
+  <div className="relative min-h-screen overflow-hidden">
+    {/* Background glows */}
+    <div
+      className="hero-glow absolute -top-40 left-1/4"
+      style={{ background: 'radial-gradient(circle, hsl(330 85% 65% / 0.3), transparent 70%)' }}
+    />
+    <div
+      className="hero-glow absolute top-1/3 right-0"
+      style={{ background: 'radial-gradient(circle, hsl(280 80% 60% / 0.2), transparent 70%)' }}
+    />
 
-    <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-24">
+    <div className="relative mx-auto max-w-6xl px-6 pt-20 pb-16 md:pt-32 md:pb-24">
       {/* Hero */}
-      <motion.div
-        className="mb-12 text-center md:mb-16"
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+      <motion.section
+        className="mb-20 text-center md:mb-28"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.15 } },
+        }}
       >
-        <p className="font-mono text-xs uppercase tracking-widest mb-4 text-muted-foreground">// autonomous digital agency</p>
-        <h1 className="mb-6 font-mono text-4xl font-bold leading-tight md:text-7xl">
+        <motion.h1
+          className="mb-6 font-mono text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl md:text-7xl"
+          variants={{ hidden: { opacity: 0, y: 40 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease } } }}
+        >
           <span className="text-gradient">Build. Automate.</span>
           <br />
           <span className="text-foreground">Dominate.</span>
-        </h1>
-        <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg lg:text-xl">
-          Three pillars. One agency. Everything your brand needs to grow, scale, and run on autopilot.
-        </p>
+        </motion.h1>
 
-        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4 md:mt-10">
-          <Button asChild className="w-full sm:w-auto glow-blue bg-primary text-primary-foreground font-mono hover:bg-primary/90 px-8 py-3">
+        <motion.p
+          className="mx-auto mb-10 max-w-lg text-base text-muted-foreground md:text-lg"
+          variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease } } }}
+        >
+          Three pillars. One agency. Everything your brand needs to grow, scale, and run on autopilot.
+        </motion.p>
+
+        <motion.div
+          className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4"
+          variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease } } }}
+        >
+          <Button
+            asChild
+            className="w-full sm:w-auto bg-primary text-primary-foreground font-mono hover:bg-primary/90 px-8 py-3 transition-shadow hover:shadow-[0_0_30px_hsl(330_85%_65%/0.25)]"
+          >
             <Link to="/get-started">Get Started</Link>
           </Button>
-          <Button variant="ghost" asChild className="w-full sm:w-auto font-mono text-muted-foreground hover:text-foreground px-8 py-3">
-            <Link to="/services">Explore Services →</Link>
+          <Button variant="ghost" asChild className="w-full sm:w-auto font-mono text-muted-foreground hover:text-foreground px-8 py-3 group">
+            <Link to="/services">
+              Explore Services
+              <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
           </Button>
-        </div>
-      </motion.div>
+        </motion.div>
+      </motion.section>
 
       {/* Stats */}
-      <div className="mb-14 md:mb-20">
+      <section className="mb-20 md:mb-28">
         <StatsBar />
-      </div>
+      </section>
 
-      {/* Pillar Cards */}
-      <div className="mb-4 flex items-center gap-3 md:mb-6">
-        <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">// core_services</span>
-        <div className="h-px flex-1 bg-border" />
-      </div>
-      <div className="mb-14 grid gap-4 sm:grid-cols-2 md:mb-20 md:grid-cols-3 md:gap-6">
-        {PILLARS.map((pillar, i) => (
-          <motion.div
-            key={pillar.title}
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.4, delay: i * 0.15 }}
-          >
-            <Link
-              to={pillar.link}
-              className="glass-card group relative block overflow-hidden p-5 transition-all duration-500 hover:scale-[1.02] md:p-6"
-              style={{ boxShadow: `0 0 25px hsl(${pillar.glowHsl} / 0.1)` }}
+      {/* Services */}
+      <LazySection className="mb-20 md:mb-28">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, ease }}
+        >
+          <h2 className="mb-2 font-mono text-2xl font-bold text-foreground md:text-3xl">What We Do</h2>
+          <p className="mb-8 text-sm text-muted-foreground max-w-md">End-to-end digital services across three pillars.</p>
+        </motion.div>
+
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-5">
+          {PILLARS.map((pillar, i) => (
+            <motion.div
+              key={pillar.title}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.5, delay: i * 0.12, ease }}
+              whileHover={{ y: -4 }}
             >
-              {/* Colored top accent */}
-              <div
-                className="absolute inset-x-0 top-0 h-[2px]"
-                style={{ background: `hsl(${pillar.glowHsl})`, boxShadow: `0 0 12px hsl(${pillar.glowHsl} / 0.5)` }}
-              />
-
-              <div className="mb-3 flex items-center justify-between">
-                <span className={`font-mono text-xs uppercase tracking-widest ${pillar.accentColor}`}>
+              <Link
+                to={pillar.link}
+                className={`glass-card group block p-5 md:p-6 border-l-[3px] ${PILLAR_ACCENTS[pillar.id] || ''}`}
+              >
+                <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                   {pillar.label}
                 </span>
-                <span className={pillar.accentColor}>
-                  {PILLAR_ICONS[pillar.id]}
+                <h3 className="mt-2 mb-3 font-mono text-lg font-semibold text-foreground md:text-xl">
+                  {pillar.title}
+                </h3>
+                <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                  {pillar.description}
+                </p>
+                <span className="inline-flex items-center gap-1 text-xs font-mono text-muted-foreground transition-colors group-hover:text-primary">
+                  Explore <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
                 </span>
-              </div>
-
-              <h3 className="mb-3 font-mono text-lg font-semibold text-foreground md:text-xl">
-                {pillar.title}
-              </h3>
-              <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                {pillar.description}
-              </p>
-
-              <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground transition-colors group-hover:text-primary">
-                <span>Explore</span>
-                <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
-              </div>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </LazySection>
 
       {/* Tech Marquee */}
-      <LazySection className="mb-14 md:mb-20">
+      <LazySection className="mb-20 md:mb-28">
         <TechMarquee />
       </LazySection>
 
-      {/* Agent Preview */}
-      <LazySection className="mb-14 md:mb-20">
+      {/* Agents */}
+      <LazySection className="mb-20 md:mb-28">
         <AgentPreview />
       </LazySection>
 
       {/* Latest Articles */}
-      <LazySection className="mb-14 md:mb-20">
-        <div className="mb-4 flex items-center gap-3 md:mb-6">
-          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">// latest_articles</span>
-          <div className="h-px flex-1 bg-border" />
-          <Link to="/blog" className="font-mono text-xs text-primary hover:underline">View all →</Link>
-        </div>
+      <LazySection className="mb-20 md:mb-28">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, ease }}
+          className="mb-6 flex items-center justify-between"
+        >
+          <h2 className="font-mono text-2xl font-bold text-foreground md:text-3xl">Latest Articles</h2>
+          <Link to="/blog" className="font-mono text-sm text-primary hover:underline">
+            View all →
+          </Link>
+        </motion.div>
         <LatestArticles />
       </LazySection>
 
-      {/* Live Pulse */}
+      {/* Agency Pulse */}
       <LazySection className="mx-auto max-w-2xl">
-        <div className="mb-4 flex items-center gap-3">
-          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">// live_feed</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-        <AgencyPulse />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease }}
+        >
+          <h2 className="mb-4 font-mono text-lg font-semibold text-foreground">Live Agent Feed</h2>
+          <AgencyPulse />
+        </motion.div>
       </LazySection>
     </div>
   </div>
