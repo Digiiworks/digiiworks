@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import ConstellationBg from '@/components/ConstellationBg';
+
 
 const SERVICE_GROUPS = [
   {
