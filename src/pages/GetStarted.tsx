@@ -221,7 +221,7 @@ const GetStarted = () => {
   return (
     <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
       
-      <div className="relative mx-auto max-w-3xl px-6 py-12 md:py-20">
+      <div className="relative mx-auto max-w-3xl px-6 pt-24 pb-12 sm:pt-20 md:pb-20">
         {/* Header */}
         <div className="mb-8 text-center">
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-2">// get_started</p>
