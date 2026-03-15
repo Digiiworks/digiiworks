@@ -49,7 +49,7 @@ const AIAutomation = () => (
         </div>
 
         <div className="glass-card p-6 md:p-8">
-          <p className="mb-6 text-muted-foreground max-w-2xl md:mb-8">
+          <p className="mb-6 text-foreground/70 max-w-2xl md:mb-8 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             We design zero-touch workflows that connect your entire tech stack. Data flows automatically between your tools — no copy-pasting, no manual handoffs, no dropped balls.
           </p>
 
