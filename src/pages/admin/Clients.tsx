@@ -445,7 +445,8 @@ export default function Clients() {
         phone: form.phone || null,
         notes: form.notes || null,
         logo_url: logoUrl,
-      })
+        cc_emails: ccEmails.filter(e => e.trim()),
+      } as any)
       .eq('id', editClient.id);
 
     if (error) {
