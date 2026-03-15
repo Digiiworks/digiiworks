@@ -125,7 +125,7 @@ const Blog = () => {
         <div className="mb-12 text-center md:mb-16">
           <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// blog_feed</p>
           <h1 className="font-mono text-3xl font-bold md:text-4xl">
-            <span className="text-gradient">Insights & Articles</span>
+            <span className="text-gradient">Digital Marketing Insights & Articles</span>
           </h1>
           <p className="mt-3 text-sm text-muted-foreground max-w-xl mx-auto">
             Expert insights on web development, AI automation, SEO, and digital growth strategies.
