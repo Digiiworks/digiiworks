@@ -1,9 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import type { AgentLog } from '@/lib/types';
-import { useEffect, useRef, useState } from 'react';
-import { MOCK_AGENT_LOGS } from '@/lib/constants';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { AGENT_TASKS } from '@/lib/constants';
+
+const AGENT_ORDER = ['Dex', 'Vantage', 'Forge', 'Pixel', 'Dex'] as const;
 
 const agentColors: Record<string, string> = {
   Dex: 'text-primary',
@@ -14,40 +13,48 @@ const agentColors: Record<string, string> = {
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
+interface RowState {
+  taskIndex: number;
+  charsTyped: number;
+  fullText: string;
+  doneTyping: boolean;
+  rotateAt: number; // timestamp when to rotate
+}
+
+function randomDelay() {
+  return 5000 + Math.random() * 10000; // 5-15s
+}
+
+function pickNewIndex(current: number, max: number) {
+  let next: number;
+  do {
+    next = Math.floor(Math.random() * max);
+  } while (next === current && max > 1);
+  return next;
+}
+
 const AgencyPulse = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(0);
+  const [rows, setRows] = useState<RowState[]>(() =>
+    AGENT_ORDER.map((agent) => {
+      const idx = 0;
+      return {
+        taskIndex: idx,
+        charsTyped: 0,
+        fullText: AGENT_TASKS[agent]?.[idx] ?? '',
+        doneTyping: false,
+        rotateAt: Date.now() + randomDelay(),
+      };
+    })
+  );
 
-  const { data: logs } = useQuery({
-    queryKey: ['agent_logs'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('agent_logs' as any)
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5);
-        if (error) throw error;
-        return (data as unknown as AgentLog[]) ?? [];
-      } catch {
-        return [];
-      }
-    },
-    staleTime: 60 * 60 * 1000,
-    refetchInterval: false,
-    retry: false,
-  });
-
-  const displayLogs: readonly { id: string; agent: string; message: string }[] =
-    logs && logs.length > 0
-      ? logs
-      : MOCK_AGENT_LOGS.map((l) => ({ ...l, created_at: new Date().toISOString() }));
-
+  // Staggered reveal
   useEffect(() => {
     setVisibleCount(0);
     const interval = setInterval(() => {
       setVisibleCount((prev) => {
-        if (prev >= displayLogs.length) {
+        if (prev >= AGENT_ORDER.length) {
           clearInterval(interval);
           return prev;
         }
@@ -55,8 +62,48 @@ const AgencyPulse = () => {
       });
     }, 500);
     return () => clearInterval(interval);
-  }, [displayLogs.length]);
+  }, []);
 
+  // Typewriter + rotation tick
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = Date.now();
+      setRows((prev) =>
+        prev.map((row, i) => {
+          // Not visible yet
+          if (i >= visibleCount) return row;
+
+          // Check rotation
+          if (row.doneTyping && now >= row.rotateAt) {
+            const agent = AGENT_ORDER[i];
+            const tasks = AGENT_TASKS[agent] ?? [];
+            const newIdx = pickNewIndex(row.taskIndex, tasks.length);
+            return {
+              taskIndex: newIdx,
+              charsTyped: 0,
+              fullText: tasks[newIdx] ?? '',
+              doneTyping: false,
+              rotateAt: now + randomDelay(),
+            };
+          }
+
+          // Typewriter
+          if (!row.doneTyping) {
+            const next = row.charsTyped + 1;
+            if (next > row.fullText.length) {
+              return { ...row, doneTyping: true, charsTyped: row.fullText.length };
+            }
+            return { ...row, charsTyped: next };
+          }
+
+          return row;
+        })
+      );
+    }, 30);
+    return () => clearInterval(id);
+  }, [visibleCount]);
+
+  // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -90,22 +137,26 @@ const AgencyPulse = () => {
 
       {/* Log entries */}
       <div ref={scrollRef} className="max-h-52 overflow-y-auto p-5 font-mono text-xs leading-loose">
-        {displayLogs.slice(0, visibleCount).map((log, i) => (
-          <div
-            key={log.id}
-            className="mb-1 animate-fade-in"
-            style={{ animationDelay: `${i * 100}ms` }}
-          >
-            <span className="text-muted-foreground/40 select-none">→ </span>
-            <span className={`font-semibold ${agentColors[log.agent] || 'text-primary'}`}>{log.agent}</span>
-            <span className="text-foreground/60"> {log.message}</span>
-          </div>
-        ))}
-        {visibleCount >= displayLogs.length && (
-          <div className="mt-3 text-muted-foreground/40 animate-fade-in">
-            <span className="inline-block animate-pulse">▊</span>
-          </div>
-        )}
+        {AGENT_ORDER.slice(0, visibleCount).map((agent, i) => {
+          const row = rows[i];
+          const typed = row.fullText.slice(0, row.charsTyped);
+          return (
+            <div key={i} className="mb-1 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
+              <span className="text-muted-foreground/40 select-none">→ </span>
+              <span className={`font-semibold ${agentColors[agent] || 'text-primary'}`}>{agent}</span>
+              <span className="text-foreground/60"> {typed}</span>
+              {row.doneTyping ? (
+                <span className="inline-flex gap-1 ml-1">
+                  <span className="animate-pulse text-muted-foreground/50">.</span>
+                  <span className="animate-pulse text-muted-foreground/50" style={{ animationDelay: '200ms' }}>.</span>
+                  <span className="animate-pulse text-muted-foreground/50" style={{ animationDelay: '400ms' }}>.</span>
+                </span>
+              ) : (
+                <span className="inline-block animate-pulse text-primary">▊</span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </motion.div>
   );
