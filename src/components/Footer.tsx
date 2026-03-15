@@ -62,6 +62,20 @@ const Footer = () => {
             <p className="text-sm leading-relaxed text-muted-foreground max-w-xs">
               Human creativity meets autonomous execution. Three pillars powering your brand 24/7.
             </p>
+            <div className="flex flex-col sm:flex-row items-start gap-3 pt-1">
+              <Link
+                to="/contact"
+                className="inline-flex items-center rounded-lg border border-border/50 px-5 py-2 font-mono text-xs text-muted-foreground transition-all hover:text-foreground hover:border-primary/30"
+              >
+                Contact Us
+              </Link>
+              <a
+                href="mailto:hello@digiiworks.co"
+                className="font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                hello@digiiworks.co
+              </a>
+            </div>
           </div>
 
           {/* Navigation */}
