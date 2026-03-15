@@ -9,39 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
-const PasswordStrength = ({ password }: { password: string }) => {
-  const checks = [
-    { label: '6+ characters', pass: password.length >= 6 },
-    { label: 'Uppercase', pass: /[A-Z]/.test(password) },
-    { label: 'Number', pass: /\d/.test(password) },
-    { label: 'Special char', pass: /[^A-Za-z0-9]/.test(password) },
-  ];
-  const score = checks.filter(c => c.pass).length;
-  const colors = ['bg-destructive', 'bg-destructive', 'bg-orange-500', 'bg-neon-mint', 'bg-neon-mint'];
-  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-
-  return (
-    <div className="mt-2 space-y-1.5">
-      <div className="flex items-center gap-1.5">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= score ? colors[score] : 'bg-muted/50'}`} />
-        ))}
-        {score > 0 && (
-          <span className={`font-mono text-[10px] font-medium leading-none pl-1 shrink-0 ${score <= 1 ? 'text-destructive' : score <= 2 ? 'text-orange-400' : 'text-neon-mint'}`}>
-            {labels[score]}
-          </span>
-        )}
-      </div>
-      <p className="font-mono text-[10px] leading-relaxed text-muted-foreground">
-        {checks.map((c, i) => (
-          <span key={c.label} className={c.pass ? 'text-neon-mint' : undefined}>
-            {c.pass ? '✓' : '○'}&nbsp;{c.label}{i < checks.length - 1 ? '  ·  ' : ''}
-          </span>
-        ))}
-      </p>
-    </div>
-  );
-};
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -168,7 +135,7 @@ const Auth = () => {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {!isLogin && password.length > 0 && <PasswordStrength password={password} />}
+                
               </div>
             )}
 
