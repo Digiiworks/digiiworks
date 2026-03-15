@@ -85,6 +85,8 @@ export default function Clients() {
   const [form, setForm] = useState({
     email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa' | 'thailand',
   });
+  const [ccEmails, setCcEmails] = useState<string[]>([]);
+  const [newCcEmail, setNewCcEmail] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
@@ -342,6 +344,8 @@ export default function Clients() {
       notes: client.notes ?? '',
       country: client.currency === 'ZAR' ? 'south_africa' : client.currency === 'THB' ? 'thailand' : 'global',
     });
+    setCcEmails((client as any).cc_emails ?? []);
+    setNewCcEmail('');
     setLogoFile(null);
     setLogoPreview(null);
     setExistingLogoUrl(client.logo_url ?? null);
@@ -399,6 +403,8 @@ export default function Clients() {
     setLogoFile(null);
     setLogoPreview(null);
     setExistingLogoUrl(null);
+    setCcEmails([]);
+    setNewCcEmail('');
   };
 
   const saveRecurringServices = async (clientId: string, companyId: string) => {
@@ -439,7 +445,8 @@ export default function Clients() {
         phone: form.phone || null,
         notes: form.notes || null,
         logo_url: logoUrl,
-      })
+        cc_emails: ccEmails.filter(e => e.trim()),
+      } as any)
       .eq('id', editClient.id);
 
     if (error) {
@@ -512,6 +519,7 @@ export default function Clients() {
         address: form.address,
         currency,
         existing_user_id: selectedExistingUser?.user_id || undefined,
+        cc_emails: ccEmails.filter(e => e.trim()),
       },
     });
 
@@ -820,7 +828,51 @@ export default function Clients() {
           <div className="space-y-4 overflow-y-auto flex-1 pr-1">
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><Mail className="h-3 w-3" /> Email</Label>
-              <Input value={form.email} disabled className="bg-muted border-border opacity-60" />
+              <div className="flex items-center gap-2">
+                <Input value={form.email} disabled className="bg-muted border-border opacity-60 flex-1" />
+                <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => {
+                  if (newCcEmail.trim()) return;
+                  setNewCcEmail('');
+                  const input = document.getElementById('cc-email-input-edit');
+                  if (input) (input as HTMLInputElement).focus();
+                }} title="Add CC email">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {/* CC Emails */}
+              {ccEmails.map((cc, idx) => (
+                <div key={idx} className="flex items-center gap-2 mt-2">
+                  <Input value={cc} disabled className="bg-muted border-border opacity-60 flex-1 text-xs" />
+                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:text-destructive" onClick={() => setCcEmails(prev => prev.filter((_, i) => i !== idx))}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+              <div className="flex items-center gap-2 mt-2">
+                <Input
+                  id="cc-email-input-edit"
+                  type="email"
+                  value={newCcEmail}
+                  onChange={e => setNewCcEmail(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newCcEmail.trim() && newCcEmail.includes('@')) {
+                        setCcEmails(prev => [...prev, newCcEmail.trim()]);
+                        setNewCcEmail('');
+                      }
+                    }
+                  }}
+                  className="bg-background border-border flex-1 text-xs"
+                  placeholder="Add CC email and press Enter"
+                />
+                <Button type="button" variant="outline" size="sm" className="text-xs shrink-0" disabled={!newCcEmail.trim() || !newCcEmail.includes('@')} onClick={() => {
+                  setCcEmails(prev => [...prev, newCcEmail.trim()]);
+                  setNewCcEmail('');
+                }}>
+                  Add
+                </Button>
+              </div>
             </div>
             <div>
               <Label className="font-mono text-xs flex items-center gap-1.5"><User className="h-3 w-3" /> Contact Name</Label>
@@ -966,6 +1018,42 @@ export default function Clients() {
               )}
             </div>
 
+            {/* CC Emails for create */}
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5"><Mail className="h-3 w-3" /> CC Emails</Label>
+              {ccEmails.map((cc, idx) => (
+                <div key={idx} className="flex items-center gap-2 mt-2">
+                  <Input value={cc} disabled className="bg-muted border-border opacity-60 flex-1 text-xs" />
+                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:text-destructive" onClick={() => setCcEmails(prev => prev.filter((_, i) => i !== idx))}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+              <div className="flex items-center gap-2 mt-2">
+                <Input
+                  type="email"
+                  value={newCcEmail}
+                  onChange={e => setNewCcEmail(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newCcEmail.trim() && newCcEmail.includes('@')) {
+                        setCcEmails(prev => [...prev, newCcEmail.trim()]);
+                        setNewCcEmail('');
+                      }
+                    }
+                  }}
+                  className="bg-background border-border flex-1 text-xs"
+                  placeholder="Add extra email and press Enter"
+                />
+                <Button type="button" variant="outline" size="sm" className="text-xs shrink-0" disabled={!newCcEmail.trim() || !newCcEmail.includes('@')} onClick={() => {
+                  setCcEmails(prev => [...prev, newCcEmail.trim()]);
+                  setNewCcEmail('');
+                }}>
+                  Add
+                </Button>
+              </div>
+            </div>
             {!selectedExistingUser && (
               <div>
                 <Label className="font-mono text-xs flex items-center gap-1.5"><User className="h-3 w-3" /> Contact Name</Label>

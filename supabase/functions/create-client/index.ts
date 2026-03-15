@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, display_name, phone, company, address, currency, existing_user_id } = await req.json();
+    const { email, display_name, phone, company, address, currency, existing_user_id, cc_emails } = await req.json();
 
     let userId: string;
     let resetEmailSent = false;
@@ -130,6 +130,7 @@ Deno.serve(async (req) => {
         address: address || null,
         currency: currency || "USD",
         phone: phone || null,
+        cc_emails: cc_emails || [],
       })
       .select("id")
       .single();

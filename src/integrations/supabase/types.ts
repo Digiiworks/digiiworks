@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           active: boolean
           address: string | null
+          cc_emails: string[] | null
           company_name: string
           created_at: string
           currency: string
@@ -31,6 +32,7 @@ export type Database = {
         Insert: {
           active?: boolean
           address?: string | null
+          cc_emails?: string[] | null
           company_name: string
           created_at?: string
           currency?: string
@@ -44,6 +46,7 @@ export type Database = {
         Update: {
           active?: boolean
           address?: string | null
+          cc_emails?: string[] | null
           company_name?: string
           created_at?: string
           currency?: string
