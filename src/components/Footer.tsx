@@ -119,12 +119,6 @@ const Footer = () => {
 
         {/* Bottom bar */}
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-border/20 pt-8 md:flex-row">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
-            <span>Design by</span>
-            <Link to="/" className="inline-block transition-opacity hover:opacity-80">
-              <img src="/logo.svg" alt={SITE_NAME} style={{ width: 100 }} />
-            </Link>
-          </div>
           <p className="text-xs text-muted-foreground/50">
             © {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
           </p>
@@ -134,6 +128,12 @@ const Footer = () => {
             </Link>
             <Link to="/terms" className="text-xs text-muted-foreground/40 transition-colors hover:text-muted-foreground">
               Terms
+            </Link>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
+            <span>Design by</span>
+            <Link to="/" className="inline-block transition-opacity hover:opacity-80">
+              <img src="/logo.svg" alt={SITE_NAME} style={{ width: 100 }} />
             </Link>
           </div>
         </div>
