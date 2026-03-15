@@ -133,7 +133,7 @@ const Footer = () => {
           <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
             <span>Design by</span>
             <Link to="/" className="inline-block transition-opacity hover:opacity-80">
-              <img src="/logo.svg" alt={SITE_NAME} style={{ width: 100 }} />
+              <img src="/logo.svg" alt={SITE_NAME} style={{ width: 75 }} />
             </Link>
           </div>
         </div>
