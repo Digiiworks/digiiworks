@@ -29,7 +29,7 @@ const AIAutomation = () => (
 
       {/* Hero */}
       <div className="mb-16 text-center md:mb-20">
-        <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// pillar_03 :: autonomous_agency</p>
+        <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">// pillar_03 :: autonomous_agency</p>
         <h1 className="mb-6 font-mono text-3xl font-bold leading-tight md:text-6xl">
           <span className="text-foreground">Human Creativity.</span>
           <br />
