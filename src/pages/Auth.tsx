@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-
+import { toast as sonnerToast } from 'sonner';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -31,6 +31,13 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Custom password validation (bypass native tooltip)
+    if (!forgotPassword && password.length < 6) {
+      sonnerToast('Password must be at least 6 characters', { duration: 5000 });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -122,7 +129,6 @@ const Auth = () => {
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     required
-                    minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="border-border bg-background/50 focus:border-primary/50 pr-10"
