@@ -1,20 +1,21 @@
 
 
-## Custom 404 Page — Neon Dark Theme
+## Problem
+On mobile, the hero section's "Autonomous Digital Agency" label is hidden behind the navbar when the page loads. The hero uses `min-h-[90vh]` with `items-center justify-center` but has no top padding to account for the fixed/sticky navbar.
 
-Replace the current plain 404 page with a styled version matching the site's neon-dark aesthetic.
+## Fix
+Add top padding to the hero `<section>` so content clears the navbar on mobile. The navbar is roughly 64px tall.
 
-### Changes
+**File:** `src/pages/Index.tsx` — line 26
 
-**`src/pages/NotFound.tsx`** — Full redesign:
-- Dark background with `grid-overlay` pattern (matching ErrorBoundary style)
-- Glitchy "404" heading using `text-gradient` and `font-mono`
-- Pulsing status indicator (neon-mint dot with `animate-ping`) showing "Route Not Found"
-- Display the attempted path using `useLocation().pathname` in a mono-styled code block
-- Subtitle text in `text-muted-foreground`
-- "Return to Base" button styled with `glow-blue` and primary colors (matching ErrorBoundary's button pattern)
-- `glass-card` container for the content block
-- Wrap in the `Layout` component by moving the `*` route inside the Layout route group in `App.tsx`
+Change:
+```tsx
+<section className="relative z-10 flex min-h-[90vh] items-center justify-center px-6">
+```
+To:
+```tsx
+<section className="relative z-10 flex min-h-[90vh] items-center justify-center px-6 pt-20 sm:pt-16">
+```
 
-**`src/App.tsx`** — Move the catch-all route inside the `<Route element={<Layout />}>` group so the 404 page gets the navbar and footer.
+`pt-20` (80px) on mobile gives enough clearance above the navbar. `sm:pt-16` relaxes it on larger screens where the centered layout has more vertical room.
 
