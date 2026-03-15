@@ -519,6 +519,7 @@ export default function Clients() {
         address: form.address,
         currency,
         existing_user_id: selectedExistingUser?.user_id || undefined,
+        cc_emails: ccEmails.filter(e => e.trim()),
       },
     });
 
