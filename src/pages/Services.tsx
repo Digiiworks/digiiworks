@@ -55,6 +55,7 @@ const Services = () => {
             {PILLARS.map((pillar) => {
               const isActive = activePillar === pillar.id;
               const isPurple = pillar.id === 'autonomous';
+              const shortName = pillar.id === 'architecture' ? 'Architecture' : pillar.id === 'growth' ? 'Growth' : 'Agency';
               return (
                 <button
                   key={pillar.id}
@@ -68,7 +69,7 @@ const Services = () => {
                       : 'border-border/40 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/20'
                   )}
                 >
-                  {pillar.title}
+                  {shortName}
                 </button>
               );
             })}
