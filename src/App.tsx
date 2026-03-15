@@ -34,6 +34,7 @@ import SettingsAdmin from "./pages/admin/Settings";
 
 // Lazy imports for low-traffic / detail pages
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
+const ServiceOnboarding = lazy(() => import("./pages/ServiceOnboarding"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 
 const Auth = lazy(() => import("./pages/Auth"));
@@ -67,6 +68,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                   <Route path="/services" element={<Services />} />
                   <Route path="/services/:slug" element={<Suspense fallback={<ContentPageSkeleton />}><ServiceDetail /></Suspense>} />
+                  <Route path="/services/:slug/start" element={<Suspense fallback={<FormPageSkeleton />}><ServiceOnboarding /></Suspense>} />
                   <Route path="/ai" element={<AIAutomation />} />
                   <Route path="/get-started" element={<GetStarted />} />
                   <Route path="/contact" element={<Contact />} />
