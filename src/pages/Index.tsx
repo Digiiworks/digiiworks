@@ -79,10 +79,10 @@ const Index = () => (
 
         {/* Trust line */}
         <motion.p
-          className="mt-10 text-xs text-muted-foreground/50 font-mono tracking-wider"
+          className="mt-10 mb-16 text-xs text-muted-foreground/50 font-mono tracking-wider"
           variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.8, delay: 0.5, ease } } }}
         >
-          Trusted by 50+ brands worldwide · South Africa's autonomous digital agency
+          Trusted by 50+ brands worldwide
         </motion.p>
       </motion.div>
 
