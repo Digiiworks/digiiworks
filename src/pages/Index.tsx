@@ -93,6 +93,7 @@ const Index = () => (
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5, duration: 0.8 }}
       >
+        <motion.div
           className="w-5 h-8 rounded-full border border-border/40 flex items-start justify-center p-1"
           animate={{ borderColor: ['hsl(var(--border) / 0.4)', 'hsl(var(--primary) / 0.3)', 'hsl(var(--border) / 0.4)'] }}
           transition={{ duration: 3, repeat: Infinity }}
