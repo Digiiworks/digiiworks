@@ -54,6 +54,12 @@ interface BankingInfo {
     stripe_enabled: boolean;
     yoco_enabled: boolean;
   };
+  socials: {
+    instagram: string;
+    facebook: string;
+    linkedin: string;
+    github: string;
+  };
 }
 
 const defaultData: BankingInfo = {
