@@ -140,6 +140,38 @@ export const MOCK_AGENT_LOGS = [
   { id: '5', agent: 'Dex', message: 'Scheduling follow-up for qualified lead #0847...' },
 ] as const;
 
+// ─── Agent Tasks (rotating typewriter) ───
+export const AGENT_TASKS: Record<string, string[]> = {
+  Dex: [
+    'Analyzing new lead from digiiworks.co',
+    'Scheduling follow-up for qualified lead #0847',
+    'Onboarding new client — sending welcome sequence',
+    'Qualifying inbound inquiry from LinkedIn',
+    'Booking discovery call for enterprise prospect',
+  ],
+  Vantage: [
+    "Scraping SEO trends for 'AI Automation 2026'",
+    'Monitoring competitor ranking shifts on Google',
+    'Indexing 14 new backlink opportunities',
+    'Analyzing keyword gaps for Q2 content plan',
+    'Auditing site speed metrics across 3 domains',
+  ],
+  Forge: [
+    'Deploying system update to KVM 2 node',
+    'Rotating SSL certificates for 5 client domains',
+    'Scaling container resources — traffic spike detected',
+    'Running automated backup for production database',
+    'Patching security vulnerability in edge proxy',
+  ],
+  Pixel: [
+    'Generating social assets for Q1 campaign',
+    'Rendering carousel visuals for Instagram post',
+    'Creating blog header graphic — AI Trends article',
+    'Exporting branded deck slides for client pitch',
+    'Designing email banner for product launch',
+  ],
+};
+
 // ─── SEO Meta per Page ───
 export const PAGE_META: Record<string, { title: string; description: string }> = {
   '/': {
