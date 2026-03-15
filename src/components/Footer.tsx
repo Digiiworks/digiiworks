@@ -59,22 +59,17 @@ const Footer = () => {
             <Link to="/" className="inline-block transition-opacity hover:opacity-80">
               <img src="/logo.svg" alt={`${SITE_NAME} — Autonomous Digital Agency`} style={{ width: 130 }} />
             </Link>
-            <p className="text-sm leading-relaxed text-muted-foreground max-w-xs">
+            <p className="text-sm leading-relaxed text-foreground/70 max-w-xs">
               Human creativity meets autonomous execution. Three pillars powering your brand 24/7.
             </p>
-            <div className="flex flex-col sm:flex-row items-start gap-3 pt-1">
+            <div className="pt-2">
               <Link
                 to="/contact"
-                className="inline-flex items-center rounded-lg border border-border/50 px-5 py-2 font-mono text-xs text-muted-foreground transition-all hover:text-foreground hover:border-primary/30"
+                className="inline-flex items-center gap-2 rounded-lg border border-primary/50 px-5 py-2 font-mono text-xs text-primary transition-all hover:bg-primary/10 hover:border-primary"
               >
+                <Mail className="h-3.5 w-3.5" />
                 Contact Us
               </Link>
-              <a
-                href="mailto:hello@digiiworks.co"
-                className="font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                hello@digiiworks.co
-              </a>
             </div>
           </div>
 
