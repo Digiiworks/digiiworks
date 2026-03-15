@@ -29,13 +29,13 @@ const AIAutomation = () => (
 
       {/* Hero */}
       <div className="mb-16 text-center md:mb-20">
-        <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// pillar_03 :: autonomous_agency</p>
+        <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">// pillar_03 :: autonomous_agency</p>
         <h1 className="mb-6 font-mono text-3xl font-bold leading-tight md:text-6xl">
           <span className="text-foreground">Human Creativity.</span>
           <br />
           <span className="text-gradient">Autonomous Execution.</span>
         </h1>
-        <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
+        <p className="mx-auto max-w-2xl text-base text-foreground/80 md:text-lg drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
           Our AI agents run 24/7 — handling SEO, content, lead qualification, and infrastructure so you can focus on what matters.
         </p>
       </div>
@@ -49,7 +49,7 @@ const AIAutomation = () => (
         </div>
 
         <div className="glass-card p-6 md:p-8">
-          <p className="mb-6 text-muted-foreground max-w-2xl md:mb-8">
+          <p className="mb-6 text-foreground/70 max-w-2xl md:mb-8 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             We design zero-touch workflows that connect your entire tech stack. Data flows automatically between your tools — no copy-pasting, no manual handoffs, no dropped balls.
           </p>
 
@@ -99,7 +99,7 @@ const AIAutomation = () => (
                 <span className={`font-mono text-lg font-bold ${agent.color}`}>{agent.name}</span>
                 <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{agent.role}</span>
               </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">{agent.desc}</p>
+              <p className="text-sm leading-relaxed text-foreground/70 drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">{agent.desc}</p>
             </motion.div>
           ))}
         </div>
