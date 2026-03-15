@@ -403,6 +403,8 @@ export default function Clients() {
     setLogoFile(null);
     setLogoPreview(null);
     setExistingLogoUrl(null);
+    setCcEmails([]);
+    setNewCcEmail('');
   };
 
   const saveRecurringServices = async (clientId: string, companyId: string) => {
