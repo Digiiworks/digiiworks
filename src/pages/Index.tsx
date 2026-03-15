@@ -23,7 +23,7 @@ const Index = () => (
     
 
     {/* ── HERO ── */}
-    <section className="relative z-10 flex min-h-[90vh] items-center justify-center px-6">
+    <section className="relative z-10 flex min-h-[90vh] items-center justify-center px-6 pt-20 sm:pt-16">
       <motion.div
         className="mx-auto max-w-4xl text-center"
         initial="hidden"
