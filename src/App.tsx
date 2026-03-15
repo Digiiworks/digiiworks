@@ -34,6 +34,7 @@ import SettingsAdmin from "./pages/admin/Settings";
 
 // Lazy imports for low-traffic / detail pages
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
+const ServiceOnboarding = lazy(() => import("./pages/ServiceOnboarding"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 
 const Auth = lazy(() => import("./pages/Auth"));
