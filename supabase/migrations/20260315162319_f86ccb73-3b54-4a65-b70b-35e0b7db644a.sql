@@ -1,0 +1,1 @@
+ALTER TABLE public.client_companies ADD COLUMN cc_emails text[] DEFAULT '{}'::text[];
