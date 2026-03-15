@@ -130,6 +130,7 @@ Deno.serve(async (req) => {
         address: address || null,
         currency: currency || "USD",
         phone: phone || null,
+        cc_emails: cc_emails || [],
       })
       .select("id")
       .single();
