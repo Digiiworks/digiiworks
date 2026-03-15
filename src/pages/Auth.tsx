@@ -214,9 +214,15 @@ const Auth = () => {
                 {isLogin ? "Don't have an account? Sign up as a client" : 'Already have an account? Sign in'}
               </button>
             )}
-          </div>
+        </div>
+
+        <div className="mt-8 mb-12 text-center">
+          <Link to="/" className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors">
+            <ArrowLeft className="h-3 w-3" /> Return to Home
+          </Link>
         </div>
       </div>
+    </div>
     </div>
   );
 };
