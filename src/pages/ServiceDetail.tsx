@@ -124,7 +124,7 @@ const ServiceDetail = () => {
               asChild
               className={`${glowClass} ${bgClass} font-mono px-8 py-3`}
             >
-              <Link to={`/contact?service=${encodeURIComponent(service.contactPreset)}`}>
+              <Link to={`/services/${service.slug}/start`}>
                 {service.ctaButtonLabel}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
