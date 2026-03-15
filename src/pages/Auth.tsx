@@ -129,7 +129,6 @@ const Auth = () => {
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     required
-                    minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="border-border bg-background/50 focus:border-primary/50 pr-10"
