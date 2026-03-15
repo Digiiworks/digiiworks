@@ -35,7 +35,7 @@ const AIAutomation = () => (
           <br />
           <span className="text-gradient">Autonomous Execution.</span>
         </h1>
-        <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
+        <p className="mx-auto max-w-2xl text-base text-foreground/80 md:text-lg drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
           Our AI agents run 24/7 — handling SEO, content, lead qualification, and infrastructure so you can focus on what matters.
         </p>
       </div>
