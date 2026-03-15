@@ -181,7 +181,7 @@ const Auth = () => {
             )}
         </div>
 
-        <div className="mt-8 mb-12 text-center">
+        <div className="mt-8 mb-6 text-center">
           <Link to="/" className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors">
             <ArrowLeft className="h-3 w-3" /> Return to Home
           </Link>
