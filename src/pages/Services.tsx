@@ -60,7 +60,7 @@ const Services = () => {
                   key={pillar.id}
                   onClick={() => scrollTo(pillar.id)}
                   className={cn(
-                    'shrink-0 rounded-full px-5 py-2 font-mono text-sm transition-all duration-300 border',
+                    'shrink-0 rounded-full px-4 py-2 font-mono text-xs transition-all duration-300 border',
                     isActive
                       ? isPurple
                         ? 'bg-neon-purple/10 border-neon-purple/50 text-neon-purple shadow-[0_0_16px_hsl(280_99%_53%/0.15)]'
@@ -68,7 +68,6 @@ const Services = () => {
                       : 'border-border/40 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/20'
                   )}
                 >
-                  <span className={cn('mr-2', isActive ? 'opacity-80' : 'opacity-40')}>{pillar.label}</span>
                   {pillar.title}
                 </button>
               );
