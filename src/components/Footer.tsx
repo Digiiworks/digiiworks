@@ -60,7 +60,7 @@ const Footer = () => {
               <img src="/logo.svg" alt={`${SITE_NAME} — Autonomous Digital Agency`} style={{ width: 130 }} />
             </Link>
             <p className="text-sm leading-relaxed text-foreground/70 max-w-xs">
-              Human creativity meets autonomous execution. Three pillars powering your brand 24/7.
+              Human creativity meets autonomous execution. An autonomous digital agency based in South Africa, serving clients globally.
             </p>
             <div className="pt-2">
               <Link

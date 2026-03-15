@@ -50,7 +50,7 @@ const Index = () => (
           className="mx-auto mb-12 max-w-xl text-base leading-relaxed text-foreground/80 md:text-lg drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
           variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease } } }}
         >
-          Three pillars. One agency. Everything your brand needs to grow, scale, and run on autopilot.
+          Three pillars. One agency. Based in South Africa, serving clients globally. Everything your brand needs to grow, scale, and run on autopilot.
         </motion.p>
 
         <motion.div
@@ -82,7 +82,7 @@ const Index = () => (
           className="mt-10 text-xs text-muted-foreground/50 font-mono tracking-wider"
           variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.8, delay: 0.5, ease } } }}
         >
-          Trusted by 50+ brands worldwide
+          Trusted by 50+ brands worldwide · South Africa's autonomous digital agency
         </motion.p>
       </motion.div>
 

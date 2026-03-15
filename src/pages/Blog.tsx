@@ -125,7 +125,7 @@ const Blog = () => {
         <div className="mb-12 text-center md:mb-16">
           <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// blog_feed</p>
           <h1 className="font-mono text-3xl font-bold md:text-4xl">
-            <span className="text-gradient">Insights & Articles</span>
+            <span className="text-gradient">Digital Marketing Insights & Articles</span>
           </h1>
           <p className="mt-3 text-sm text-muted-foreground max-w-xl mx-auto">
             Expert insights on web development, AI automation, SEO, and digital growth strategies.
@@ -138,6 +138,7 @@ const Blog = () => {
           <input
             type="text"
             placeholder="Search articles..."
+            aria-label="Search articles"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-lg border border-border bg-background/50 py-2.5 pl-10 pr-4 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/25 transition-colors"
@@ -198,8 +199,11 @@ const Blog = () => {
                     <img
                       src={post.featured_image}
                       alt={post.title}
+                      width={800}
+                      height={450}
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                       loading="lazy"
+                      decoding="async"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
                   </div>
@@ -233,7 +237,7 @@ const Blog = () => {
                   </p>
 
                   {/* Read more */}
-                  <span className="mt-4 inline-flex items-center font-mono text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <span className="mt-4 inline-flex items-center font-mono text-xs text-primary opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300">
                     Read article →
                   </span>
                 </div>
