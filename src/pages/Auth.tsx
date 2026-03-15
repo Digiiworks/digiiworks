@@ -21,26 +21,24 @@ const PasswordStrength = ({ password }: { password: string }) => {
   const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
 
   return (
-    <div className="space-y-2 pt-1">
-      <div className="flex items-center gap-2">
-        <div className="flex gap-1 flex-1">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${i <= score ? colors[score] : 'bg-muted'}`} />
-          ))}
-        </div>
+    <div className="mt-2 space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= score ? colors[score] : 'bg-muted/50'}`} />
+        ))}
         {score > 0 && (
-          <span className={`font-mono text-[11px] font-semibold shrink-0 ${score <= 1 ? 'text-destructive' : score <= 2 ? 'text-orange-500' : 'text-neon-mint'}`}>
+          <span className={`font-mono text-[10px] font-medium leading-none pl-1 shrink-0 ${score <= 1 ? 'text-destructive' : score <= 2 ? 'text-orange-400' : 'text-neon-mint'}`}>
             {labels[score]}
           </span>
         )}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1">
-        {checks.map(c => (
-          <span key={c.label} className={`font-mono text-[10px] ${c.pass ? 'text-neon-mint' : 'text-muted-foreground'}`}>
-            {c.pass ? '✓' : '○'} {c.label}
+      <p className="font-mono text-[10px] leading-relaxed text-muted-foreground">
+        {checks.map((c, i) => (
+          <span key={c.label} className={c.pass ? 'text-neon-mint' : undefined}>
+            {c.pass ? '✓' : '○'}&nbsp;{c.label}{i < checks.length - 1 ? '  ·  ' : ''}
           </span>
         ))}
-      </div>
+      </p>
     </div>
   );
 };
