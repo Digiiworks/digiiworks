@@ -69,6 +69,7 @@ const defaultData: BankingInfo = {
   payment_links: { yoco_payment_link: '', wise_payment_link: '' },
   tracking: { google_pixel_id: '', meta_pixel_id: '' },
   payment_methods: { stripe_enabled: false, yoco_enabled: true },
+  socials: { instagram: '', facebook: '', linkedin: '', github: '' },
 };
 
 const SettingsPage = () => {
