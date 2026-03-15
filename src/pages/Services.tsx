@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { PILLARS } from '@/lib/constants';
 import { SERVICE_PAGES } from '@/lib/service-pages';
 import { cn } from '@/lib/utils';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 const getSlugForService = (name: string) => {
   const page = SERVICE_PAGES.find((p) => p.name === name);
