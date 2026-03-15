@@ -24,16 +24,16 @@ const PasswordStrength = ({ password }: { password: string }) => {
     <div className="space-y-2 pt-1">
       <div className="flex gap-1">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= score ? colors[score] : 'bg-muted'}`} />
+          <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${i <= score ? colors[score] : 'bg-muted'}`} />
         ))}
       </div>
-      <div className="flex items-center justify-between">
-        <span className={`font-mono text-[10px] ${score <= 1 ? 'text-destructive' : score <= 2 ? 'text-orange-500' : 'text-neon-mint'}`}>
+      <div className="flex items-center gap-2">
+        <span className={`font-mono text-[11px] font-semibold shrink-0 ${score <= 1 ? 'text-destructive' : score <= 2 ? 'text-orange-500' : 'text-neon-mint'}`}>
           {labels[score]}
         </span>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-0.5">
           {checks.map(c => (
-            <span key={c.label} className={`font-mono text-[10px] ${c.pass ? 'text-neon-mint' : 'text-muted-foreground'}`}>
+            <span key={c.label} className={`font-mono text-[10px] whitespace-nowrap ${c.pass ? 'text-neon-mint' : 'text-muted-foreground'}`}>
               {c.pass ? '✓' : '○'} {c.label}
             </span>
           ))}
