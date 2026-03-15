@@ -162,7 +162,7 @@ const BlogPost = () => {
       {post && <ScrollProgress />}
       {post && <ArticleJsonLd post={post} />}
       
-      <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-20">
+      <div className="relative mx-auto max-w-3xl px-6 py-16 md:py-20">
         <Breadcrumbs items={[
           { label: 'Blog', to: '/blog' },
           { label: post?.title ?? slug ?? '...' },

@@ -41,7 +41,7 @@ const Services = () => {
   return (
     <div className="relative min-h-screen">
       
-      <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-20">
+      <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-20">
         <div className="mb-12 text-center md:mb-16">
           <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// service_catalog</p>
           <h1 className="font-mono text-3xl font-bold md:text-5xl">

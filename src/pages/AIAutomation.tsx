@@ -23,7 +23,7 @@ const AIAutomation = () => (
   <div className="relative min-h-screen">
     <AIJsonLd />
     
-    <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-20">
+    <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-20">
 
       <Breadcrumbs items={[{ label: 'AI Automation' }]} />
 
