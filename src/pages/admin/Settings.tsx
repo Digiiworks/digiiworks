@@ -346,7 +346,23 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
-      {/* ─── SECTION 2: Tracking & Analytics ─── */}
+      {/* ─── SECTION 2: Social Media ─── */}
+      <Card className="border-border bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-mono text-base">
+            <Share2 className="h-4 w-4 text-primary" /> Social Media
+          </CardTitle>
+          <CardDescription>Add URLs to display social links in the site footer</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <Field label="Instagram" path={['socials', 'instagram']} placeholder="https://instagram.com/digiiworks" />
+          <Field label="Facebook" path={['socials', 'facebook']} placeholder="https://facebook.com/digiiworks" />
+          <Field label="LinkedIn" path={['socials', 'linkedin']} placeholder="https://linkedin.com/company/digiiworks" />
+          <Field label="GitHub" path={['socials', 'github']} placeholder="https://github.com/digiiworks" />
+        </CardContent>
+      </Card>
+
+      {/* ─── SECTION 3: Tracking & Analytics ─── */}
       <Card className="border-border bg-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-mono text-base">
