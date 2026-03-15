@@ -99,7 +99,7 @@ const AIAutomation = () => (
                 <span className={`font-mono text-lg font-bold ${agent.color}`}>{agent.name}</span>
                 <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{agent.role}</span>
               </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">{agent.desc}</p>
+              <p className="text-sm leading-relaxed text-foreground/70 drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">{agent.desc}</p>
             </motion.div>
           ))}
         </div>
