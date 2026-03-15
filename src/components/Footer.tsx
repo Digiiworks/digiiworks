@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { NAV_LINKS, SITE_NAME } from '@/lib/constants';
 import { motion } from 'framer-motion';
-import { Instagram, Facebook, Linkedin, Github } from 'lucide-react';
+import { Instagram, Facebook, Linkedin, Github, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
