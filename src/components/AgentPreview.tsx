@@ -28,7 +28,7 @@ const AgentPreview = () => (
           transition={{ duration: 0.45, delay: i * 0.08, ease }}
           whileHover={{ y: -6, transition: { duration: 0.3 } }}
         >
-          <Link to="/ai" className="glass-card group flex flex-col p-5 h-full">
+          <Link to="/ai#agents" className="glass-card group flex flex-col p-5 h-full">
             {/* Status dot + name */}
             <div className="flex items-center gap-2.5 mb-3">
               <span className="relative flex h-2 w-2 shrink-0">

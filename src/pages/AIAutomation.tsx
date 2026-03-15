@@ -73,7 +73,7 @@ const AIAutomation = () => (
       </section>
 
       {/* Agent Cards */}
-      <section className="mb-16 md:mb-24">
+      <section id="agents" className="mb-16 md:mb-24 scroll-mt-24">
         <div className="mb-6 flex items-center gap-3 md:mb-8">
           <span className="font-mono text-xs uppercase tracking-widest text-neon-purple">Section 02</span>
           <div className="h-px flex-1 bg-border" />
