@@ -344,6 +344,8 @@ export default function Clients() {
       notes: client.notes ?? '',
       country: client.currency === 'ZAR' ? 'south_africa' : client.currency === 'THB' ? 'thailand' : 'global',
     });
+    setCcEmails((client as any).cc_emails ?? []);
+    setNewCcEmail('');
     setLogoFile(null);
     setLogoPreview(null);
     setExistingLogoUrl(client.logo_url ?? null);
