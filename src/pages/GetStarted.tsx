@@ -156,7 +156,7 @@ const GetStarted = () => {
 
     return (
       <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
-        <div className="relative mx-auto max-w-2xl px-6 py-16 md:py-24">
+        <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-24">
           {/* Success header */}
           <motion.div className="mb-10 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}>
@@ -221,7 +221,7 @@ const GetStarted = () => {
   return (
     <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
       
-      <div className="relative mx-auto max-w-3xl px-6 py-12 md:py-20">
+      <div className="relative mx-auto max-w-7xl px-6 py-12 md:py-20">
         {/* Header */}
         <div className="mb-8 text-center">
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-2">// get_started</p>

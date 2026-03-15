@@ -119,7 +119,7 @@ const Blog = () => {
     <div className="relative min-h-screen">
       <BlogJsonLd />
       
-      <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-20">
+      <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-20">
         <Breadcrumbs items={[{ label: 'Blog' }]} />
 
         <div className="mb-12 text-center md:mb-16">
