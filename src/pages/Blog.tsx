@@ -237,7 +237,7 @@ const Blog = () => {
                   </p>
 
                   {/* Read more */}
-                  <span className="mt-4 inline-flex items-center font-mono text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <span className="mt-4 inline-flex items-center font-mono text-xs text-primary opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300">
                     Read article →
                   </span>
                 </div>

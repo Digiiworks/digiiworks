@@ -82,7 +82,7 @@ const Index = () => (
           className="mt-10 text-xs text-muted-foreground/50 font-mono tracking-wider"
           variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.8, delay: 0.5, ease } } }}
         >
-          Trusted by 50+ brands worldwide
+          Trusted by 50+ brands worldwide · South Africa's autonomous digital agency
         </motion.p>
       </motion.div>
 

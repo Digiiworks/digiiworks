@@ -45,7 +45,7 @@ const Services = () => {
         <div className="mb-12 text-center md:mb-16">
           <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// service_catalog</p>
           <h1 className="font-mono text-3xl font-bold md:text-5xl">
-            <span className="text-gradient">Our Services</span>
+            <span className="text-gradient">Digital Marketing & Web Design Services</span>
           </h1>
         </div>
 

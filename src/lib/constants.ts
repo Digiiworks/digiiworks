@@ -175,27 +175,35 @@ export const AGENT_TASKS: Record<string, string[]> = {
 // ─── SEO Meta per Page ───
 export const PAGE_META: Record<string, { title: string; description: string }> = {
   '/': {
-    title: 'Digiiworks — Autonomous Digital Agency',
-    description: 'Build, automate, and dominate. Digiiworks delivers custom web development, AI-powered automation, and data-driven SEO for brands ready to scale.',
+    title: 'Digiiworks — Digital Marketing Agency South Africa',
+    description: 'Build, automate, and dominate. Digiiworks delivers custom web development, AI-powered automation, and data-driven SEO. Based in South Africa, serving clients globally.',
   },
   '/services': {
-    title: 'Services — Digiiworks',
-    description: 'Explore our three pillars: Digital Architecture, Growth Engine, and Autonomous Agency. Custom dev, SEO, AI automation, and more.',
+    title: 'Web Design & SEO Services — Digiiworks',
+    description: 'Explore our digital services: custom web development, responsive design, data-driven SEO, AI automation, and more. Affordable digital agency for growing brands.',
   },
   '/ai': {
-    title: 'AI & Automation — Digiiworks',
-    description: 'Human creativity meets autonomous execution. Meet Dex, Vantage, Pixel & Forge — our AI agents running 24/7 for your brand.',
+    title: 'AI Automation & Workflow Engineering — Digiiworks',
+    description: 'Human creativity meets autonomous execution. Meet our AI agents running 24/7 — handling SEO, content, lead qualification, and n8n workflow automation.',
   },
   '/blog': {
-    title: 'Blog — Digiiworks',
-    description: 'Insights on web development, AI automation, SEO strategy, and the future of autonomous digital agencies.',
+    title: 'Digital Marketing Blog — Digiiworks',
+    description: 'Expert insights on web development, AI automation, SEO strategy, and digital growth from a South Africa-based autonomous digital agency.',
   },
   '/contact': {
-    title: 'Contact — Digiiworks',
-    description: 'Ready to automate your growth? Get in touch with Digiiworks for a consultation on web development, SEO, or AI automation.',
+    title: 'Contact Us — Digiiworks Digital Agency',
+    description: 'Ready to automate your growth? Get in touch with Digiiworks for a free consultation on web development, SEO, or AI automation. Response within 24 hours.',
   },
   '/get-started': {
-    title: 'Get Started — Digiiworks',
-    description: 'Answer 5 quick questions and we\'ll scope your project. Web development, SEO, AI automation — let\'s find the right fit.',
+    title: 'Get Started — Free Project Scoping | Digiiworks',
+    description: 'Answer 5 quick questions and we\'ll scope your project. Web development, SEO, AI automation — affordable digital agency solutions for your brand.',
+  },
+  '/privacy': {
+    title: 'Privacy Policy — Digiiworks',
+    description: 'Read the Digiiworks privacy policy. Learn how we collect, use, and protect your personal data in compliance with POPIA and global privacy standards.',
+  },
+  '/terms': {
+    title: 'Terms of Service — Digiiworks',
+    description: 'Review the Digiiworks terms of service covering project agreements, payment terms, intellectual property, and service delivery.',
   },
 };

@@ -195,6 +195,8 @@ const BlogPost = () => {
               <img
                 src={post.featured_image}
                 alt={post.title}
+                width={1200}
+                height={480}
                 loading="lazy"
                 decoding="async"
                 className="mb-8 w-full rounded-lg object-cover max-h-80"

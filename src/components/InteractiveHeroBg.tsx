@@ -13,18 +13,20 @@ const MOBILE_BP = 640;
 const getNodeCount = (w: number) => w < MOBILE_BP ? 25 : 60;
 const getEdgeDist = (w: number) => w < MOBILE_BP ? 160 : 220;
 const MOUSE_RADIUS = 280;
-const TRIANGLE_CHANCE = 0.35;
 
 const InteractiveHeroBg = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const nodesRef = useRef<Node[]>([]);
   const edgeDistRef = useRef(220);
   const rafRef = useRef(0);
   const mouseRef = useRef({ x: -9999, y: -9999 });
+  const isVisibleRef = useRef(true);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
@@ -33,15 +35,31 @@ const InteractiveHeroBg = () => {
     let lastH = 0;
     let resizeTimer: ReturnType<typeof setTimeout>;
 
+    // Pause animation when off-screen
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        isVisibleRef.current = entry.isIntersecting;
+        if (entry.isIntersecting && !rafRef.current) {
+          rafRef.current = requestAnimationFrame(draw);
+        }
+      },
+      { threshold: 0.05 }
+    );
+    visibilityObserver.observe(container);
+
+    // Respect prefers-reduced-motion
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (motionQuery.matches) {
+      isVisibleRef.current = false;
+    }
+
     const init = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
       const w = parent.clientWidth;
       const h = parent.clientHeight;
 
-      // Skip resize if only height changed slightly (mobile address bar)
       if (lastW === w && Math.abs(h - lastH) < 100 && nodesRef.current.length > 0) {
-        // Just update canvas size without regenerating nodes
         canvas.width = w * dpr;
         canvas.height = h * dpr;
         canvas.style.width = `${w}px`;
@@ -59,7 +77,6 @@ const InteractiveHeroBg = () => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       edgeDistRef.current = getEdgeDist(w);
-      // Seed nodes across full viewport
       const nodes: Node[] = [];
       for (let i = 0; i < getNodeCount(w); i++) {
         nodes.push({
@@ -91,12 +108,17 @@ const InteractiveHeroBg = () => {
     window.addEventListener('mousemove', onMove);
     canvas.addEventListener('mouseleave', onLeave);
 
-    // Cyan / teal palette matching the reference
     const CYAN = { h: 175, s: 100, l: 50 };
     const TEAL = { h: 185, s: 90, l: 45 };
     const hsla = (c: typeof CYAN, a: number) => `hsla(${c.h},${c.s}%,${c.l}%,${a})`;
 
     const draw = (time: number) => {
+      // Stop loop if not visible
+      if (!isVisibleRef.current) {
+        rafRef.current = 0;
+        return;
+      }
+
       const w = canvas.width / dpr;
       const h = canvas.height / dpr;
       ctx.clearRect(0, 0, w, h);
@@ -104,22 +126,16 @@ const InteractiveHeroBg = () => {
       const nodes = nodesRef.current;
       const mouse = mouseRef.current;
 
-      // Update
       for (const n of nodes) {
         n.x += n.vx;
         n.y += n.vy;
-
-        // Gentle sine drift
         n.x += Math.sin(time * 0.0003 + n.y * 0.005) * 0.08;
         n.y += Math.cos(time * 0.00025 + n.x * 0.004) * 0.06;
-
-        // Bounce off edges with padding
         if (n.x < -40) n.x = w + 40;
         if (n.x > w + 40) n.x = -40;
         if (n.y < -40) n.y = h + 40;
         if (n.y > h + 40) n.y = -40;
 
-        // Mouse repel (push away like the reference)
         const dx = n.x - mouse.x;
         const dy = n.y - mouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -130,7 +146,6 @@ const InteractiveHeroBg = () => {
         }
       }
 
-      // Find edges and triangles
       const edges: [number, number][] = [];
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
@@ -142,7 +157,7 @@ const InteractiveHeroBg = () => {
         }
       }
 
-      // Draw filled triangles (subtle)
+      // Triangles
       const adjacency = new Map<number, Set<number>>();
       for (const [a, b] of edges) {
         if (!adjacency.has(a)) adjacency.set(a, new Set());
@@ -156,25 +171,19 @@ const InteractiveHeroBg = () => {
         const common = adjacency.get(a);
         const bNeighbors = adjacency.get(b);
         if (!common || !bNeighbors) continue;
-
         for (const c of common) {
           if (c <= b) continue;
           if (!bNeighbors.has(c)) continue;
-
           const key = [a, b, c].sort().join(',');
           if (drawnTriangles.has(key)) continue;
           drawnTriangles.add(key);
-
-          // Stable hash to decide which triangles show (no flicker)
           const hash = ((a * 73856093) ^ (b * 19349663) ^ (c * 83492791)) >>> 0;
           if ((hash % 100) > 30) continue;
-
           const na = nodes[a], nb = nodes[b], nc = nodes[c];
           const cx = (na.x + nb.x + nc.x) / 3;
           const cy = (na.y + nb.y + nc.y) / 3;
           const md = Math.hypot(mouse.x - cx, mouse.y - cy);
           const mouseBoost = md < MOUSE_RADIUS ? (1 - md / MOUSE_RADIUS) * 0.04 : 0;
-
           ctx.beginPath();
           ctx.moveTo(na.x, na.y);
           ctx.lineTo(nb.x, nb.y);
@@ -185,19 +194,17 @@ const InteractiveHeroBg = () => {
         }
       }
 
-      // Draw edges
+      // Edges
       for (const [i, j] of edges) {
         const a = nodes[i], b = nodes[j];
         const dx = a.x - b.x;
         const dy = a.y - b.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const alpha = (1 - dist / edgeDistRef.current) * 0.25;
-
         const mx = (a.x + b.x) / 2;
         const my = (a.y + b.y) / 2;
         const md = Math.hypot(mouse.x - mx, mouse.y - my);
         const mouseBoost = md < MOUSE_RADIUS ? (1 - md / MOUSE_RADIUS) * 0.35 : 0;
-
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
@@ -206,21 +213,17 @@ const InteractiveHeroBg = () => {
         ctx.stroke();
       }
 
-      // Draw nodes
+      // Nodes
       for (const n of nodes) {
         const md = Math.hypot(mouse.x - n.x, mouse.y - n.y);
         const isHot = md < MOUSE_RADIUS;
         const boost = isHot ? (1 - md / MOUSE_RADIUS) : 0;
-
-        // Outer glow
         if (boost > 0.2) {
           ctx.beginPath();
           ctx.arc(n.x, n.y, n.size * 3 * boost, 0, Math.PI * 2);
           ctx.fillStyle = hsla(CYAN, boost * 0.15);
           ctx.fill();
         }
-
-        // Node dot
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.size * (1 + boost * 0.8), 0, Math.PI * 2);
         ctx.fillStyle = hsla(isHot ? CYAN : TEAL, 0.5 + boost * 0.5);
@@ -234,7 +237,9 @@ const InteractiveHeroBg = () => {
 
     return () => {
       cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
       clearTimeout(resizeTimer);
+      visibilityObserver.disconnect();
       window.removeEventListener('resize', debouncedResize);
       window.removeEventListener('mousemove', onMove);
       canvas.removeEventListener('mouseleave', onLeave);
@@ -242,9 +247,8 @@ const InteractiveHeroBg = () => {
   }, []);
 
   return (
-    <div className="fixed inset-x-0 top-0 z-0 pointer-events-auto" style={{ height: '100dvh' }}>
-      <canvas ref={canvasRef} className="absolute inset-0" />
-      {/* Vignette */}
+    <div ref={containerRef} className="fixed inset-x-0 top-0 z-0 pointer-events-auto" style={{ height: '100dvh' }}>
+      <canvas ref={canvasRef} className="absolute inset-0" aria-hidden="true" />
       <div
         className="absolute inset-0 pointer-events-none"
         style={{

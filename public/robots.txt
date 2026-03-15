@@ -1,8 +1,16 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /invoice
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /invoice
 
 User-agent: Twitterbot
 Allow: /
@@ -12,5 +20,9 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /invoice
 
-Sitemap: https://jiwyrsnwmlxoelrpowbq.supabase.co/functions/v1/generate-sitemap
+Sitemap: https://digiiworks.co/sitemap.xml

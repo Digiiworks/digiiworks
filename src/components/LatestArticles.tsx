@@ -57,13 +57,15 @@ const LatestArticles = () => {
             <article className="glass-card overflow-hidden h-full flex flex-col">
               {post.featured_image && (
                 <div className="relative h-44 overflow-hidden">
-                  <img
-                    src={post.featured_image}
-                    alt={post.title}
-                    className="h-full w-full object-cover transition-transform duration-600 group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                    <img
+                      src={post.featured_image}
+                      alt={post.title}
+                      width={800}
+                      height={450}
+                      className="h-full w-full object-cover transition-transform duration-600 group-hover:scale-105"
+                      loading="lazy"
+                      decoding="async"
+                    />
                   <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
                 </div>
               )}
