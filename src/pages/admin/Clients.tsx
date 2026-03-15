@@ -1018,6 +1018,42 @@ export default function Clients() {
               )}
             </div>
 
+            {/* CC Emails for create */}
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5"><Mail className="h-3 w-3" /> CC Emails</Label>
+              {ccEmails.map((cc, idx) => (
+                <div key={idx} className="flex items-center gap-2 mt-2">
+                  <Input value={cc} disabled className="bg-muted border-border opacity-60 flex-1 text-xs" />
+                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:text-destructive" onClick={() => setCcEmails(prev => prev.filter((_, i) => i !== idx))}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+              <div className="flex items-center gap-2 mt-2">
+                <Input
+                  type="email"
+                  value={newCcEmail}
+                  onChange={e => setNewCcEmail(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newCcEmail.trim() && newCcEmail.includes('@')) {
+                        setCcEmails(prev => [...prev, newCcEmail.trim()]);
+                        setNewCcEmail('');
+                      }
+                    }
+                  }}
+                  className="bg-background border-border flex-1 text-xs"
+                  placeholder="Add extra email and press Enter"
+                />
+                <Button type="button" variant="outline" size="sm" className="text-xs shrink-0" disabled={!newCcEmail.trim() || !newCcEmail.includes('@')} onClick={() => {
+                  setCcEmails(prev => [...prev, newCcEmail.trim()]);
+                  setNewCcEmail('');
+                }}>
+                  Add
+                </Button>
+              </div>
+            </div>
             {!selectedExistingUser && (
               <div>
                 <Label className="font-mono text-xs flex items-center gap-1.5"><User className="h-3 w-3" /> Contact Name</Label>
