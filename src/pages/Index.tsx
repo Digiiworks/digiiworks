@@ -88,13 +88,11 @@ const Index = () => (
 
       {/* Scroll indicator */}
       <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5, duration: 0.8 }}
       >
-        <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/40">Scroll</span>
-        <motion.div
           className="w-5 h-8 rounded-full border border-border/40 flex items-start justify-center p-1"
           animate={{ borderColor: ['hsl(var(--border) / 0.4)', 'hsl(var(--primary) / 0.3)', 'hsl(var(--border) / 0.4)'] }}
           transition={{ duration: 3, repeat: Infinity }}
