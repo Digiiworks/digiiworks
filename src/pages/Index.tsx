@@ -110,7 +110,7 @@ const Index = () => (
 
     {/* Content sections — elevated above fixed bg */}
     <div className="relative z-10">
-      <div className="mx-auto max-w-6xl px-6 py-20 md:py-28 space-y-24 md:space-y-32">
+      <div className="mx-auto max-w-6xl px-6 py-14 md:py-20 space-y-16 md:space-y-22">
 
         {/* ── STATS ── */}
         <StatsBar />
@@ -187,6 +187,11 @@ const Index = () => (
           <AgentPreview />
         </LazySection>
 
+        {/* ── TECH MARQUEE ── */}
+        <LazySection>
+          <TechMarquee />
+        </LazySection>
+
         {/* ── CTA ── */}
         <LazySection>
           <motion.div
@@ -214,11 +219,6 @@ const Index = () => (
               <Link to="/get-started">Get Started →</Link>
             </Button>
           </motion.div>
-        </LazySection>
-
-        {/* ── TECH MARQUEE ── */}
-        <LazySection>
-          <TechMarquee />
         </LazySection>
       </div>
     </div>
