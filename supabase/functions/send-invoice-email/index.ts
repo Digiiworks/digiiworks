@@ -539,13 +539,15 @@ Deno.serve(async (req) => {
     if (!client?.email) throw new Error("Client has no email address");
 
     let companyCurrency = 'USD';
+    let ccEmails: string[] = [];
     if (invoice.client_company_id) {
       const { data: company } = await supabase
         .from("client_companies")
-        .select("currency")
+        .select("currency, cc_emails")
         .eq("id", invoice.client_company_id)
         .single();
       if (company?.currency) companyCurrency = company.currency;
+      if (company?.cc_emails) ccEmails = company.cc_emails;
     }
 
     const { data: items } = await supabase
@@ -557,11 +559,12 @@ Deno.serve(async (req) => {
     const stripeToken = await hmacSign(invoice_id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const stripeUrl = `${supabaseUrl}/functions/v1/create-stripe-checkout-public?invoice_id=${invoice_id}&token=${stripeToken}`;
     const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings, stripeUrl);
-    await sendEmail(client.email, "Invoice " + invoice.invoice_number + " from DigiiWorks", html);
+    const allRecipients = [client.email, ...ccEmails.filter(e => e && e !== client.email)].join(", ");
+    await sendEmail(allRecipients, "Invoice " + invoice.invoice_number + " from DigiiWorks", html);
 
     await supabase.from("invoice_emails").insert({
       invoice_id: invoice.id,
-      sent_to: client.email,
+      sent_to: allRecipients,
       sent_at: new Date().toISOString(),
       status: "sent",
     });
@@ -571,7 +574,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, sent_to: client.email }),
+      JSON.stringify({ success: true, sent_to: allRecipients }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
