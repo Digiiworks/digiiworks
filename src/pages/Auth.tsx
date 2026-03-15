@@ -31,6 +31,13 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Custom password validation (bypass native tooltip)
+    if (!forgotPassword && password.length < 6) {
+      sonnerToast('Password must be at least 6 characters', { duration: 5000 });
+      return;
+    }
+
     setLoading(true);
 
     try {
