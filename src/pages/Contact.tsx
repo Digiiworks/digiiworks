@@ -96,7 +96,7 @@ const Contact = () => {
   return (
     <div className="relative min-h-screen">
       
-      <div className="relative mx-auto max-w-xl px-6 pt-20 pb-16 sm:pt-16 md:pb-20">
+      <div className="relative mx-auto max-w-xl px-6 pt-24 pb-16 sm:pt-20 md:pb-20">
         <Breadcrumbs items={[{ label: 'Contact' }]} />
 
         <div className="mb-10 text-center md:mb-12">

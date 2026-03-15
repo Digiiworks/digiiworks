@@ -42,7 +42,7 @@ const Services = () => {
   return (
     <div className="relative min-h-screen">
       
-      <div className="relative mx-auto max-w-6xl px-6 pt-20 pb-16 sm:pt-16 md:pb-20">
+      <div className="relative mx-auto max-w-6xl px-6 pt-24 pb-16 sm:pt-20 md:pb-20">
         <Breadcrumbs items={[{ label: 'Services' }]} />
         <div className="mb-12 text-center md:mb-16">
           <p className="font-mono text-xs uppercase tracking-widest mb-3 text-muted-foreground">// service_catalog</p>

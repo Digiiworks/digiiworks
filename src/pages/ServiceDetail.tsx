@@ -23,7 +23,7 @@ const ServiceDetail = () => {
   return (
     <div className="relative min-h-screen">
       
-      <div className="relative mx-auto max-w-4xl px-6 py-16 md:py-20">
+      <div className="relative mx-auto max-w-4xl px-6 pt-24 pb-16 sm:pt-20 md:pb-20">
         {/* Breadcrumb */}
         <nav className="mb-8 font-mono text-xs text-muted-foreground">
           <Link to="/" className="hover:text-primary transition-colors">Home</Link>
