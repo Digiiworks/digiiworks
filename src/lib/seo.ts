@@ -1,6 +1,6 @@
 import { SITE_NAME, SITE_URL } from '@/lib/constants';
 
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 /** Set or create a <meta> tag by attribute selector */
 export const setMeta = (attr: string, key: string, value: string) => {
