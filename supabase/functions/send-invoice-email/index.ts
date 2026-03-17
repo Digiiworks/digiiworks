@@ -331,8 +331,108 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // --- Auth check: require admin role ---
+    const body = await req.json();
+    const { invoice_id, mode, force_resend } = body;
+
+    // Scheduled mode (called by cron) — skip admin auth, use service role
+    if (mode === "scheduled") {
+      const supabase = adminClient;
+      const dashboardBaseUrl = "https://digiiworks.lovable.app/client";
+
+      // Fetch payment settings once
+      const { data: settingsRow } = await supabase
+        .from("page_content")
+        .select("content")
+        .eq("page_key", "payment_settings")
+        .single();
+      const paymentSettings = settingsRow?.content as any ?? null;
+
+      const today = new Date().toISOString().split("T")[0];
+      const { data: invoices, error: invErr } = await supabase
+        .from("invoices")
+        .select("*")
+        .in("status", ["draft", "sent"])
+        .lte("send_date", today);
+
+      if (invErr) throw invErr;
+
+      const results: { invoice_id: string; status: string; error?: string }[] = [];
+
+      for (const inv of invoices || []) {
+        if (!force_resend) {
+          const { data: existing } = await supabase
+            .from("invoice_emails")
+            .select("id")
+            .eq("invoice_id", inv.id)
+            .eq("status", "sent")
+            .limit(1);
+          if (existing && existing.length > 0) continue;
+        }
+
+        try {
+          const { data: client } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", inv.client_id)
+            .single();
+          if (!client?.email) throw new Error("No client email");
+
+          let companyCurrency = 'USD';
+          let ccEmails: string[] = [];
+          if (inv.client_company_id) {
+            const { data: company } = await supabase
+              .from("client_companies")
+              .select("currency, cc_emails")
+              .eq("id", inv.client_company_id)
+              .single();
+            if (company?.currency) companyCurrency = company.currency;
+            if (company?.cc_emails) ccEmails = company.cc_emails;
+          }
+
+          const { data: items } = await supabase
+            .from("invoice_items")
+            .select("*")
+            .eq("invoice_id", inv.id);
+
+          const pdfToken = await hmacSign(inv.id, serviceRoleKey);
+          const stripeToken = await hmacSign(inv.id, serviceRoleKey);
+          const stripeUrl = `${supabaseUrl}/functions/v1/create-stripe-checkout-public?invoice_id=${inv.id}&token=${stripeToken}`;
+          const html = buildEmailHTML(inv, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings, stripeUrl);
+          const allRecipients = [client.email, ...ccEmails.filter(e => e && e !== client.email)].join(", ");
+          await sendEmail(allRecipients, "Invoice " + inv.invoice_number + " from DigiiWorks", html);
+
+          await supabase.from("invoice_emails").insert({
+            invoice_id: inv.id,
+            sent_to: allRecipients,
+            sent_at: new Date().toISOString(),
+            scheduled_for: inv.send_date,
+            status: "sent",
+          });
+
+          if (inv.status === "draft") {
+            await supabase.from("invoices").update({ status: "sent" }).eq("id", inv.id);
+          }
+
+          results.push({ invoice_id: inv.id, status: "sent" });
+        } catch (err: any) {
+          await supabase.from("invoice_emails").insert({
+            invoice_id: inv.id,
+            sent_to: "unknown",
+            status: "failed",
+            error: err.message,
+          });
+          results.push({ invoice_id: inv.id, status: "failed", error: err.message });
+        }
+      }
+
+      return new Response(JSON.stringify({ processed: results.length, results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Auth check: require admin role for all other modes ---
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization" }), {
@@ -350,7 +450,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: isAdmin } = await adminClient.rpc("has_role", {
       _user_id: caller.id,
       _role: "admin",
@@ -363,7 +462,6 @@ Deno.serve(async (req) => {
     }
 
     const supabase = adminClient;
-    const body = await req.json();
     const { invoice_id, mode, force_resend } = body;
 
     const dashboardBaseUrl = "https://digiiworks.lovable.app/client";
