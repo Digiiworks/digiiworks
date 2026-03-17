@@ -462,10 +462,8 @@ Deno.serve(async (req) => {
     }
 
     const supabase = adminClient;
-    const { invoice_id, mode, force_resend } = body;
 
     const dashboardBaseUrl = "https://digiiworks.lovable.app/client";
-    const results: { invoice_id: string; status: string; error?: string }[] = [];
 
     // Fetch payment settings once
     const { data: settingsRow } = await supabase
