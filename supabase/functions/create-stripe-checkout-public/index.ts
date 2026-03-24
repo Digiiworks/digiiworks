@@ -87,16 +87,8 @@ Deno.serve(async (req) => {
       .eq("user_id", invoice.client_id)
       .single();
 
-    // Determine currency
-    let currency = "USD";
-    if (invoice.client_company_id) {
-      const { data: company } = await supabase
-        .from("client_companies")
-        .select("currency")
-        .eq("id", invoice.client_company_id)
-        .single();
-      if (company?.currency) currency = company.currency;
-    }
+    // Use currency stored on invoice (denormalized at creation time)
+    const currency = invoice.currency || "USD";
 
     const amountInCents = Math.round(Number(invoice.total) * 100);
     const baseUrl = Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app";
@@ -142,6 +134,14 @@ Deno.serve(async (req) => {
       .from("invoices")
       .update({ payment_reference: session.id })
       .eq("id", invoice.id);
+
+    // Log the checkout session for reconciliation tracking
+    await supabase.from("payment_sessions").upsert({
+      invoice_id: invoice.id,
+      gateway: "stripe",
+      session_id: session.id,
+      status: "pending",
+    }, { onConflict: "session_id" });
 
     // Redirect to Stripe checkout
     return Response.redirect(session.url, 302);

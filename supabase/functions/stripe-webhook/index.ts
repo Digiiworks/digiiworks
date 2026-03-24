@@ -114,9 +114,10 @@ Deno.serve(async (req) => {
         // Fired when a Stripe Checkout session is completed
         const invoiceId = obj.metadata?.invoice_id;
         const sessionId = obj.id;
+        // Update payment session status
+        await supabase.from("payment_sessions").update({ status: "completed", updated_at: new Date().toISOString() }).eq("session_id", sessionId);
         if (!invoiceId) {
           console.warn("checkout.session.completed: no invoice_id in metadata, sessionId:", sessionId);
-          // Try to find by payment_reference
           await markInvoicePaidByReference(supabase, sessionId, "stripe", obj.payment_intent ?? sessionId, event.id);
           break;
         }
@@ -133,6 +134,10 @@ Deno.serve(async (req) => {
       }
 
       case "charge.failed": {
+        // Mark any pending session for this payment as failed
+        if (obj.payment_intent) {
+          await supabase.from("payment_sessions").update({ status: "failed", updated_at: new Date().toISOString() }).eq("session_id", obj.payment_intent);
+        }
         const invoiceId = obj.metadata?.invoice_id;
         const reason = obj.failure_message ?? obj.outcome?.seller_message ?? "Unknown reason";
         console.warn(`Charge failed for invoice ${invoiceId}: ${reason}`);

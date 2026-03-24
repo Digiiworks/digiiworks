@@ -42,6 +42,7 @@ type Invoice = {
   subtotal: number;
   tax_rate: number;
   total: number;
+  currency: string;
   due_date: string | null;
   send_date: string | null;
   notes: string | null;
@@ -96,6 +97,15 @@ const EMAIL_STATUS_ICON: Record<string, React.ReactNode> = {
 
 const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
+
+// Valid invoice status transitions — terminal states (paid, cancelled) have no outgoing transitions
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  draft:     ['sent', 'cancelled'],
+  sent:      ['paid', 'overdue', 'cancelled'],
+  overdue:   ['paid', 'cancelled'],
+  paid:      [],
+  cancelled: [],
+};
 
 const isPayableStatus = (status: Invoice['status']) => !['paid', 'cancelled'].includes(status);
 const isSentAlready = (status: string) => ['sent', 'overdue', 'paid'].includes(status);
@@ -152,6 +162,7 @@ export default function Invoices() {
   const [originalFormSnapshot, setOriginalFormSnapshot] = useState<string>('');
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [payingMethod, setPayingMethod] = useState<string | null>(null);
+  const [manualPayNotes, setManualPayNotes] = useState('');
 
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -357,6 +368,7 @@ export default function Invoices() {
     const { data: inv, error } = await supabase.from('invoices').insert({
       invoice_number: invoiceNumber, client_id: selectedCompany?.user_id ?? form.client_id,
       client_company_id: form.client_company_id || null,
+      currency: selectedCompany?.currency ?? 'USD',
       due_date: form.due_date || null, notes: form.notes || null,
       tax_rate: form.tax_rate, subtotal, total: grandTotal, status: 'draft' as const,
       send_date: sendDate ? format(sendDate, 'yyyy-MM-dd') : null,
@@ -468,12 +480,27 @@ export default function Invoices() {
     }
   };
 
-  const updateStatus = async (id: string, status: string) => {
-    const extra: any = { status };
-    if (status === 'paid') extra.paid_at = new Date().toISOString();
+  const updateStatus = async (id: string, newStatus: string) => {
+    const inv = invoices.find(i => i.id === id);
+    if (inv) {
+      const allowed = ALLOWED_TRANSITIONS[inv.status] ?? [];
+      if (!allowed.includes(newStatus)) {
+        toast({ title: 'Invalid status change', description: `Cannot transition from "${inv.status}" to "${newStatus}"`, variant: 'destructive' });
+        return;
+      }
+    }
+    const extra: any = { status: newStatus };
+    if (newStatus === 'paid') extra.paid_at = new Date().toISOString();
     const { error } = await supabase.from('invoices').update(extra).eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
-    toast({ title: `Status updated to ${status}` }); fetchAll();
+    // Audit log
+    supabase.from('audit_logs').insert({
+      resource_type: 'invoice', resource_id: id, action: 'status_changed',
+      actor_id: user?.id ?? null,
+      old_values: inv ? { status: inv.status } : null,
+      new_values: { status: newStatus },
+    }).then();
+    toast({ title: `Status updated to ${newStatus}` }); fetchAll();
   };
 
   const handleDelete = async () => {
@@ -528,12 +555,20 @@ export default function Invoices() {
         .update({ status: 'paid', paid_at: now, payment_method: 'manual' })
         .eq('id', payDialog.id);
       if (error) throw error;
+      // Audit log — record who marked it paid and any reference notes
+      supabase.from('audit_logs').insert({
+        resource_type: 'invoice', resource_id: payDialog.id, action: 'mark_paid_manual',
+        actor_id: user?.id ?? null,
+        old_values: { status: payDialog.status },
+        new_values: { status: 'paid', payment_method: 'manual', notes: manualPayNotes || null },
+      }).then();
       toast({ title: 'Invoice marked as paid (manual)', description: `${payDialog.invoice_number} has been marked as paid.` });
       fetchAll();
       if (showDetail?.id === payDialog.id) {
         setShowDetail({ ...payDialog, status: 'paid', paid_at: now, payment_method: 'manual' } as any);
       }
       setPayDialog(null);
+      setManualPayNotes('');
     } catch (err: any) {
       toast({ title: 'Failed to mark as paid', description: err.message, variant: 'destructive' });
     }
@@ -608,10 +643,26 @@ export default function Invoices() {
     if (!payable.length) { toast({ title: 'No unpaid invoices selected', variant: 'destructive' }); return; }
     setBulkLoading('paid');
     const now = new Date().toISOString();
+    const failed: string[] = [];
     for (const inv of payable) {
-      await supabase.from('invoices').update({ status: 'paid' as const, paid_at: now, payment_method: 'manual' as const }).eq('id', inv.id);
+      const { error } = await supabase.from('invoices').update({ status: 'paid' as const, paid_at: now, payment_method: 'manual' as const }).eq('id', inv.id);
+      if (error) {
+        failed.push(`${inv.invoice_number}: ${error.message}`);
+      } else {
+        supabase.from('audit_logs').insert({
+          resource_type: 'invoice', resource_id: inv.id, action: 'mark_paid_manual',
+          actor_id: user?.id ?? null,
+          old_values: { status: inv.status },
+          new_values: { status: 'paid', payment_method: 'manual' },
+        }).then();
+      }
     }
-    toast({ title: `${payable.length} invoice(s) marked as paid` });
+    const succeeded = payable.length - failed.length;
+    if (failed.length > 0) {
+      toast({ title: `${succeeded} paid, ${failed.length} failed`, description: failed.join(' | '), variant: 'destructive' });
+    } else {
+      toast({ title: `${succeeded} invoice(s) marked as paid` });
+    }
     setSelectedIds(new Set());
     setBulkLoading(null);
     fetchAll();
@@ -622,13 +673,21 @@ export default function Invoices() {
     if (!sendable.length) { toast({ title: 'No sendable invoices selected', variant: 'destructive' }); return; }
     setBulkLoading('send');
     let sent = 0;
+    const failed: string[] = [];
     for (const inv of sendable) {
       try {
-        await supabase.functions.invoke('send-invoice-email', { body: { invoice_id: inv.id, force_resend: true } });
+        const { error } = await supabase.functions.invoke('send-invoice-email', { body: { invoice_id: inv.id, force_resend: true } });
+        if (error) throw error;
         sent++;
-      } catch { /* skip failed */ }
+      } catch (err: any) {
+        failed.push(`${inv.invoice_number}: ${err?.message ?? 'send failed'}`);
+      }
     }
-    toast({ title: `${sent} reminder(s) sent` });
+    if (failed.length > 0) {
+      toast({ title: `${sent} sent, ${failed.length} failed`, description: failed.join(' | '), variant: 'destructive' });
+    } else {
+      toast({ title: `${sent} reminder(s) sent` });
+    }
     setSelectedIds(new Set());
     setBulkLoading(null);
     fetchAll();
@@ -639,10 +698,23 @@ export default function Invoices() {
     setBulkLoading('status');
     const extra: Record<string, unknown> = { status: newStatus };
     if (newStatus === 'paid') extra.paid_at = new Date().toISOString();
+    const failed: string[] = [];
     for (const id of selectedIds) {
-      await supabase.from('invoices').update(extra as any).eq('id', id);
+      const inv = invoices.find(i => i.id === id);
+      const allowed = ALLOWED_TRANSITIONS[inv?.status ?? ''] ?? [];
+      if (inv && !allowed.includes(newStatus)) {
+        failed.push(`${inv.invoice_number}: cannot move from "${inv.status}" to "${newStatus}"`);
+        continue;
+      }
+      const { error } = await supabase.from('invoices').update(extra as any).eq('id', id);
+      if (error) failed.push(`${inv?.invoice_number ?? id}: ${error.message}`);
     }
-    toast({ title: `${selectedIds.size} invoice(s) updated to ${newStatus}` });
+    const succeeded = selectedIds.size - failed.length;
+    if (failed.length > 0) {
+      toast({ title: `${succeeded} updated, ${failed.length} skipped`, description: failed.join(' | '), variant: 'destructive' });
+    } else {
+      toast({ title: `${succeeded} invoice(s) updated to ${newStatus}` });
+    }
     setSelectedIds(new Set());
     setBulkLoading(null);
     fetchAll();
@@ -1544,7 +1616,17 @@ export default function Invoices() {
 
                 {/* Manual */}
                 {isAdmin && (
-                  <div className="pt-2 border-t border-border/50">
+                  <div className="pt-2 border-t border-border/50 space-y-2">
+                    <div className="px-1">
+                      <Label className="text-[10px] text-muted-foreground font-mono uppercase tracking-wide">Payment reference / notes (optional)</Label>
+                      <Textarea
+                        value={manualPayNotes}
+                        onChange={e => setManualPayNotes(e.target.value)}
+                        placeholder="e.g. Bank transfer ref #12345, received 2026-03-24"
+                        rows={2}
+                        className="mt-1 text-xs font-mono resize-none"
+                      />
+                    </div>
                     <Button
                       variant="ghost"
                       className="w-full justify-start gap-3 h-10 font-mono text-xs text-muted-foreground hover:text-foreground"

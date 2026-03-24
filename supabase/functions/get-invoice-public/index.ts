@@ -71,15 +71,8 @@ Deno.serve(async (req) => {
       .eq("user_id", invoice.client_id)
       .single();
 
-    let currency = profile?.currency || "USD";
-    if (invoice.client_company_id) {
-      const { data: co } = await supabase
-        .from("client_companies")
-        .select("currency")
-        .eq("id", invoice.client_company_id)
-        .single();
-      if (co?.currency) currency = co.currency;
-    }
+    // Use currency stored on invoice (denormalized) — avoids stale data if company is deleted/updated
+    const currency = invoice.currency || profile?.currency || "USD";
 
     return new Response(
       JSON.stringify({

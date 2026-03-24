@@ -108,30 +108,36 @@ Deno.serve(async (req) => {
     const eventType = body.type;
     const payload = body.payload;
 
-    if (eventType === "payment.succeeded") {
-      const checkoutId = payload?.metadata?.checkoutId || payload?.checkoutId;
-      const invoiceId = payload?.metadata?.invoice_id;
+    const checkoutId = payload?.metadata?.checkoutId || payload?.checkoutId;
+    const invoiceId = payload?.metadata?.invoice_id;
 
-      let invoice;
-
+    // Helper: resolve invoice by id or payment_reference
+    const resolveInvoice = async () => {
       if (invoiceId) {
-        const { data } = await supabase
-          .from("invoices")
-          .select("id, status")
-          .eq("id", invoiceId)
-          .single();
-        invoice = data;
+        const { data } = await supabase.from("invoices").select("id, status, invoice_number").eq("id", invoiceId).single();
+        if (data) return data;
       }
-
-      if (!invoice && checkoutId) {
-        const { data } = await supabase
-          .from("invoices")
-          .select("id, status")
-          .eq("payment_reference", checkoutId)
-          .single();
-        invoice = data;
+      if (checkoutId) {
+        const { data } = await supabase.from("invoices").select("id, status, invoice_number").eq("payment_reference", checkoutId).single();
+        if (data) return data;
       }
+      return null;
+    };
 
+    // Helper: write to audit_logs (non-blocking)
+    const logAudit = (resourceId: string, action: string, oldVals: any, newVals: any) => {
+      supabase.from("audit_logs").insert({
+        resource_type: "invoice",
+        resource_id: resourceId,
+        action,
+        actor_id: null,
+        old_values: oldVals,
+        new_values: newVals,
+      }).then();
+    };
+
+    if (eventType === "payment.succeeded") {
+      const invoice = await resolveInvoice();
       if (invoice && invoice.status !== "paid") {
         await supabase
           .from("invoices")
@@ -142,9 +148,42 @@ Deno.serve(async (req) => {
             payment_reference: payload?.id || checkoutId,
           })
           .eq("id", invoice.id);
-
-        console.log(`Invoice ${invoice.id} marked as paid via Yoco`);
+        logAudit(invoice.id, "payment_succeeded", { status: invoice.status }, { status: "paid", gateway: "yoco", yoco_payment_id: payload?.id });
+        console.log(`Invoice ${invoice.invoice_number} (${invoice.id}) marked as paid via Yoco`);
+      } else if (invoice?.status === "paid") {
+        console.log(`Invoice ${invoice.id} already paid — idempotent skip`);
+      } else {
+        console.warn(`payment.succeeded: no invoice found for id=${invoiceId} checkoutId=${checkoutId}`);
       }
+
+    } else if (eventType === "payment.failed") {
+      const reason = payload?.failureReason ?? payload?.failure_reason ?? "Unknown reason";
+      console.warn(`Yoco payment.failed: invoiceId=${invoiceId}, reason=${reason}`);
+      const invoice = await resolveInvoice();
+      if (invoice) {
+        logAudit(invoice.id, "payment_failed", { status: invoice.status }, { gateway: "yoco", reason, yoco_payment_id: payload?.id });
+      }
+
+    } else if (eventType === "payment.cancelled") {
+      console.log(`Yoco payment.cancelled: invoiceId=${invoiceId}`);
+      const invoice = await resolveInvoice();
+      if (invoice) {
+        logAudit(invoice.id, "payment_cancelled", { status: invoice.status }, { gateway: "yoco", yoco_payment_id: payload?.id });
+      }
+
+    } else if (eventType === "payment.reversed" || eventType === "payment.refunded") {
+      const invoice = await resolveInvoice();
+      if (invoice && invoice.status === "paid") {
+        await supabase
+          .from("invoices")
+          .update({ status: "sent", paid_at: null, payment_method: null, payment_reference: null })
+          .eq("id", invoice.id);
+        logAudit(invoice.id, "payment_reversed", { status: "paid" }, { status: "sent", gateway: "yoco", yoco_payment_id: payload?.id });
+        console.log(`Invoice ${invoice.id} payment reversed — status reverted to sent`);
+      }
+
+    } else {
+      console.log(`Unhandled Yoco event type: ${eventType}`);
     }
 
     return new Response(JSON.stringify({ received: true }), {
