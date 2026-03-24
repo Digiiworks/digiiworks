@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -48,6 +48,26 @@ Deno.serve(async (req) => {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Rate limit: max 10 views per invoice per hour
+    const windowStart = new Date(Math.floor(Date.now() / 3_600_000) * 3_600_000).toISOString();
+    const rlKey = `invoice_view:${invoice_id}`;
+    const { data: existingRl } = await supabase
+      .from("rate_limit_checks")
+      .select("count")
+      .eq("key", rlKey)
+      .eq("window_start", windowStart)
+      .single();
+    if (existingRl && existingRl.count >= 10) {
+      return new Response(JSON.stringify({ error: "Too many requests. Please try again later." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    await supabase.from("rate_limit_checks").upsert(
+      { key: rlKey, window_start: windowStart, count: (existingRl?.count ?? 0) + 1 },
+      { onConflict: "key,window_start" }
     );
 
     const [invRes, itemsRes, settingsRes] = await Promise.all([

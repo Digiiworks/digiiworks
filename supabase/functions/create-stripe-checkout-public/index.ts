@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -60,6 +60,26 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Rate limit: max 5 checkout sessions per invoice per day
+    const dayStart = new Date(new Date().toDateString()).toISOString();
+    const rlKey = `checkout:${invoiceId}`;
+    const { data: existingRl } = await supabase
+      .from("rate_limit_checks")
+      .select("count")
+      .eq("key", rlKey)
+      .eq("window_start", dayStart)
+      .single();
+    if (existingRl && existingRl.count >= 5) {
+      return new Response("Too many checkout attempts. Please try again tomorrow.", {
+        status: 429,
+        headers: corsHeaders,
+      });
+    }
+    await supabase.from("rate_limit_checks").upsert(
+      { key: rlKey, window_start: dayStart, count: (existingRl?.count ?? 0) + 1 },
+      { onConflict: "key,window_start" }
+    );
 
     // Fetch invoice
     const { data: invoice, error: invErr } = await supabase

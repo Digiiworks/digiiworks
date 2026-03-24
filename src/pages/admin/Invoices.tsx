@@ -354,6 +354,10 @@ export default function Invoices() {
       toast({ title: 'Fill in client company and at least one line item', variant: 'destructive' });
       return;
     }
+    if (form.due_date && new Date(form.due_date) < new Date(new Date().toDateString())) {
+      toast({ title: 'Due date must not be in the past', variant: 'destructive' });
+      return;
+    }
     const selectedCompany = clientCompanies.find(cc => cc.id === form.client_company_id);
     setSaving(true);
 
@@ -430,6 +434,10 @@ export default function Invoices() {
     if (!editingInvoice) return;
     if (!form.client_company_id || lineItems.every(li => !li.description)) {
       toast({ title: 'Fill in client company and at least one line item', variant: 'destructive' });
+      return;
+    }
+    if (form.due_date && new Date(form.due_date) < new Date(new Date().toDateString())) {
+      toast({ title: 'Due date must not be in the past', variant: 'destructive' });
       return;
     }
     const selectedCompany = clientCompanies.find(cc => cc.id === form.client_company_id);
@@ -1167,6 +1175,7 @@ export default function Invoices() {
                       mode="single"
                       selected={form.due_date ? new Date(form.due_date + 'T00:00:00') : undefined}
                       onSelect={(date) => setForm(f => ({ ...f, due_date: date ? format(date, 'yyyy-MM-dd') : '' }))}
+                      fromDate={new Date(new Date().toDateString())}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />
@@ -1314,7 +1323,7 @@ export default function Invoices() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={form.due_date ? new Date(form.due_date + 'T00:00:00') : undefined} onSelect={(date) => setForm(f => ({ ...f, due_date: date ? format(date, 'yyyy-MM-dd') : '' }))} initialFocus className={cn("p-3 pointer-events-auto")} />
+                    <Calendar mode="single" selected={form.due_date ? new Date(form.due_date + 'T00:00:00') : undefined} onSelect={(date) => setForm(f => ({ ...f, due_date: date ? format(date, 'yyyy-MM-dd') : '' }))} fromDate={new Date(new Date().toDateString())} initialFocus className={cn("p-3 pointer-events-auto")} />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -1679,10 +1688,10 @@ export default function Invoices() {
       <ConfirmDialog
         open={!!resendAfterEditId}
         onOpenChange={() => setResendAfterEditId(null)}
-        title="Invoice Updated"
-        description="This invoice has been sent before. Would you like to resend the updated version to the client?"
-        confirmLabel="Resend Now"
-        cancelLabel="Not Now"
+        title="Invoice updated — resend to client?"
+        description="The invoice has been updated. Send the client a fresh copy with the latest changes?"
+        confirmLabel="Yes, resend"
+        cancelLabel="No, save only"
         variant="default"
         onConfirm={() => { handleSendEmail(resendAfterEditId!, true); setResendAfterEditId(null); }}
       />

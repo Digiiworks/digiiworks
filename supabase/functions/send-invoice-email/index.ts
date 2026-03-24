@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6.9.16";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -299,9 +299,12 @@ notesBlock +
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const smtpHost = Deno.env.get("SMTP_HOST")!.trim();
-  const smtpUser = Deno.env.get("SMTP_USER")!.trim();
-  const smtpPass = Deno.env.get("SMTP_PASS")!.trim();
+  const smtpHost = Deno.env.get("SMTP_HOST")?.trim();
+  const smtpUser = Deno.env.get("SMTP_USER")?.trim();
+  const smtpPass = Deno.env.get("SMTP_PASS")?.trim();
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    throw new Error("Email service not configured: SMTP_HOST, SMTP_USER and SMTP_PASS must all be set");
+  }
 
   const transporter = nodemailer.createTransport({
     host: smtpHost,

@@ -156,6 +156,18 @@ const Contact = () => {
         ) : (
         <div className="glass-card p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
+            {/* Error summary */}
+            {Object.keys(errors).length > 0 && (
+              <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 space-y-1">
+                <p className="font-mono text-xs font-semibold text-destructive">Please fix the following:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  {Object.values(errors).map((msg, i) => (
+                    <li key={i} className="font-mono text-xs text-destructive">{msg}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Honeypot — hidden from users, bots fill it */}
             <div className="absolute opacity-0 h-0 overflow-hidden" aria-hidden="true" tabIndex={-1}>
               <label htmlFor="website_url_hp">Website</label>
