@@ -210,7 +210,7 @@ function OnboardingForm({ config }: { config: NonNullable<ReturnType<typeof getS
     <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
       <div className="relative mx-auto max-w-3xl px-6 py-12 md:py-20">
         {/* Header */}
-        <div className="mb-8 text-center">
+        <div className="mb-8 pt-[50px] text-center">
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-2">{config.headerLabel}</p>
           <h1 className="font-mono text-2xl font-bold text-foreground md:text-4xl">{config.headline}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{config.subtitle}</p>
