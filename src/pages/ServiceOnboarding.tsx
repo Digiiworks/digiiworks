@@ -52,9 +52,10 @@ function OnboardingForm({ config, preselectedPackage }: { config: NonNullable<Re
   const [honeypot, setHoneypot] = useState('');
 
   // Quiz answers — pre-select budget if package query param provided
+  const packageMap = PACKAGE_MAPS[config.serviceSlug] || {};
   const [answers, setAnswers] = useState<Record<string, string | string[]>>(() => {
-    if (preselectedPackage && PACKAGE_MAP[preselectedPackage]) {
-      return { budget: PACKAGE_MAP[preselectedPackage] };
+    if (preselectedPackage && packageMap[preselectedPackage]) {
+      return { budget: packageMap[preselectedPackage] };
     }
     return {};
   });
