@@ -74,8 +74,8 @@ const defaultData: BankingInfo = {
   tracking: { google_pixel_id: '', meta_pixel_id: '' },
   payment_methods: { stripe_enabled: false, yoco_enabled: true },
   socials: { instagram: '', facebook: '', linkedin: '', github: '' },
+  branding: { apple_touch_icon_url: '/apple-touch-icon.png', favicon_url: '/favicon.svg' },
 };
-
 const SettingsPage = () => {
   const [data, setData] = useState<BankingInfo>(defaultData);
   const [saving, setSaving] = useState(false);
