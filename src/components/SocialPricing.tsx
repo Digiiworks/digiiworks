@@ -60,8 +60,15 @@ const plans = [
 
 const ANNUAL_DISCOUNT = 0.15;
 
+const PACKAGE_MAP: Record<string, string> = {
+  Starter: 'Starter — $297/mo',
+  Growth: 'Growth — $597/mo',
+  Power: 'Power — $997/mo',
+};
+
 const SocialPricing = () => {
   const [annual, setAnnual] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <motion.section
