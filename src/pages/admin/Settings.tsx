@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail, CreditCard, Share2 } from 'lucide-react';
+import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail, CreditCard, Share2, Image, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PAGE_KEY = 'payment_settings';
