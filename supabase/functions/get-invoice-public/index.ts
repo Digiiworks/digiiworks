@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -36,8 +36,8 @@ Deno.serve(async (req) => {
     }
 
     // Verify HMAC token
-    const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const expected = await hmacSign(invoice_id, secret);
+    const tokenSecret = Deno.env.get("INVOICE_TOKEN_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const expected = await hmacSign(invoice_id, tokenSecret);
     if (token !== expected) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 403,
@@ -47,7 +47,27 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      secret
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Rate limit: max 10 views per invoice per hour
+    const windowStart = new Date(Math.floor(Date.now() / 3_600_000) * 3_600_000).toISOString();
+    const rlKey = `invoice_view:${invoice_id}`;
+    const { data: existingRl } = await supabase
+      .from("rate_limit_checks")
+      .select("count")
+      .eq("key", rlKey)
+      .eq("window_start", windowStart)
+      .single();
+    if (existingRl && existingRl.count >= 10) {
+      return new Response(JSON.stringify({ error: "Too many requests. Please try again later." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    await supabase.from("rate_limit_checks").upsert(
+      { key: rlKey, window_start: windowStart, count: (existingRl?.count ?? 0) + 1 },
+      { onConflict: "key,window_start" }
     );
 
     const [invRes, itemsRes, settingsRes] = await Promise.all([
@@ -71,15 +91,8 @@ Deno.serve(async (req) => {
       .eq("user_id", invoice.client_id)
       .single();
 
-    let currency = profile?.currency || "USD";
-    if (invoice.client_company_id) {
-      const { data: co } = await supabase
-        .from("client_companies")
-        .select("currency")
-        .eq("id", invoice.client_company_id)
-        .single();
-      if (co?.currency) currency = co.currency;
-    }
+    // Use currency stored on invoice (denormalized) — avoids stale data if company is deleted/updated
+    const currency = invoice.currency || profile?.currency || "USD";
 
     return new Response(
       JSON.stringify({

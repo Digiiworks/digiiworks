@@ -363,21 +363,21 @@ const GetStarted = () => {
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1 block font-mono text-xs text-muted-foreground">Name *</label>
-                      <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+                      <label htmlFor="gs-name" className="mb-1 block font-mono text-xs text-muted-foreground">Name *</label>
+                      <Input id="gs-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
                     </div>
                     <div>
-                      <label className="mb-1 block font-mono text-xs text-muted-foreground">Email *</label>
-                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
+                      <label htmlFor="gs-email" className="mb-1 block font-mono text-xs text-muted-foreground">Email *</label>
+                      <Input id="gs-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
                     </div>
                   </div>
                   <div>
-                    <label className="mb-1 block font-mono text-xs text-muted-foreground">Current website URL (optional)</label>
-                    <Input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://yoursite.com" />
+                    <label htmlFor="gs-website" className="mb-1 block font-mono text-xs text-muted-foreground">Current website URL (optional)</label>
+                    <Input id="gs-website" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://yoursite.com" />
                   </div>
                   <div>
-                    <label className="mb-1 block font-mono text-xs text-muted-foreground">Anything else? (optional)</label>
-                    <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tell us more about your project..." rows={3} />
+                    <label htmlFor="gs-message" className="mb-1 block font-mono text-xs text-muted-foreground">Anything else? (optional)</label>
+                    <Textarea id="gs-message" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tell us more about your project..." rows={3} />
                   </div>
                 </div>
               )}

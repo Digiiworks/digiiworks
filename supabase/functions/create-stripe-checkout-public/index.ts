@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -48,8 +48,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify HMAC token
-    const expectedToken = await hmacSign(invoiceId, serviceRoleKey);
+    // Verify HMAC token using dedicated secret (falls back to service role key for backward compat)
+    const tokenSecret = Deno.env.get("INVOICE_TOKEN_SECRET") || serviceRoleKey;
+    const expectedToken = await hmacSign(invoiceId, tokenSecret);
     if (token !== expectedToken) {
       return new Response("Invalid or expired link", {
         status: 403,
@@ -59,6 +60,26 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Rate limit: max 5 checkout sessions per invoice per day
+    const dayStart = new Date(new Date().toDateString()).toISOString();
+    const rlKey = `checkout:${invoiceId}`;
+    const { data: existingRl } = await supabase
+      .from("rate_limit_checks")
+      .select("count")
+      .eq("key", rlKey)
+      .eq("window_start", dayStart)
+      .single();
+    if (existingRl && existingRl.count >= 5) {
+      return new Response("Too many checkout attempts. Please try again tomorrow.", {
+        status: 429,
+        headers: corsHeaders,
+      });
+    }
+    await supabase.from("rate_limit_checks").upsert(
+      { key: rlKey, window_start: dayStart, count: (existingRl?.count ?? 0) + 1 },
+      { onConflict: "key,window_start" }
+    );
 
     // Fetch invoice
     const { data: invoice, error: invErr } = await supabase
@@ -72,7 +93,7 @@ Deno.serve(async (req) => {
     }
 
     if (invoice.status === "paid" || invoice.status === "cancelled") {
-      const baseUrl = "https://digiiworks.lovable.app";
+      const baseUrl = Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app";
       return Response.redirect(
         `${baseUrl}/client?payment=already_${invoice.status}&invoice=${invoice.invoice_number}`,
         302
@@ -86,19 +107,11 @@ Deno.serve(async (req) => {
       .eq("user_id", invoice.client_id)
       .single();
 
-    // Determine currency
-    let currency = "USD";
-    if (invoice.client_company_id) {
-      const { data: company } = await supabase
-        .from("client_companies")
-        .select("currency")
-        .eq("id", invoice.client_company_id)
-        .single();
-      if (company?.currency) currency = company.currency;
-    }
+    // Use currency stored on invoice (denormalized at creation time)
+    const currency = invoice.currency || "USD";
 
     const amountInCents = Math.round(Number(invoice.total) * 100);
-    const baseUrl = "https://digiiworks.lovable.app";
+    const baseUrl = Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app";
 
     // Create Stripe Checkout Session
     const params = new URLSearchParams();
@@ -141,6 +154,14 @@ Deno.serve(async (req) => {
       .from("invoices")
       .update({ payment_reference: session.id })
       .eq("id", invoice.id);
+
+    // Log the checkout session for reconciliation tracking
+    await supabase.from("payment_sessions").upsert({
+      invoice_id: invoice.id,
+      gateway: "stripe",
+      session_id: session.id,
+      status: "pending",
+    }, { onConflict: "session_id" });
 
     // Redirect to Stripe checkout
     return Response.redirect(session.url, 302);

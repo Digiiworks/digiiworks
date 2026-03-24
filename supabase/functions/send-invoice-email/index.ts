@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6.9.16";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -299,9 +299,12 @@ notesBlock +
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const smtpHost = Deno.env.get("SMTP_HOST")!.trim();
-  const smtpUser = Deno.env.get("SMTP_USER")!.trim();
-  const smtpPass = Deno.env.get("SMTP_PASS")!.trim();
+  const smtpHost = Deno.env.get("SMTP_HOST")?.trim();
+  const smtpUser = Deno.env.get("SMTP_USER")?.trim();
+  const smtpPass = Deno.env.get("SMTP_PASS")?.trim();
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    throw new Error("Email service not configured: SMTP_HOST, SMTP_USER and SMTP_PASS must all be set");
+  }
 
   const transporter = nodemailer.createTransport({
     host: smtpHost,
@@ -378,7 +381,8 @@ Deno.serve(async (req) => {
             .single();
           if (!client?.email) throw new Error("No client email");
 
-          let companyCurrency = 'USD';
+          // Use currency stored on invoice (denormalized at creation time) — fall back to client_companies only if missing
+          let companyCurrency: string = (inv as any).currency ?? 'USD';
           let ccEmails: string[] = [];
           if (inv.client_company_id) {
             const { data: company } = await supabase
@@ -386,8 +390,12 @@ Deno.serve(async (req) => {
               .select("currency, cc_emails")
               .eq("id", inv.client_company_id)
               .single();
-            if (company?.currency) companyCurrency = company.currency;
-            if (company?.cc_emails) ccEmails = company.cc_emails;
+            if (!((inv as any).currency) && company?.currency) companyCurrency = company.currency;
+            if (company?.cc_emails) {
+              // Validate CC addresses before including to prevent header injection
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              ccEmails = (company.cc_emails as string[]).filter((e: string) => e && emailRegex.test(e.trim()));
+            }
           }
 
           const { data: items } = await supabase
@@ -395,8 +403,9 @@ Deno.serve(async (req) => {
             .select("*")
             .eq("invoice_id", inv.id);
 
-          const pdfToken = await hmacSign(inv.id, serviceRoleKey);
-          const stripeToken = await hmacSign(inv.id, serviceRoleKey);
+          const tokenSecret = Deno.env.get("INVOICE_TOKEN_SECRET") || serviceRoleKey;
+          const pdfToken = await hmacSign(inv.id, tokenSecret);
+          const stripeToken = await hmacSign(inv.id, tokenSecret);
           const stripeUrl = `${supabaseUrl}/functions/v1/create-stripe-checkout-public?invoice_id=${inv.id}&token=${stripeToken}`;
           const html = buildEmailHTML(inv, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings, stripeUrl);
           const allRecipients = [client.email, ...ccEmails.filter(e => e && e !== client.email)].join(", ");
@@ -568,8 +577,9 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("invoice_id", invoice_id);
 
-    const pdfToken = await hmacSign(invoice_id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const stripeToken = await hmacSign(invoice_id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const tokenSecret2 = Deno.env.get("INVOICE_TOKEN_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const pdfToken = await hmacSign(invoice_id, tokenSecret2);
+    const stripeToken = await hmacSign(invoice_id, tokenSecret2);
     const stripeUrl = `${supabaseUrl}/functions/v1/create-stripe-checkout-public?invoice_id=${invoice_id}&token=${stripeToken}`;
     const html = buildEmailHTML(invoice, items || [], client, dashboardBaseUrl, companyCurrency, pdfToken, paymentSettings, stripeUrl);
     const allRecipients = [client.email, ...ccEmails.filter(e => e && e !== client.email)].join(", ");

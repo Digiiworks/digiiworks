@@ -38,10 +38,12 @@ type Invoice = {
   invoice_number: string;
   client_id: string;
   client_company_id: string | null;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'partial';
+  paid_amount: number;
   subtotal: number;
   tax_rate: number;
   total: number;
+  currency: string;
   due_date: string | null;
   send_date: string | null;
   notes: string | null;
@@ -79,11 +81,13 @@ type InvoiceEmail = {
 type Profile = { user_id: string; display_name: string | null; email: string | null; company: string | null; currency?: string };
 type ClientCompanyOption = { id: string; user_id: string; company_name: string; currency: string; display_name: string | null; email: string | null };
 type Product = { id: string; name: string; price_usd: number; price_zar: number; price_thb: number; description?: string | null; category?: string | null };
+type ExchangeRate = { currency_code: string; rate_vs_usd: number; margin_pct: number };
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   sent: 'bg-primary/80 text-primary-foreground',
   paid: 'bg-primary/20 text-primary',
+  partial: 'bg-yellow-500/20 text-yellow-400',
   overdue: 'bg-orange-500/20 text-orange-400',
   cancelled: 'bg-muted text-muted-foreground line-through',
 };
@@ -94,10 +98,21 @@ const EMAIL_STATUS_ICON: Record<string, React.ReactNode> = {
   scheduled: <Clock className="h-3.5 w-3.5 text-blue-400" />,
 };
 
-const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
+const STATUSES = ['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
 
+// Valid invoice status transitions — terminal states (paid, cancelled) have no outgoing transitions
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  draft:     ['sent', 'cancelled'],
+  sent:      ['paid', 'partial', 'overdue', 'cancelled'],
+  overdue:   ['paid', 'partial', 'cancelled'],
+  partial:   ['paid', 'cancelled'],
+  paid:      [],
+  cancelled: [],
+};
+
 const isPayableStatus = (status: Invoice['status']) => !['paid', 'cancelled'].includes(status);
+const isPartialStatus = (status: Invoice['status']) => status === 'partial';
 const isSentAlready = (status: string) => ['sent', 'overdue', 'paid'].includes(status);
 
 const fmtCurrency = (amount: number, currency: string = 'USD') => {
@@ -126,6 +141,7 @@ export default function Invoices() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [clientCompanies, setClientCompanies] = useState<ClientCompanyOption[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [exchangeRates, setExchangeRates] = useState<Map<string, ExchangeRate>>(new Map());
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -152,6 +168,8 @@ export default function Invoices() {
   const [originalFormSnapshot, setOriginalFormSnapshot] = useState<string>('');
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [payingMethod, setPayingMethod] = useState<string | null>(null);
+  const [manualPayNotes, setManualPayNotes] = useState('');
+  const [partialAmount, setPartialAmount] = useState('');
 
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -168,13 +186,17 @@ export default function Invoices() {
     setLoading(true);
     setFetchError(false);
     try {
-      const [invRes, profRes, prodRes, compRes, paySettingsRes] = await Promise.all([
+      const [invRes, profRes, prodRes, compRes, paySettingsRes, ratesRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
         supabase.from('profiles').select('user_id, display_name, email, company, currency'),
         supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
         supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
+        supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
       ]);
+      if (ratesRes.data) {
+        setExchangeRates(new Map((ratesRes.data as ExchangeRate[]).map(r => [r.currency_code, r])));
+      }
       if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
       const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
       const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
@@ -312,9 +334,17 @@ export default function Invoices() {
     });
   };
 
-  const getProductPrice = (p: Product, currency: string = 'USD') => {
-    if (currency === 'ZAR') return p.price_zar || p.price_usd;
-    if (currency === 'THB') return p.price_thb || p.price_usd;
+  const getProductPrice = (p: Product, currency: string = 'USD'): number => {
+    if (currency === 'ZAR') {
+      if (p.price_zar) return p.price_zar;
+      const r = exchangeRates.get('ZAR');
+      if (r) return Math.round(p.price_usd * r.rate_vs_usd * (1 + r.margin_pct / 100) * 100) / 100;
+    }
+    if (currency === 'THB') {
+      if (p.price_thb) return p.price_thb;
+      const r = exchangeRates.get('THB');
+      if (r) return Math.round(p.price_usd * r.rate_vs_usd * (1 + r.margin_pct / 100) * 100) / 100;
+    }
     return p.price_usd;
   };
 
@@ -331,21 +361,37 @@ export default function Invoices() {
     });
   };
 
-  const subtotal = lineItems.reduce((s, li) => s + li.total, 0);
-  const taxAmount = subtotal * (form.tax_rate / 100);
-  const grandTotal = subtotal + taxAmount;
-  const nextNumber = `INV-${String((invoices.length || 0) + 1).padStart(4, '0')}`;
+  // Use integer cent arithmetic to avoid floating-point rounding on tax
+  const subtotalCents = lineItems.reduce((s, li) => s + Math.round(li.total * 100), 0);
+  const taxCents = Math.round((subtotalCents * form.tax_rate) / 100);
+  const grandTotalCents = subtotalCents + taxCents;
+  const subtotal = subtotalCents / 100;
+  const grandTotal = grandTotalCents / 100;
 
   const handleCreate = async () => {
     if (!form.client_company_id || lineItems.every(li => !li.description)) {
       toast({ title: 'Fill in client company and at least one line item', variant: 'destructive' });
       return;
     }
+    if (form.due_date && new Date(form.due_date) < new Date(new Date().toDateString())) {
+      toast({ title: 'Due date must not be in the past', variant: 'destructive' });
+      return;
+    }
     const selectedCompany = clientCompanies.find(cc => cc.id === form.client_company_id);
     setSaving(true);
+
+    // Generate invoice number atomically via DB sequence (race-condition safe)
+    const { data: generatedNumber, error: numErr } = await supabase.rpc('next_invoice_number');
+    if (numErr || !generatedNumber) {
+      toast({ title: 'Error generating invoice number', description: numErr?.message, variant: 'destructive' });
+      setSaving(false); return;
+    }
+    const invoiceNumber = generatedNumber as string;
+
     const { data: inv, error } = await supabase.from('invoices').insert({
-      invoice_number: nextNumber, client_id: selectedCompany?.user_id ?? form.client_id,
+      invoice_number: invoiceNumber, client_id: selectedCompany?.user_id ?? form.client_id,
       client_company_id: form.client_company_id || null,
+      currency: selectedCompany?.currency ?? 'USD',
       due_date: form.due_date || null, notes: form.notes || null,
       tax_rate: form.tax_rate, subtotal, total: grandTotal, status: 'draft' as const,
       send_date: sendDate ? format(sendDate, 'yyyy-MM-dd') : null,
@@ -364,7 +410,7 @@ export default function Invoices() {
       const { error: itemErr } = await supabase.from('invoice_items').insert(items);
       if (itemErr) toast({ title: 'Error adding line items', description: itemErr.message, variant: 'destructive' });
     }
-    toast({ title: `Invoice ${nextNumber} created` });
+    toast({ title: `Invoice ${invoiceNumber} created` });
     setSaving(false); setShowCreate(false); resetForm(); fetchAll();
   };
 
@@ -407,6 +453,10 @@ export default function Invoices() {
     if (!editingInvoice) return;
     if (!form.client_company_id || lineItems.every(li => !li.description)) {
       toast({ title: 'Fill in client company and at least one line item', variant: 'destructive' });
+      return;
+    }
+    if (form.due_date && new Date(form.due_date) < new Date(new Date().toDateString())) {
+      toast({ title: 'Due date must not be in the past', variant: 'destructive' });
       return;
     }
     const selectedCompany = clientCompanies.find(cc => cc.id === form.client_company_id);
@@ -457,12 +507,27 @@ export default function Invoices() {
     }
   };
 
-  const updateStatus = async (id: string, status: string) => {
-    const extra: any = { status };
-    if (status === 'paid') extra.paid_at = new Date().toISOString();
+  const updateStatus = async (id: string, newStatus: string) => {
+    const inv = invoices.find(i => i.id === id);
+    if (inv) {
+      const allowed = ALLOWED_TRANSITIONS[inv.status] ?? [];
+      if (!allowed.includes(newStatus)) {
+        toast({ title: 'Invalid status change', description: `Cannot transition from "${inv.status}" to "${newStatus}"`, variant: 'destructive' });
+        return;
+      }
+    }
+    const extra: any = { status: newStatus };
+    if (newStatus === 'paid') extra.paid_at = new Date().toISOString();
     const { error } = await supabase.from('invoices').update(extra).eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
-    toast({ title: `Status updated to ${status}` }); fetchAll();
+    // Audit log
+    supabase.from('audit_logs').insert({
+      resource_type: 'invoice', resource_id: id, action: 'status_changed',
+      actor_id: user?.id ?? null,
+      old_values: inv ? { status: inv.status } : null,
+      new_values: { status: newStatus },
+    }).then();
+    toast({ title: `Status updated to ${newStatus}` }); fetchAll();
   };
 
   const handleDelete = async () => {
@@ -517,14 +582,52 @@ export default function Invoices() {
         .update({ status: 'paid', paid_at: now, payment_method: 'manual' })
         .eq('id', payDialog.id);
       if (error) throw error;
+      // Audit log — record who marked it paid and any reference notes
+      supabase.from('audit_logs').insert({
+        resource_type: 'invoice', resource_id: payDialog.id, action: 'mark_paid_manual',
+        actor_id: user?.id ?? null,
+        old_values: { status: payDialog.status },
+        new_values: { status: 'paid', payment_method: 'manual', notes: manualPayNotes || null },
+      }).then();
       toast({ title: 'Invoice marked as paid (manual)', description: `${payDialog.invoice_number} has been marked as paid.` });
       fetchAll();
       if (showDetail?.id === payDialog.id) {
         setShowDetail({ ...payDialog, status: 'paid', paid_at: now, payment_method: 'manual' } as any);
       }
       setPayDialog(null);
+      setManualPayNotes('');
     } catch (err: any) {
       toast({ title: 'Failed to mark as paid', description: err.message, variant: 'destructive' });
+    }
+    setPayingMethod(null);
+  };
+
+  const handlePartialPay = async () => {
+    if (!payDialog) return;
+    const amount = parseFloat(partialAmount);
+    if (isNaN(amount) || amount <= 0 || amount >= payDialog.total) {
+      toast({ title: 'Enter a valid partial amount (must be less than the invoice total)', variant: 'destructive' });
+      return;
+    }
+    setPayingMethod('partial');
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: 'partial', paid_amount: amount, payment_method: 'manual' })
+        .eq('id', payDialog.id);
+      if (error) throw error;
+      supabase.from('audit_logs').insert({
+        resource_type: 'invoice', resource_id: payDialog.id, action: 'partial_payment',
+        actor_id: user?.id ?? null,
+        old_values: { status: payDialog.status, paid_amount: payDialog.paid_amount },
+        new_values: { status: 'partial', paid_amount: amount, payment_method: 'manual' },
+      }).then();
+      toast({ title: `Partial payment of ${fmtCurrency(amount, payDialog.currency)} recorded` });
+      fetchAll();
+      setPayDialog(null);
+      setPartialAmount('');
+    } catch (err: any) {
+      toast({ title: 'Failed to record partial payment', description: err.message, variant: 'destructive' });
     }
     setPayingMethod(null);
   };
@@ -597,10 +700,26 @@ export default function Invoices() {
     if (!payable.length) { toast({ title: 'No unpaid invoices selected', variant: 'destructive' }); return; }
     setBulkLoading('paid');
     const now = new Date().toISOString();
+    const failed: string[] = [];
     for (const inv of payable) {
-      await supabase.from('invoices').update({ status: 'paid' as const, paid_at: now, payment_method: 'manual' as const }).eq('id', inv.id);
+      const { error } = await supabase.from('invoices').update({ status: 'paid' as const, paid_at: now, payment_method: 'manual' as const }).eq('id', inv.id);
+      if (error) {
+        failed.push(`${inv.invoice_number}: ${error.message}`);
+      } else {
+        supabase.from('audit_logs').insert({
+          resource_type: 'invoice', resource_id: inv.id, action: 'mark_paid_manual',
+          actor_id: user?.id ?? null,
+          old_values: { status: inv.status },
+          new_values: { status: 'paid', payment_method: 'manual' },
+        }).then();
+      }
     }
-    toast({ title: `${payable.length} invoice(s) marked as paid` });
+    const succeeded = payable.length - failed.length;
+    if (failed.length > 0) {
+      toast({ title: `${succeeded} paid, ${failed.length} failed`, description: failed.join(' | '), variant: 'destructive' });
+    } else {
+      toast({ title: `${succeeded} invoice(s) marked as paid` });
+    }
     setSelectedIds(new Set());
     setBulkLoading(null);
     fetchAll();
@@ -611,13 +730,21 @@ export default function Invoices() {
     if (!sendable.length) { toast({ title: 'No sendable invoices selected', variant: 'destructive' }); return; }
     setBulkLoading('send');
     let sent = 0;
+    const failed: string[] = [];
     for (const inv of sendable) {
       try {
-        await supabase.functions.invoke('send-invoice-email', { body: { invoice_id: inv.id, force_resend: true } });
+        const { error } = await supabase.functions.invoke('send-invoice-email', { body: { invoice_id: inv.id, force_resend: true } });
+        if (error) throw error;
         sent++;
-      } catch { /* skip failed */ }
+      } catch (err: any) {
+        failed.push(`${inv.invoice_number}: ${err?.message ?? 'send failed'}`);
+      }
     }
-    toast({ title: `${sent} reminder(s) sent` });
+    if (failed.length > 0) {
+      toast({ title: `${sent} sent, ${failed.length} failed`, description: failed.join(' | '), variant: 'destructive' });
+    } else {
+      toast({ title: `${sent} reminder(s) sent` });
+    }
     setSelectedIds(new Set());
     setBulkLoading(null);
     fetchAll();
@@ -628,10 +755,23 @@ export default function Invoices() {
     setBulkLoading('status');
     const extra: Record<string, unknown> = { status: newStatus };
     if (newStatus === 'paid') extra.paid_at = new Date().toISOString();
+    const failed: string[] = [];
     for (const id of selectedIds) {
-      await supabase.from('invoices').update(extra as any).eq('id', id);
+      const inv = invoices.find(i => i.id === id);
+      const allowed = ALLOWED_TRANSITIONS[inv?.status ?? ''] ?? [];
+      if (inv && !allowed.includes(newStatus)) {
+        failed.push(`${inv.invoice_number}: cannot move from "${inv.status}" to "${newStatus}"`);
+        continue;
+      }
+      const { error } = await supabase.from('invoices').update(extra as any).eq('id', id);
+      if (error) failed.push(`${inv?.invoice_number ?? id}: ${error.message}`);
     }
-    toast({ title: `${selectedIds.size} invoice(s) updated to ${newStatus}` });
+    const succeeded = selectedIds.size - failed.length;
+    if (failed.length > 0) {
+      toast({ title: `${succeeded} updated, ${failed.length} skipped`, description: failed.join(' | '), variant: 'destructive' });
+    } else {
+      toast({ title: `${succeeded} invoice(s) updated to ${newStatus}` });
+    }
     setSelectedIds(new Set());
     setBulkLoading(null);
     fetchAll();
@@ -980,6 +1120,9 @@ export default function Invoices() {
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
                         <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>{fmtCurrency(inv.total, inv.currency)}</span>
+                        {inv.status === 'partial' && (
+                          <span className="block text-[10px] text-yellow-400">{fmtCurrency(inv.total - inv.paid_amount, inv.currency)} remaining</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -1084,6 +1227,7 @@ export default function Invoices() {
                       mode="single"
                       selected={form.due_date ? new Date(form.due_date + 'T00:00:00') : undefined}
                       onSelect={(date) => setForm(f => ({ ...f, due_date: date ? format(date, 'yyyy-MM-dd') : '' }))}
+                      fromDate={new Date(new Date().toDateString())}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />
@@ -1231,7 +1375,7 @@ export default function Invoices() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={form.due_date ? new Date(form.due_date + 'T00:00:00') : undefined} onSelect={(date) => setForm(f => ({ ...f, due_date: date ? format(date, 'yyyy-MM-dd') : '' }))} initialFocus className={cn("p-3 pointer-events-auto")} />
+                    <Calendar mode="single" selected={form.due_date ? new Date(form.due_date + 'T00:00:00') : undefined} onSelect={(date) => setForm(f => ({ ...f, due_date: date ? format(date, 'yyyy-MM-dd') : '' }))} fromDate={new Date(new Date().toDateString())} initialFocus className={cn("p-3 pointer-events-auto")} />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -1334,6 +1478,12 @@ export default function Invoices() {
                 <div><span className="text-muted-foreground">Client:</span> {showDetail.client_name}</div>
                 <div><span className="text-muted-foreground">Status:</span> <Badge className={`${STATUS_COLORS[showDetail.status]} border-0 capitalize`}>{showDetail.status}</Badge></div>
                 <div><span className="text-muted-foreground">Due:</span> {showDetail.due_date ? format(new Date(showDetail.due_date), 'MMM d, yyyy') : '—'}</div>
+                {showDetail.status === 'partial' && (
+                  <>
+                    <div><span className="text-muted-foreground">Paid so far:</span> <span className="text-yellow-400 font-mono">{fmtCurrency(showDetail.paid_amount, showDetail.currency)}</span></div>
+                    <div><span className="text-muted-foreground">Remaining:</span> <span className="text-orange-400 font-mono">{fmtCurrency(showDetail.total - showDetail.paid_amount, showDetail.currency)}</span></div>
+                  </>
+                )}
                 <div><span className="text-muted-foreground">Created:</span> {format(new Date(showDetail.created_at), 'MMM d, yyyy')}</div>
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Send Date:</span>{' '}
@@ -1533,7 +1683,42 @@ export default function Invoices() {
 
                 {/* Manual */}
                 {isAdmin && (
-                  <div className="pt-2 border-t border-border/50">
+                  <div className="pt-2 border-t border-border/50 space-y-2">
+                    <div className="px-1">
+                      <Label className="text-[10px] text-muted-foreground font-mono uppercase tracking-wide">Payment reference / notes (optional)</Label>
+                      <Textarea
+                        value={manualPayNotes}
+                        onChange={e => setManualPayNotes(e.target.value)}
+                        placeholder="e.g. Bank transfer ref #12345, received 2026-03-24"
+                        rows={2}
+                        className="mt-1 text-xs font-mono resize-none"
+                      />
+                    </div>
+                    {/* Partial payment */}
+                    <div className="px-1 space-y-1">
+                      <Label className="text-[10px] text-muted-foreground font-mono uppercase tracking-wide">Partial amount received</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          placeholder={`0.00 of ${fmtCurrency(payDialog?.total ?? 0, payDialog?.currency)}`}
+                          value={partialAmount}
+                          onChange={e => setPartialAmount(e.target.value)}
+                          className="text-xs font-mono"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="font-mono text-xs whitespace-nowrap"
+                          onClick={handlePartialPay}
+                          disabled={!!payingMethod}
+                        >
+                          {payingMethod === 'partial' ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                          Record Partial
+                        </Button>
+                      </div>
+                    </div>
                     <Button
                       variant="ghost"
                       className="w-full justify-start gap-3 h-10 font-mono text-xs text-muted-foreground hover:text-foreground"
@@ -1586,10 +1771,10 @@ export default function Invoices() {
       <ConfirmDialog
         open={!!resendAfterEditId}
         onOpenChange={() => setResendAfterEditId(null)}
-        title="Invoice Updated"
-        description="This invoice has been sent before. Would you like to resend the updated version to the client?"
-        confirmLabel="Resend Now"
-        cancelLabel="Not Now"
+        title="Invoice updated — resend to client?"
+        description="The invoice has been updated. Send the client a fresh copy with the latest changes?"
+        confirmLabel="Yes, resend"
+        cancelLabel="No, save only"
         variant="default"
         onConfirm={() => { handleSendEmail(resendAfterEditId!, true); setResendAfterEditId(null); }}
       />

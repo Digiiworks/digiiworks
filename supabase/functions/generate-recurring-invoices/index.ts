@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
@@ -92,15 +92,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check existing invoices for this month for these clients
-    const { data: existingInvoices } = await supabase
-      .from("invoices")
+    // Dedup: check recurring_invoice_runs table (DB-level unique constraint prevents concurrent duplicates)
+    const billingMonth = monthStart; // e.g. "2026-03-01"
+    const { data: existingRuns } = await supabase
+      .from("recurring_invoice_runs")
       .select("client_id")
       .in("client_id", eligibleClients)
-      .gte("created_at", `${monthStart}T00:00:00Z`)
-      .lte("created_at", `${monthEnd}T23:59:59Z`);
+      .eq("billing_month", billingMonth);
 
-    const alreadyInvoiced = new Set((existingInvoices ?? []).map((i: any) => i.client_id));
+    const alreadyInvoiced = new Set((existingRuns ?? []).map((r: any) => r.client_id));
 
     // Get products for pricing
     const allProductIds = [...new Set(services.map(s => s.product_id))];
@@ -119,19 +119,6 @@ Deno.serve(async (req) => {
 
     const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
 
-    // Get latest invoice number
-    const { data: lastInvoice } = await supabase
-      .from("invoices")
-      .select("invoice_number")
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    let lastNum = 0;
-    if (lastInvoice && lastInvoice.length > 0) {
-      const match = lastInvoice[0].invoice_number.match(/(\d+)$/);
-      if (match) lastNum = parseInt(match[1]);
-    }
-
     const generated: string[] = [];
 
     for (const clientId of eligibleClients) {
@@ -142,8 +129,22 @@ Deno.serve(async (req) => {
 
       const profile = profileMap.get(clientId);
       const currency = profile?.currency ?? 'USD';
-      lastNum++;
-      const invoiceNumber = `INV-${String(lastNum).padStart(4, "0")}`;
+
+      // Atomically reserve a run slot — skip on unique constraint violation (concurrent execution)
+      const { error: runErr } = await supabase
+        .from("recurring_invoice_runs")
+        .insert({ client_id: clientId, billing_month: billingMonth });
+      if (runErr) {
+        console.log(`Skipping ${clientId} — already invoiced this month (concurrent run)`);
+        continue;
+      }
+
+      // Generate invoice number atomically via DB sequence
+      const { data: invoiceNumber, error: numErr } = await supabase.rpc("next_invoice_number");
+      if (numErr || !invoiceNumber) {
+        console.error(`Failed to generate invoice number for ${clientId}:`, numErr);
+        continue;
+      }
 
       // Calculate totals
       let subtotal = 0;
@@ -173,6 +174,7 @@ Deno.serve(async (req) => {
         .insert({
           client_id: clientId,
           invoice_number: invoiceNumber,
+          currency,
           status: "draft",
           subtotal,
           tax_rate: 0,
@@ -187,6 +189,13 @@ Deno.serve(async (req) => {
         console.error(`Failed to create invoice for ${clientId}:`, invErr);
         continue;
       }
+
+      // Link the run record to the created invoice
+      await supabase
+        .from("recurring_invoice_runs")
+        .update({ invoice_id: invoice.id })
+        .eq("client_id", clientId)
+        .eq("billing_month", billingMonth);
 
       // Insert line items
       const { error: itemsErr } = await supabase

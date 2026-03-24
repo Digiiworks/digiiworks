@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail, CreditCard, Share2, Image, Upload } from 'lucide-react';
+import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail, CreditCard, Share2, Image, Upload, ShieldCheck, Bell, TrendingUp, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PAGE_KEY = 'payment_settings';
@@ -89,6 +89,29 @@ const SettingsPage = () => {
   const [testEmail, setTestEmail] = useState('');
   const [testSending, setTestSending] = useState(false);
 
+  // FX Rates state
+  type FxRow = { currency_code: string; rate_vs_usd: string; margin_pct: string; updated_at?: string };
+  const [fxRates, setFxRates] = useState<FxRow[]>([]);
+  const [fxSaving, setFxSaving] = useState<string | null>(null);
+
+  // Dunning state
+  const [dunningRunning, setDunningRunning] = useState(false);
+
+  // MFA state
+  type MfaFactor = { id: string; friendly_name: string; factor_type: string; status: string };
+  const [mfaFactors, setMfaFactors] = useState<MfaFactor[]>([]);
+  const [mfaEnrolling, setMfaEnrolling] = useState(false);
+  const [mfaTotpUri, setMfaTotpUri] = useState('');
+  const [mfaFactorId, setMfaFactorId] = useState('');
+  const [mfaVerifyCode, setMfaVerifyCode] = useState('');
+  const [mfaVerifying, setMfaVerifying] = useState(false);
+  const [mfaUnenrolling, setMfaUnenrolling] = useState<string | null>(null);
+
+  const loadMfaFactors = async () => {
+    const { data } = await supabase.auth.mfa.listFactors();
+    setMfaFactors((data?.totp ?? []) as MfaFactor[]);
+  };
+
   useEffect(() => {
     const load = async () => {
       const { data: row } = await supabase
@@ -102,6 +125,21 @@ const SettingsPage = () => {
       }
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) setTestEmail(user.email);
+
+      // Load FX rates
+      const { data: rates } = await supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct, updated_at');
+      if (rates) {
+        setFxRates(rates.map(r => ({
+          currency_code: r.currency_code,
+          rate_vs_usd: String(r.rate_vs_usd),
+          margin_pct: String(r.margin_pct),
+          updated_at: r.updated_at,
+        })));
+      }
+
+      // Load MFA factors
+      await loadMfaFactors();
+
       setLoading(false);
     };
     load();
@@ -147,6 +185,80 @@ const SettingsPage = () => {
     let v = obj;
     for (const k of path) v = v?.[k] ?? '';
     return v;
+  };
+
+  const saveFxRate = async (code: string) => {
+    const row = fxRates.find(r => r.currency_code === code);
+    if (!row) return;
+    const rate = parseFloat(row.rate_vs_usd);
+    const margin = parseFloat(row.margin_pct);
+    if (isNaN(rate) || rate <= 0) { toast.error('Rate must be a positive number'); return; }
+    if (isNaN(margin) || margin < 0) { toast.error('Margin must be 0 or greater'); return; }
+    setFxSaving(code);
+    const { error } = await supabase.from('exchange_rates').upsert({
+      currency_code: code, rate_vs_usd: rate, margin_pct: margin, updated_at: new Date().toISOString(),
+    }, { onConflict: 'currency_code' });
+    if (error) toast.error('Failed to save: ' + error.message);
+    else toast.success(`${code} rate saved`);
+    setFxSaving(null);
+  };
+
+  const runDunning = async () => {
+    setDunningRunning(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('send-dunning-reminders');
+      if (error) throw error;
+      toast.success(`Dunning run complete: ${result?.sent ?? 0} reminder(s) sent`);
+    } catch (err: any) {
+      toast.error('Dunning run failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setDunningRunning(false);
+    }
+  };
+
+  const startMfaEnroll = async () => {
+    setMfaEnrolling(true);
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
+      if (error) throw error;
+      setMfaTotpUri(data.totp.uri);
+      setMfaFactorId(data.id);
+    } catch (err: any) {
+      toast.error('Failed to start 2FA setup: ' + err.message);
+      setMfaEnrolling(false);
+    }
+  };
+
+  const verifyMfaEnroll = async () => {
+    if (!mfaVerifyCode || mfaVerifyCode.length !== 6) { toast.error('Enter the 6-digit code from your authenticator app'); return; }
+    setMfaVerifying(true);
+    try {
+      const { data: challengeData, error: cErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+      if (cErr) throw cErr;
+      const { error: vErr } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: challengeData.id, code: mfaVerifyCode });
+      if (vErr) throw vErr;
+      toast.success('Two-factor authentication enabled!');
+      setMfaEnrolling(false); setMfaTotpUri(''); setMfaFactorId(''); setMfaVerifyCode('');
+      await loadMfaFactors();
+    } catch (err: any) {
+      toast.error('Verification failed: ' + err.message);
+    } finally {
+      setMfaVerifying(false);
+    }
+  };
+
+  const unenrollMfa = async (factorId: string) => {
+    setMfaUnenrolling(factorId);
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId });
+      if (error) throw error;
+      toast.success('Two-factor authentication removed');
+      await loadMfaFactors();
+    } catch (err: any) {
+      toast.error('Failed to remove 2FA: ' + err.message);
+    } finally {
+      setMfaUnenrolling(null);
+    }
   };
 
   const sendTestEmail = async () => {
@@ -388,6 +500,192 @@ const SettingsPage = () => {
           <Field label="Facebook" path={['socials', 'facebook']} placeholder="https://facebook.com/digiiworks" />
           <Field label="LinkedIn" path={['socials', 'linkedin']} placeholder="https://linkedin.com/company/digiiworks" />
           <Field label="GitHub" path={['socials', 'github']} placeholder="https://github.com/digiiworks" />
+        </CardContent>
+      </Card>
+
+      {/* ─── SECTION: FX Rates ─── */}
+      <Card className="border-border bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-mono text-base">
+            <TrendingUp className="h-4 w-4 text-primary" /> Exchange Rates
+          </CardTitle>
+          <CardDescription>
+            Used to auto-price products in ZAR/THB when no direct price column is set. Products with a specific price always take priority.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {fxRates.length === 0 && <p className="text-xs text-muted-foreground font-mono">No exchange rates found. Run the database migration to seed defaults.</p>}
+          {fxRates.map(r => (
+            <div key={r.currency_code} className="rounded-lg border border-border p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-sm font-semibold text-foreground">{r.currency_code}</span>
+                {r.updated_at && <span className="font-mono text-[10px] text-muted-foreground">Updated {new Date(r.updated_at).toLocaleDateString()}</span>}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Rate vs USD (1 USD = X {r.currency_code})</Label>
+                  <Input
+                    type="number" step="0.0001" min="0.0001"
+                    value={r.rate_vs_usd}
+                    onChange={e => setFxRates(prev => prev.map(x => x.currency_code === r.currency_code ? { ...x, rate_vs_usd: e.target.value } : x))}
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Margin % (markup added on top)</Label>
+                  <Input
+                    type="number" step="0.1" min="0"
+                    value={r.margin_pct}
+                    onChange={e => setFxRates(prev => prev.map(x => x.currency_code === r.currency_code ? { ...x, margin_pct: e.target.value } : x))}
+                    className="font-mono text-sm"
+                  />
+                </div>
+              </div>
+              {parseFloat(r.rate_vs_usd) > 0 && (
+                <p className="font-mono text-xs text-muted-foreground">
+                  Preview: $10 USD → {r.currency_code} {(10 * parseFloat(r.rate_vs_usd) * (1 + parseFloat(r.margin_pct || '0') / 100)).toFixed(2)}
+                  {parseFloat(r.margin_pct) > 0 && ` (incl. ${r.margin_pct}% margin)`}
+                </p>
+              )}
+              <Button
+                size="sm"
+                className="font-mono text-xs gap-1.5"
+                onClick={() => saveFxRate(r.currency_code)}
+                disabled={fxSaving === r.currency_code}
+              >
+                {fxSaving === r.currency_code ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                Save {r.currency_code} Rate
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* ─── SECTION: Dunning Reminders ─── */}
+      <Card className="border-border bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-mono text-base">
+            <Bell className="h-4 w-4 text-primary" /> Payment Dunning
+          </CardTitle>
+          <CardDescription>
+            Automatically sends reminder emails to clients with overdue invoices at 1, 7, and 14 days past due. Each milestone is sent only once per invoice.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-1">
+            <p className="font-mono text-xs text-foreground font-medium">Reminder schedule</p>
+            <ul className="font-mono text-xs text-muted-foreground space-y-1 list-disc list-inside">
+              <li>Day 1 overdue — first gentle reminder</li>
+              <li>Day 7 overdue — follow-up reminder</li>
+              <li>Day 14 overdue — final reminder</li>
+            </ul>
+            <p className="font-mono text-[10px] text-muted-foreground pt-2">
+              Schedule automatically via pg_cron at 8am UTC daily, or trigger manually below.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            className="font-mono text-xs gap-1.5"
+            onClick={runDunning}
+            disabled={dunningRunning}
+          >
+            {dunningRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3" />}
+            Run Dunning Now
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* ─── SECTION: Two-Factor Authentication ─── */}
+      <Card className="border-border bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-mono text-base">
+            <ShieldCheck className="h-4 w-4 text-primary" /> Two-Factor Authentication
+          </CardTitle>
+          <CardDescription>
+            Protect your account with a TOTP authenticator app (Google Authenticator, Authy, etc.).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {mfaFactors.filter(f => f.status === 'verified').length > 0 ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                <span className="font-mono text-sm text-primary font-medium">2FA Active — your account is protected</span>
+              </div>
+              {mfaFactors.filter(f => f.status === 'verified').map(f => (
+                <div key={f.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                  <div>
+                    <p className="font-mono text-xs text-foreground">{f.friendly_name || 'Authenticator App'}</p>
+                    <p className="font-mono text-[10px] text-muted-foreground">TOTP · {f.factor_type}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="font-mono text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => unenrollMfa(f.id)}
+                    disabled={mfaUnenrolling === f.id}
+                  >
+                    {mfaUnenrolling === f.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Remove 2FA'}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : mfaEnrolling ? (
+            <div className="space-y-4">
+              <p className="font-mono text-xs text-muted-foreground">Scan this QR code with your authenticator app, then enter the 6-digit code to verify.</p>
+              {mfaTotpUri && (
+                <div className="flex justify-center">
+                  <img
+                    src={`https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=${encodeURIComponent(mfaTotpUri)}`}
+                    alt="Scan with authenticator app"
+                    className="rounded-lg border border-border"
+                    width={200}
+                    height={200}
+                  />
+                </div>
+              )}
+              <div className="space-y-1">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">6-digit code</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={mfaVerifyCode}
+                  onChange={e => setMfaVerifyCode(e.target.value.replace(/\D/g, ''))}
+                  className="font-mono text-center text-lg tracking-widest"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 font-mono text-xs"
+                  onClick={verifyMfaEnroll}
+                  disabled={mfaVerifying || mfaVerifyCode.length !== 6}
+                >
+                  {mfaVerifying ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                  Verify & Enable 2FA
+                </Button>
+                <Button
+                  variant="outline"
+                  className="font-mono text-xs"
+                  onClick={() => { setMfaEnrolling(false); setMfaTotpUri(''); setMfaFactorId(''); setMfaVerifyCode(''); }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="font-mono text-xs text-muted-foreground">Two-factor authentication is not enabled. Add an extra layer of security to your account.</p>
+              <Button
+                variant="outline"
+                className="font-mono text-xs gap-1.5"
+                onClick={startMfaEnroll}
+              >
+                <ShieldCheck className="h-3 w-3" /> Enable 2FA
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -432,8 +432,20 @@ export default function Clients() {
 
   const countryToCurrency = (c: string) => c === 'south_africa' ? 'ZAR' : c === 'thailand' ? 'THB' : 'USD';
 
+  // Basic RFC 5322-compatible email validation
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
   const handleUpdate = async () => {
     if (!editClient) return;
+
+    // Validate CC emails before saving
+    const invalidCcEmails = ccEmails.filter(e => e.trim() && !isValidEmail(e));
+    if (invalidCcEmails.length > 0) {
+      toast({ title: 'Invalid CC email address', description: `Fix these before saving: ${invalidCcEmails.join(', ')}`, variant: 'destructive' });
+      return;
+    }
+
     setSaving(true);
     const logoUrl = await uploadLogo(editClient.id);
     const { error } = await supabase
@@ -445,7 +457,7 @@ export default function Clients() {
         phone: form.phone || null,
         notes: form.notes || null,
         logo_url: logoUrl,
-        cc_emails: ccEmails.filter(e => e.trim()),
+        cc_emails: ccEmails.filter(e => e.trim() && isValidEmail(e)),
       } as any)
       .eq('id', editClient.id);
 

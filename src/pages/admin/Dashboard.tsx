@@ -1,16 +1,22 @@
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, FileText, Mail, TrendingUp, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { format, subDays, startOfDay } from 'date-fns';
+import { format, subDays, startOfDay, addMonths } from 'date-fns';
 import StatCard from '@/components/admin/StatCard';
 import AdminToolbar from '@/components/admin/AdminToolbar';
 import ClientDashboard from '@/pages/ClientDashboard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const COLORS = ['hsl(184, 100%, 50%)', 'hsl(280, 99%, 53%)', 'hsl(106, 100%, 55%)', 'hsl(0, 72%, 51%)', 'hsl(45, 100%, 60%)'];
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', ZAR: 'R', THB: '฿' };
 
 const AdminDashboardContent = () => {
+  const [forecastMonths, setForecastMonths] = useState<1 | 3 | 6 | 12>(3);
+  const [forecastCurrency, setForecastCurrency] = useState<'USD' | 'ZAR' | 'THB'>('USD');
+
   const { data: stats } = useQuery({
     queryKey: ['admin-dashboard-stats'],
     queryFn: async () => {
@@ -39,6 +45,57 @@ const AdminDashboardContent = () => {
       return data ?? [];
     },
   });
+
+  const { data: forecastInvoices } = useQuery({
+    queryKey: ['income-forecast', forecastMonths],
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
+      const { data } = await supabase
+        .from('invoices')
+        .select('id, total, paid_amount, currency, status, due_date')
+        .in('status', ['sent', 'overdue', 'partial'])
+        .not('due_date', 'is', null)
+        .gte('due_date', today)
+        .lte('due_date', cutoff);
+      return data ?? [];
+    },
+  });
+
+  const { data: fxRates } = useQuery({
+    queryKey: ['exchange-rates-dashboard'],
+    queryFn: async () => {
+      const { data } = await supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct');
+      return new Map((data ?? []).map((r: any) => [r.currency_code, r]));
+    },
+  });
+
+  const forecastTotal = useMemo(() => {
+    if (!forecastInvoices) return 0;
+    const convertToDisplay = (amount: number, fromCurrency: string): number => {
+      if (fromCurrency === forecastCurrency) return amount;
+      let usdAmount = amount;
+      if (fromCurrency !== 'USD') {
+        const r = fxRates?.get(fromCurrency) as any;
+        if (r) usdAmount = amount / r.rate_vs_usd;
+      }
+      if (forecastCurrency === 'USD') return usdAmount;
+      const r = fxRates?.get(forecastCurrency) as any;
+      if (r) return usdAmount * r.rate_vs_usd * (1 + r.margin_pct / 100);
+      return usdAmount;
+    };
+    return forecastInvoices.reduce((sum: number, inv: any) => {
+      const remaining = inv.status === 'partial'
+        ? (inv.total - (inv.paid_amount ?? 0))
+        : inv.total;
+      return sum + convertToDisplay(remaining, inv.currency ?? 'USD');
+    }, 0);
+  }, [forecastInvoices, forecastCurrency, fxRates]);
+
+  const fmtForecast = (amount: number) => {
+    const sym = CURRENCY_SYMBOLS[forecastCurrency] ?? '';
+    return `${sym}${amount.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   const leadsPerDay = (() => {
     if (!allLeads) return [];
@@ -82,6 +139,47 @@ const AdminDashboardContent = () => {
         <StatCard label="New Leads" value={newLeads} icon={TrendingUp} iconColor="text-neon-mint" />
         <StatCard label="Blog Posts" value={postCount} icon={FileText} iconColor="text-neon-purple" />
         <StatCard label="Conversion Rate" value={conversionRate} icon={Users} iconColor="text-primary" />
+      </div>
+
+      {/* Income Forecast */}
+      <div className="glass-card p-5">
+        <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-neon-mint" />
+            <h3 className="font-mono text-sm font-semibold">Income Forecast</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={forecastCurrency} onValueChange={(v) => setForecastCurrency(v as 'USD' | 'ZAR' | 'THB')}>
+              <SelectTrigger className="w-20 h-7 border-border bg-background/50 font-mono text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD" className="font-mono text-xs">USD</SelectItem>
+                <SelectItem value="ZAR" className="font-mono text-xs">ZAR</SelectItem>
+                <SelectItem value="THB" className="font-mono text-xs">THB</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={String(forecastMonths)} onValueChange={(v) => setForecastMonths(Number(v) as 1 | 3 | 6 | 12)}>
+              <SelectTrigger className="w-24 h-7 border-border bg-background/50 font-mono text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1" className="font-mono text-xs">1 month</SelectItem>
+                <SelectItem value="3" className="font-mono text-xs">3 months</SelectItem>
+                <SelectItem value="6" className="font-mono text-xs">6 months</SelectItem>
+                <SelectItem value="12" className="font-mono text-xs">12 months</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <p className="font-mono text-3xl font-bold text-neon-mint">
+            {fmtForecast(forecastTotal)}
+          </p>
+          <p className="font-mono text-xs text-muted-foreground">
+            {forecastInvoices?.length ?? 0} outstanding invoice{forecastInvoices?.length !== 1 ? 's' : ''} due within {forecastMonths} month{forecastMonths !== 1 ? 's' : ''}
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

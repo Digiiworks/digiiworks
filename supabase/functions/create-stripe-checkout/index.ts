@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -80,20 +80,12 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    // Determine currency from client company
-    let currency = "USD";
-    if (invoice.client_company_id) {
-      const { data: company } = await supabase
-        .from("client_companies")
-        .select("currency")
-        .eq("id", invoice.client_company_id)
-        .single();
-      if (company?.currency) currency = company.currency;
-    }
+    // Use currency stored on invoice (denormalized at creation time)
+    const currency = invoice.currency || "USD";
 
     // Amount in cents for Stripe
     const amountInCents = Math.round(Number(invoice.total) * 100);
-    const baseUrl = "https://digiiworks.lovable.app";
+    const baseUrl = Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app";
 
     // Create Stripe Checkout Session via API
     const params = new URLSearchParams();
@@ -132,6 +124,14 @@ Deno.serve(async (req) => {
       .from("invoices")
       .update({ payment_reference: session.id })
       .eq("id", invoice.id);
+
+    // Log the checkout session for reconciliation tracking
+    await supabase.from("payment_sessions").upsert({
+      invoice_id: invoice.id,
+      gateway: "stripe",
+      session_id: session.id,
+      status: "pending",
+    }, { onConflict: "session_id" });
 
     return new Response(
       JSON.stringify({ redirectUrl: session.url, sessionId: session.id }),
