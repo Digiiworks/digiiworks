@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Navigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Send, CheckCircle2, Loader2, Clock, Mail, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,10 +22,19 @@ const ServiceOnboarding = () => {
 
   if (!config) return <Navigate to="/services" replace />;
 
-  return <OnboardingForm config={typeof config === 'object' ? config : config} />;
+  const [searchParams] = useSearchParams();
+  const preselectedPackage = searchParams.get('package');
+
+  return <OnboardingForm config={config} preselectedPackage={preselectedPackage} />;
 };
 
-function OnboardingForm({ config }: { config: NonNullable<ReturnType<typeof getServiceOnboarding>> }) {
+const PACKAGE_MAP: Record<string, string> = {
+  starter: 'Starter — $297/mo',
+  growth: 'Growth — $597/mo',
+  power: 'Power — $997/mo',
+};
+
+function OnboardingForm({ config, preselectedPackage }: { config: NonNullable<ReturnType<typeof getServiceOnboarding>>; preselectedPackage?: string | null }) {
   const { toast } = useToast();
   const TOTAL_STEPS = config.steps.length + 1; // +1 for contact step
   const [step, setStep] = useState(0);
@@ -35,8 +44,13 @@ function OnboardingForm({ config }: { config: NonNullable<ReturnType<typeof getS
   const formLoadTime = useRef(Date.now());
   const [honeypot, setHoneypot] = useState('');
 
-  // Quiz answers
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  // Quiz answers — pre-select budget if package query param provided
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>(() => {
+    if (preselectedPackage && PACKAGE_MAP[preselectedPackage]) {
+      return { budget: PACKAGE_MAP[preselectedPackage] };
+    }
+    return {};
+  });
 
   // Contact fields
   const [name, setName] = useState('');

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const plans = [
@@ -60,8 +60,15 @@ const plans = [
 
 const ANNUAL_DISCOUNT = 0.15;
 
+const PACKAGE_MAP: Record<string, string> = {
+  Starter: 'Starter — $297/mo',
+  Growth: 'Growth — $597/mo',
+  Power: 'Power — $997/mo',
+};
+
 const SocialPricing = () => {
   const [annual, setAnnual] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <motion.section
@@ -181,8 +188,8 @@ const SocialPricing = () => {
                 ))}
               </ul>
 
-              <Link
-                to="/contact"
+              <button
+                onClick={() => navigate(`/services/ai-powered-social-media/start?package=${plan.name.toLowerCase()}`)}
                 className={cn(
                   'block w-full rounded-lg py-3 text-center font-mono text-sm font-semibold transition-all duration-300',
                   plan.popular
@@ -191,7 +198,7 @@ const SocialPricing = () => {
                 )}
               >
                 {plan.cta}
-              </Link>
+              </button>
             </motion.div>
           );
         })}
