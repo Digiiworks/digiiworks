@@ -98,6 +98,7 @@ const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
 
 const isPayableStatus = (status: Invoice['status']) => !['paid', 'cancelled'].includes(status);
+const isSentAlready = (status: string) => ['sent', 'overdue', 'paid'].includes(status);
 
 const fmtCurrency = (amount: number, currency: string = 'USD') => {
   const symbol = currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
@@ -145,6 +146,10 @@ export default function Invoices() {
   const [saving, setSaving] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [payDialog, setPayDialog] = useState<Invoice | null>(null);
+  const [resendConfirmId, setResendConfirmId] = useState<string | null>(null);
+  const [editSentInvoice, setEditSentInvoice] = useState<Invoice | null>(null);
+  const [resendAfterEditId, setResendAfterEditId] = useState<string | null>(null);
+  const [originalFormSnapshot, setOriginalFormSnapshot] = useState<string>('');
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [payingMethod, setPayingMethod] = useState<string | null>(null);
 
@@ -381,11 +386,20 @@ export default function Invoices() {
     });
     setSendDate(inv.send_date ? new Date(inv.send_date + 'T00:00:00') : undefined);
     const { data: items } = await supabase.from('invoice_items').select('*').eq('invoice_id', inv.id);
-    setLineItems(
-      (items && items.length > 0)
-        ? items.map(it => ({ id: it.id, description: it.description, quantity: it.quantity, unit_price: it.unit_price, total: it.total, product_id: it.product_id }))
-        : [{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }]
-    );
+    const loadedItems = (items && items.length > 0)
+      ? items.map(it => ({ id: it.id, description: it.description, quantity: it.quantity, unit_price: it.unit_price, total: it.total, product_id: it.product_id }))
+      : [{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }];
+    setLineItems(loadedItems);
+    // Capture snapshot for change detection on sent invoices
+    const formSnap = {
+      client_id: inv.client_id,
+      client_company_id: inv.client_company_id ?? '',
+      due_date: inv.due_date ?? '',
+      notes: inv.notes ?? '',
+      tax_rate: inv.tax_rate,
+      send_date: inv.send_date ?? '',
+    };
+    setOriginalFormSnapshot(JSON.stringify({ form: formSnap, lineItems: loadedItems }));
     setShowEdit(true);
   };
 
@@ -424,7 +438,23 @@ export default function Invoices() {
       if (itemErr) toast({ title: 'Error updating line items', description: itemErr.message, variant: 'destructive' });
     }
     toast({ title: `Invoice ${editingInvoice.invoice_number} updated` });
-    setSaving(false); setShowEdit(false); resetForm(); fetchAll();
+    // Check if invoice was previously sent and changes were made
+    const currentSnapshot = JSON.stringify({
+      form: { ...form, send_date: sendDate ? format(sendDate, 'yyyy-MM-dd') : '' },
+      lineItems: lineItems.map(li => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price, total: li.total, product_id: li.product_id })),
+    });
+    const hasChanges = currentSnapshot !== originalFormSnapshot;
+    const wasSent = isSentAlready(editingInvoice.status);
+    setSaving(false);
+    setShowEdit(false);
+    if (hasChanges && wasSent) {
+      setResendAfterEditId(editingInvoice.id);
+      resetForm();
+      fetchAll();
+    } else {
+      resetForm();
+      fetchAll();
+    }
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -838,16 +868,27 @@ export default function Invoices() {
                         <CreditCard className="h-3 w-3" /> Pay Now
                       </Button>
                     )}
-                    {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
-                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSendEmail(inv.id)} disabled={sendingId === inv.id}>
+                    {isAdmin && inv.status !== 'cancelled' && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className={`h-7 w-7 ${isSentAlready(inv.status) ? 'border-orange-500/50 text-orange-400 hover:bg-orange-500/10' : ''}`}
+                        onClick={() => isSentAlready(inv.status) ? setResendConfirmId(inv.id) : handleSendEmail(inv.id)}
+                        disabled={sendingId === inv.id}
+                      >
                         {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                       </Button>
                     )}
                     <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto" onClick={() => viewDetail(inv)}>
                       <Eye className="h-3.5 w-3.5" />
                     </Button>
-                    {isAdmin && inv.status === 'draft' && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(inv)}>
+                    {isAdmin && inv.status !== 'cancelled' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`h-7 w-7 ${isSentAlready(inv.status) ? 'text-orange-400' : ''}`}
+                        onClick={() => isSentAlready(inv.status) ? setEditSentInvoice(inv) : openEdit(inv)}
+                      >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     )}
@@ -957,19 +998,24 @@ export default function Invoices() {
                               Pay Now
                             </Button>
                           )}
-                          {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
+                          {isAdmin && inv.status !== 'cancelled' && (
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7 border-primary/50 text-primary hover:bg-primary/10"
-                              onClick={() => handleSendEmail(inv.id)}
+                              className={`h-7 w-7 ${isSentAlready(inv.status) ? 'border-orange-500/50 text-orange-400 hover:bg-orange-500/10' : 'border-primary/50 text-primary hover:bg-primary/10'}`}
+                              onClick={() => isSentAlready(inv.status) ? setResendConfirmId(inv.id) : handleSendEmail(inv.id)}
                               disabled={sendingId === inv.id}
                             >
                               {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                             </Button>
                           )}
-                          {isAdmin && inv.status === 'draft' && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(inv)}>
+                          {isAdmin && inv.status !== 'cancelled' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`h-8 w-8 ${isSentAlready(inv.status) ? 'text-orange-400' : ''}`}
+                              onClick={() => isSentAlready(inv.status) ? setEditSentInvoice(inv) : openEdit(inv)}
+                            >
                               <Pencil className="h-4 w-4" />
                             </Button>
                           )}
@@ -1324,23 +1370,24 @@ export default function Invoices() {
               {/* Email Actions */}
               {isAdmin && showDetail.status !== 'cancelled' && (
                 <div className="flex gap-2">
-                  <Button
-                    className="flex-1 gap-2 font-mono"
-                    onClick={() => handleSendEmail(showDetail.id)}
-                    disabled={sendingId === showDetail.id}
-                  >
-                    {sendingId === showDetail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    Send Email Now
-                  </Button>
-                  {detailEmails.some(e => e.status === 'sent') && (
+                  {detailEmails.some(e => e.status === 'sent') ? (
                     <Button
+                      className="flex-1 gap-2 font-mono border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
                       variant="outline"
-                      className="gap-2 font-mono"
-                      onClick={() => handleSendEmail(showDetail.id, true)}
+                      onClick={() => setResendConfirmId(showDetail.id)}
                       disabled={sendingId === showDetail.id}
                     >
-                      <RefreshCw className="h-4 w-4" />
-                      Resend
+                      {sendingId === showDetail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      Resend Email
+                    </Button>
+                  ) : (
+                    <Button
+                      className="flex-1 gap-2 font-mono"
+                      onClick={() => handleSendEmail(showDetail.id)}
+                      disabled={sendingId === showDetail.id}
+                    >
+                      {sendingId === showDetail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      Send Email Now
                     </Button>
                   )}
                 </div>
@@ -1508,6 +1555,37 @@ export default function Invoices() {
         description="This will permanently delete this invoice and all its line items."
         confirmLabel="Delete"
         onConfirm={handleDelete}
+      />
+
+      <ConfirmDialog
+        open={!!resendConfirmId}
+        onOpenChange={() => setResendConfirmId(null)}
+        title="Email Already Sent"
+        description="This invoice has already been emailed to the client. Are you sure you want to resend it?"
+        confirmLabel="Resend"
+        variant="default"
+        onConfirm={() => { handleSendEmail(resendConfirmId!, true); setResendConfirmId(null); }}
+      />
+
+      <ConfirmDialog
+        open={!!editSentInvoice}
+        onOpenChange={() => setEditSentInvoice(null)}
+        title="Editing Sent Invoice"
+        description="This invoice has already been sent to the client. Changes won't be reflected in emails already delivered. Continue?"
+        confirmLabel="Edit Anyway"
+        variant="default"
+        onConfirm={() => { openEdit(editSentInvoice!); setEditSentInvoice(null); }}
+      />
+
+      <ConfirmDialog
+        open={!!resendAfterEditId}
+        onOpenChange={() => setResendAfterEditId(null)}
+        title="Invoice Updated"
+        description="This invoice has been sent before. Would you like to resend the updated version to the client?"
+        confirmLabel="Resend Now"
+        cancelLabel="Not Now"
+        variant="default"
+        onConfirm={() => { handleSendEmail(resendAfterEditId!, true); setResendAfterEditId(null); }}
       />
     </div>
   );
