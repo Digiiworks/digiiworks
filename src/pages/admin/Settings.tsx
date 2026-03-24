@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail, CreditCard, Share2 } from 'lucide-react';
+import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail, CreditCard, Share2, Image, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PAGE_KEY = 'payment_settings';
@@ -60,6 +60,10 @@ interface BankingInfo {
     linkedin: string;
     github: string;
   };
+  branding: {
+    apple_touch_icon_url: string;
+    favicon_url: string;
+  };
 }
 
 const defaultData: BankingInfo = {
@@ -70,8 +74,8 @@ const defaultData: BankingInfo = {
   tracking: { google_pixel_id: '', meta_pixel_id: '' },
   payment_methods: { stripe_enabled: false, yoco_enabled: true },
   socials: { instagram: '', facebook: '', linkedin: '', github: '' },
+  branding: { apple_touch_icon_url: '/apple-touch-icon.png', favicon_url: '/favicon.svg' },
 };
-
 const SettingsPage = () => {
   const [data, setData] = useState<BankingInfo>(defaultData);
   const [saving, setSaving] = useState(false);
@@ -174,6 +178,29 @@ const SettingsPage = () => {
       />
     </div>
   );
+
+  const iconInputRef = useRef<HTMLInputElement>(null);
+  const [iconUploading, setIconUploading] = useState(false);
+
+  const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIconUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `apple-touch-icon-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('client-logos').upload(fileName, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from('client-logos').getPublicUrl(fileName);
+      update(['branding', 'apple_touch_icon_url'], urlData.publicUrl);
+      toast.success('Icon uploaded');
+    } catch (err: any) {
+      toast.error('Upload failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIconUploading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   if (loading) {
     return (
@@ -362,7 +389,46 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
-      {/* ─── SECTION 3: Tracking & Analytics ─── */}
+      {/* ─── SECTION 3: Branding ─── */}
+      <Card className="border-border bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-mono text-base">
+            <Image className="h-4 w-4 text-primary" /> Branding
+          </CardTitle>
+          <CardDescription>Site icons and branding assets</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="font-mono text-sm font-medium text-foreground mb-3">Apple Touch Icon</h3>
+            <p className="text-xs text-muted-foreground mb-3">Shown when users add the site to their iOS home screen (180×180 PNG recommended)</p>
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 rounded-xl border border-border bg-muted/30 flex items-center justify-center overflow-hidden shrink-0">
+                {data.branding?.apple_touch_icon_url ? (
+                  <img src={data.branding.apple_touch_icon_url} alt="Apple touch icon" className="h-full w-full object-contain" />
+                ) : (
+                  <Image className="h-6 w-6 text-muted-foreground" />
+                )}
+              </div>
+              <div className="space-y-2 flex-1">
+                <Input
+                  defaultValue={data.branding?.apple_touch_icon_url || ''}
+                  key={`branding.apple_touch_icon_url.${data.branding?.apple_touch_icon_url}`}
+                  onChange={(e) => update(['branding', 'apple_touch_icon_url'], e.target.value)}
+                  placeholder="/apple-touch-icon.png or full URL"
+                  className="font-mono text-sm bg-background border-border"
+                />
+                <input ref={iconInputRef} type="file" accept="image/*" className="hidden" onChange={handleIconUpload} />
+                <Button variant="outline" size="sm" className="gap-1.5 font-mono text-xs" onClick={() => iconInputRef.current?.click()} disabled={iconUploading}>
+                  {iconUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                  {iconUploading ? 'Uploading…' : 'Upload Image'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ─── SECTION 4: Tracking & Analytics ─── */}
       <Card className="border-border bg-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-mono text-base">
