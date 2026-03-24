@@ -145,6 +145,10 @@ export default function Invoices() {
   const [saving, setSaving] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [payDialog, setPayDialog] = useState<Invoice | null>(null);
+  const [resendConfirmId, setResendConfirmId] = useState<string | null>(null);
+  const [editSentInvoice, setEditSentInvoice] = useState<Invoice | null>(null);
+  const [resendAfterEditId, setResendAfterEditId] = useState<string | null>(null);
+  const [originalFormSnapshot, setOriginalFormSnapshot] = useState<string>('');
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [payingMethod, setPayingMethod] = useState<string | null>(null);
 
