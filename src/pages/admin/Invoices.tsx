@@ -105,7 +105,7 @@ const fmtCurrency = (amount: number, currency: string = 'USD') => {
   return `${symbol}${amount.toFixed(2)}`;
 };
 
-type SortField = 'invoice_number' | 'total' | 'due_date' | 'created_at' | 'status';
+type SortField = 'invoice_number' | 'total' | 'due_date' | 'send_date' | 'created_at' | 'status';
 type SortDir = 'asc' | 'desc';
 
 function getFirstOfNextMonth(): Date {
