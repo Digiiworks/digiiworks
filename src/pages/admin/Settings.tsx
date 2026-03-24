@@ -213,7 +213,7 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl pb-20">
+    <div className="space-y-8 max-w-4xl pb-20 overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -286,10 +286,10 @@ const SettingsPage = () => {
           <div>
             <h3 className="font-mono text-sm font-medium text-foreground mb-3">Regional Bank Accounts</h3>
             <Tabs defaultValue="global">
-              <TabsList className="bg-muted/50 w-full justify-start">
-                <TabsTrigger value="global" className="gap-1.5 font-mono text-xs"><Globe className="h-3.5 w-3.5" /> Global (USD)</TabsTrigger>
-                <TabsTrigger value="thai" className="gap-1.5 font-mono text-xs">🇹🇭 Thailand (THB)</TabsTrigger>
-                <TabsTrigger value="south_africa" className="gap-1.5 font-mono text-xs">🇿🇦 South Africa (ZAR)</TabsTrigger>
+              <TabsList className="bg-muted/50 w-full justify-start flex-wrap h-auto gap-1 p-1">
+                <TabsTrigger value="global" className="gap-1.5 font-mono text-xs"><Globe className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Global</span> USD</TabsTrigger>
+                <TabsTrigger value="thai" className="gap-1.5 font-mono text-xs">🇹🇭 <span className="hidden sm:inline">Thailand</span> THB</TabsTrigger>
+                <TabsTrigger value="south_africa" className="gap-1.5 font-mono text-xs">🇿🇦 <span className="hidden sm:inline">South Africa</span> ZAR</TabsTrigger>
               </TabsList>
 
               <TabsContent value="global" className="mt-4">
