@@ -179,6 +179,29 @@ const SettingsPage = () => {
     </div>
   );
 
+  const iconInputRef = useRef<HTMLInputElement>(null);
+  const [iconUploading, setIconUploading] = useState(false);
+
+  const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIconUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `apple-touch-icon-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('client-logos').upload(fileName, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from('client-logos').getPublicUrl(fileName);
+      update(['branding', 'apple_touch_icon_url'], urlData.publicUrl);
+      toast.success('Icon uploaded');
+    } catch (err: any) {
+      toast.error('Upload failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIconUploading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
