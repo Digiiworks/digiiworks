@@ -21,6 +21,10 @@ const navItems = [
   { label: 'Users', to: '/admin/users', icon: Users },
 ];
 
+const externalLinks = [
+  { label: '📱 App Launcher', href: 'https://launch.digiiworks.co' },
+];
+
 const settingsItem = { label: 'Settings', to: '/admin/settings', icon: Wrench };
 
 const AdminLayout = () => {
