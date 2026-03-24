@@ -331,10 +331,12 @@ export default function Invoices() {
     });
   };
 
-  const subtotal = lineItems.reduce((s, li) => s + li.total, 0);
-  const taxAmount = subtotal * (form.tax_rate / 100);
-  const grandTotal = subtotal + taxAmount;
-  const nextNumber = `INV-${String((invoices.length || 0) + 1).padStart(4, '0')}`;
+  // Use integer cent arithmetic to avoid floating-point rounding on tax
+  const subtotalCents = lineItems.reduce((s, li) => s + Math.round(li.total * 100), 0);
+  const taxCents = Math.round((subtotalCents * form.tax_rate) / 100);
+  const grandTotalCents = subtotalCents + taxCents;
+  const subtotal = subtotalCents / 100;
+  const grandTotal = grandTotalCents / 100;
 
   const handleCreate = async () => {
     if (!form.client_company_id || lineItems.every(li => !li.description)) {
@@ -343,8 +345,17 @@ export default function Invoices() {
     }
     const selectedCompany = clientCompanies.find(cc => cc.id === form.client_company_id);
     setSaving(true);
+
+    // Generate invoice number atomically via DB sequence (race-condition safe)
+    const { data: generatedNumber, error: numErr } = await supabase.rpc('next_invoice_number');
+    if (numErr || !generatedNumber) {
+      toast({ title: 'Error generating invoice number', description: numErr?.message, variant: 'destructive' });
+      setSaving(false); return;
+    }
+    const invoiceNumber = generatedNumber as string;
+
     const { data: inv, error } = await supabase.from('invoices').insert({
-      invoice_number: nextNumber, client_id: selectedCompany?.user_id ?? form.client_id,
+      invoice_number: invoiceNumber, client_id: selectedCompany?.user_id ?? form.client_id,
       client_company_id: form.client_company_id || null,
       due_date: form.due_date || null, notes: form.notes || null,
       tax_rate: form.tax_rate, subtotal, total: grandTotal, status: 'draft' as const,
@@ -364,7 +375,7 @@ export default function Invoices() {
       const { error: itemErr } = await supabase.from('invoice_items').insert(items);
       if (itemErr) toast({ title: 'Error adding line items', description: itemErr.message, variant: 'destructive' });
     }
-    toast({ title: `Invoice ${nextNumber} created` });
+    toast({ title: `Invoice ${invoiceNumber} created` });
     setSaving(false); setShowCreate(false); resetForm(); fetchAll();
   };
 

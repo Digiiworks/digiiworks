@@ -48,8 +48,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify HMAC token
-    const expectedToken = await hmacSign(invoiceId, serviceRoleKey);
+    // Verify HMAC token using dedicated secret (falls back to service role key for backward compat)
+    const tokenSecret = Deno.env.get("INVOICE_TOKEN_SECRET") || serviceRoleKey;
+    const expectedToken = await hmacSign(invoiceId, tokenSecret);
     if (token !== expectedToken) {
       return new Response("Invalid or expired link", {
         status: 403,
@@ -72,7 +73,7 @@ Deno.serve(async (req) => {
     }
 
     if (invoice.status === "paid" || invoice.status === "cancelled") {
-      const baseUrl = "https://digiiworks.lovable.app";
+      const baseUrl = Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app";
       return Response.redirect(
         `${baseUrl}/client?payment=already_${invoice.status}&invoice=${invoice.invoice_number}`,
         302
@@ -98,7 +99,7 @@ Deno.serve(async (req) => {
     }
 
     const amountInCents = Math.round(Number(invoice.total) * 100);
-    const baseUrl = "https://digiiworks.lovable.app";
+    const baseUrl = Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app";
 
     // Create Stripe Checkout Session
     const params = new URLSearchParams();

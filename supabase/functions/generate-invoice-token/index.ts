@@ -90,7 +90,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const token = await hmacSign(invoice_id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const tokenSecret = Deno.env.get("INVOICE_TOKEN_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const token = await hmacSign(invoice_id, tokenSecret);
 
     return new Response(
       JSON.stringify({ token }),

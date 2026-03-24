@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
 
     // Amount in cents for Stripe
     const amountInCents = Math.round(Number(invoice.total) * 100);
-    const baseUrl = "https://digiiworks.lovable.app";
+    const baseUrl = Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app";
 
     // Create Stripe Checkout Session via API
     const params = new URLSearchParams();

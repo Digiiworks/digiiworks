@@ -36,8 +36,8 @@ Deno.serve(async (req) => {
     }
 
     // Verify HMAC token
-    const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const expected = await hmacSign(invoice_id, secret);
+    const tokenSecret = Deno.env.get("INVOICE_TOKEN_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const expected = await hmacSign(invoice_id, tokenSecret);
     if (token !== expected) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 403,
@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      secret
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
     const [invRes, itemsRes, settingsRes] = await Promise.all([
