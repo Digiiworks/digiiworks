@@ -213,7 +213,7 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 max-w-4xl pb-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
