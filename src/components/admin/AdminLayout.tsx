@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Separator } from '@/components/ui/separator';
-import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package, Menu, X, Wrench, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package, Menu, X, Wrench, MoreHorizontal, Globe, ChevronUp } from 'lucide-react';
 
 const bottomTabs = [
   { label: 'Clients', to: '/admin/clients', icon: UserCircle },
@@ -27,6 +27,64 @@ const externalLinks = [
 ];
 
 const settingsItem = { label: 'Settings', to: '/admin/settings', icon: Wrench };
+
+/* Desktop popover user menu at sidebar bottom */
+const DesktopUserMenu = ({ profile, roleLabel, isClient, signOut, pathname, settingsItem, setMobileOpen }: any) => {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="hidden lg:block relative border-t border-border/50 px-3 py-4" ref={menuRef}>
+      {open && (
+        <div className="absolute bottom-full left-3 right-3 mb-2 rounded-lg border border-border bg-card shadow-lg py-1 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <button
+            onClick={() => { window.open('/', '_self'); setOpen(false); }}
+            className="flex w-full items-center gap-3 px-3 py-2.5 font-mono text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Globe className="h-4 w-4" /> Frontend
+          </button>
+          {!isClient && (
+            <Link
+              to={settingsItem.to}
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2.5 font-mono text-sm transition-colors ${
+                pathname.startsWith(settingsItem.to) ? 'text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <Wrench className="h-4 w-4" /> Settings
+            </Link>
+          )}
+          <button
+            onClick={() => { signOut(); setOpen(false); }}
+            className="flex w-full items-center gap-3 px-3 py-2.5 font-mono text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+          >
+            <LogOut className="h-4 w-4" /> Logout
+          </button>
+        </div>
+      )}
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-muted transition-colors"
+      >
+        <div className="flex-1 text-left">
+          <p className="font-mono text-xs text-foreground truncate">{profile?.display_name ?? profile?.email}</p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{roleLabel}</p>
+        </div>
+        <ChevronUp className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? '' : 'rotate-180'}`} />
+      </button>
+    </div>
+  );
+};
 
 const AdminLayout = () => {
   const { pathname } = useLocation();
@@ -79,7 +137,18 @@ const AdminLayout = () => {
         ))}
       </nav>
 
-      <div className="border-t border-border/50 px-3 py-4 space-y-3">
+      <DesktopUserMenu
+        profile={profile}
+        roleLabel={roleLabel}
+        isClient={isClient}
+        signOut={signOut}
+        pathname={pathname}
+        settingsItem={settingsItem}
+        setMobileOpen={setMobileOpen}
+      />
+
+      {/* Mobile-only: keep inline footer */}
+      <div className="lg:hidden border-t border-border/50 px-3 py-4 space-y-3">
         {!isClient && (() => {
           const active = pathname === settingsItem.to || pathname.startsWith(settingsItem.to);
           return (
@@ -101,7 +170,7 @@ const AdminLayout = () => {
         </div>
         <div className="flex gap-2 px-3">
           <Link
-            to={homeLink}
+            to="/"
             onClick={() => setMobileOpen(false)}
             className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
           >
