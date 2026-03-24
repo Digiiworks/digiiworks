@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const SERVICE_GROUPS = [
   {
-    pillar: 'Digital Architecture',
+    pillar: 'Architecture',
     accent: 'border-neon-blue/40 hover:border-neon-blue',
     glowHsl: '184 100% 50%',
     services: ['Custom Web Development', 'Responsive Design', 'UX/UI Design', 'CMS Integration', 'Rent-A-Website'],

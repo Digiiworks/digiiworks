@@ -72,7 +72,7 @@ export const CONNECTOR_APPS = ['Slack', 'Gmail', 'HubSpot', 'Notion', 'Google Sh
 export const PILLARS = [
   {
     id: 'architecture' as const,
-    title: 'Digital Architecture',
+    title: 'Architecture',
     label: 'Pillar 01',
     accentColor: 'text-neon-blue',
     glowHsl: '184 100% 50%',
