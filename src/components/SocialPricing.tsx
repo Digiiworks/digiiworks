@@ -188,8 +188,8 @@ const SocialPricing = () => {
                 ))}
               </ul>
 
-              <Link
-                to="/contact"
+              <button
+                onClick={() => navigate(`/services/ai-powered-social-media/start?package=${plan.name.toLowerCase()}`)}
                 className={cn(
                   'block w-full rounded-lg py-3 text-center font-mono text-sm font-semibold transition-all duration-300',
                   plan.popular
@@ -198,7 +198,7 @@ const SocialPricing = () => {
                 )}
               >
                 {plan.cta}
-              </Link>
+              </button>
             </motion.div>
           );
         })}
