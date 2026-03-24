@@ -78,8 +78,9 @@ const ServiceDetail = () => {
           </div>
         </motion.section>
 
-        {/* Pricing — social media only */}
+        {/* Pricing */}
         {service.slug === 'ai-powered-social-media' && <SocialPricing />}
+        {service.slug === 'rent-a-website' && <WebsitePricing />}
 
         {/* Process */}
         <motion.section className="mb-14 md:mb-20" {...fadeUp} transition={{ duration: 0.5, delay: 0.2 }}>
