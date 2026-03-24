@@ -82,8 +82,8 @@ type Product = { id: string; name: string; price_usd: number; price_zar: number;
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
-  sent: 'bg-blue-500/20 text-blue-400',
-  paid: 'bg-green-500/20 text-green-400',
+  sent: 'bg-green-500/20 text-green-950',
+  paid: 'bg-primary/20 text-primary',
   overdue: 'bg-orange-500/20 text-orange-400',
   cancelled: 'bg-muted text-muted-foreground line-through',
 };
@@ -933,7 +933,7 @@ export default function Invoices() {
                   return (
                     <TableRow
                       key={inv.id}
-                      className={`border-border/30 transition-colors ${
+                      className={`border-border/30 transition-colors hover:bg-muted/40 hover:outline hover:outline-1 hover:outline-border ${
                         isOverdue ? 'bg-orange-500/5 border-l-2 border-l-orange-500' : ''
                       } ${selectedIds.has(inv.id) ? 'bg-primary/5' : ''}`}
                     >
