@@ -414,6 +414,18 @@ export const SERVICE_ONBOARDING: Record<string, ServiceOnboardingConfig> = {
         ],
       },
       {
+        question: "What's your monthly budget?",
+        subtitle: 'Select one.',
+        type: 'single',
+        key: 'budget',
+        options: [
+          { label: 'Launch — $49/mo', desc: '5 pages, hosting, SSL, SEO foundation, 1 update/mo' },
+          { label: 'Grow — $99/mo', desc: '10 pages, CMS, lead forms, monthly SEO report' },
+          { label: 'Dominate — $199/mo', desc: 'Unlimited pages, AI chatbot, automations, priority support' },
+          { label: 'Not sure — advise me', desc: "We'll recommend the best fit" },
+        ],
+      },
+      {
         question: "When do you want to go live?",
         type: 'single',
         key: 'timeline',
