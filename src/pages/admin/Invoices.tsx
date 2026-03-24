@@ -455,6 +455,7 @@ export default function Invoices() {
       resetForm();
       fetchAll();
     }
+  };
 
   const updateStatus = async (id: string, status: string) => {
     const extra: any = { status };
