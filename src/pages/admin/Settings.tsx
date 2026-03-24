@@ -128,7 +128,10 @@ const SettingsPage = () => {
     setTimeout(() => setSaved(false), 2000);
   }, [recordId]);
 
-  const update = (path: string[], value: string | boolean) => {
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  const update = useCallback((path: string[], value: string | boolean) => {
     setData((prev) => {
       const next = JSON.parse(JSON.stringify(prev));
       let obj = next;
@@ -138,7 +141,7 @@ const SettingsPage = () => {
       debounceRef.current = setTimeout(() => persist(next), 5000);
       return next;
     });
-  };
+  }, [persist]);
 
   const getVal = (obj: any, path: string[]) => {
     let v = obj;
@@ -151,7 +154,7 @@ const SettingsPage = () => {
     setTestSending(true);
     // Force-save current data before sending so the edge function reads latest values
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    await persist(data);
+    await persist(dataRef.current);
     try {
       const { data: result, error } = await supabase.functions.invoke('send-invoice-email', {
         body: { mode: 'test', currency: testCurrency, send_to: testEmail },
@@ -166,18 +169,17 @@ const SettingsPage = () => {
     }
   };
 
-  const Field = ({ label, path, placeholder }: { label: string; path: string[]; placeholder?: string }) => (
+  const Field = useCallback(({ label, path, placeholder }: { label: string; path: string[]; placeholder?: string }) => (
     <div className="space-y-1.5">
       <Label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">{label}</Label>
       <Input
-        defaultValue={getVal(data, path)}
-        key={path.join('.')}
+        defaultValue={getVal(dataRef.current, path)}
         onChange={(e) => update(path, e.target.value)}
         placeholder={placeholder}
         className="font-mono text-sm bg-background border-border"
       />
     </div>
-  );
+  ), [update]);
 
   const iconInputRef = useRef<HTMLInputElement>(null);
   const [iconUploading, setIconUploading] = useState(false);
