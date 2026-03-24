@@ -933,7 +933,7 @@ export default function Invoices() {
                   return (
                     <TableRow
                       key={inv.id}
-                      className={`border-border/30 transition-colors hover:bg-muted/40 hover:outline hover:outline-1 hover:outline-border ${
+                      className={`border-border/30 transition-colors hover:bg-primary/5 hover:outline hover:outline-1 hover:outline-primary/40 [&:hover_td]:text-primary ${
                         isOverdue ? 'bg-orange-500/5 border-l-2 border-l-orange-500' : ''
                       } ${selectedIds.has(inv.id) ? 'bg-primary/5' : ''}`}
                     >
