@@ -105,7 +105,7 @@ const fmtCurrency = (amount: number, currency: string = 'USD') => {
   return `${symbol}${amount.toFixed(2)}`;
 };
 
-type SortField = 'invoice_number' | 'total' | 'due_date' | 'created_at' | 'status';
+type SortField = 'invoice_number' | 'total' | 'due_date' | 'send_date' | 'created_at' | 'status';
 type SortDir = 'asc' | 'desc';
 
 function getFirstOfNextMonth(): Date {
@@ -240,9 +240,9 @@ export default function Invoices() {
         const av = sortField === 'total' ? a.total : a.invoice_number;
         const bv = sortField === 'total' ? b.total : b.invoice_number;
         cmp = av < bv ? -1 : av > bv ? 1 : 0;
-      } else if (sortField === 'due_date') {
-        const ad = a.due_date ?? '';
-        const bd = b.due_date ?? '';
+      } else if (sortField === 'due_date' || sortField === 'send_date') {
+        const ad = (sortField === 'due_date' ? a.due_date : a.send_date) ?? '';
+        const bd = (sortField === 'due_date' ? b.due_date : b.send_date) ?? '';
         cmp = ad < bd ? -1 : ad > bd ? 1 : 0;
       } else if (sortField === 'status') {
         cmp = a.status < b.status ? -1 : a.status > b.status ? 1 : 0;
@@ -921,7 +921,7 @@ export default function Invoices() {
                   <TableHead className="font-mono text-xs">Client</TableHead>
                   <SortHeader field="status">Status</SortHeader>
                   <SortHeader field="due_date">Due Date</SortHeader>
-                  <TableHead className="font-mono text-xs">Send Date</TableHead>
+                  <SortHeader field="send_date">Send Date</SortHeader>
                   <SortHeader field="total"><span className="ml-auto">Total</span></SortHeader>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
                 </TableRow>
