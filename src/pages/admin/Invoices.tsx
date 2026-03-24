@@ -998,19 +998,24 @@ export default function Invoices() {
                               Pay Now
                             </Button>
                           )}
-                          {isAdmin && inv.status !== 'cancelled' && inv.status !== 'paid' && (
+                          {isAdmin && inv.status !== 'cancelled' && (
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7 border-primary/50 text-primary hover:bg-primary/10"
-                              onClick={() => handleSendEmail(inv.id)}
+                              className={`h-7 w-7 ${isSentAlready(inv.status) ? 'border-orange-500/50 text-orange-400 hover:bg-orange-500/10' : 'border-primary/50 text-primary hover:bg-primary/10'}`}
+                              onClick={() => isSentAlready(inv.status) ? setResendConfirmId(inv.id) : handleSendEmail(inv.id)}
                               disabled={sendingId === inv.id}
                             >
                               {sendingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                             </Button>
                           )}
-                          {isAdmin && inv.status === 'draft' && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(inv)}>
+                          {isAdmin && inv.status !== 'cancelled' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`h-8 w-8 ${isSentAlready(inv.status) ? 'text-orange-400' : ''}`}
+                              onClick={() => isSentAlready(inv.status) ? setEditSentInvoice(inv) : openEdit(inv)}
+                            >
                               <Pencil className="h-4 w-4" />
                             </Button>
                           )}
