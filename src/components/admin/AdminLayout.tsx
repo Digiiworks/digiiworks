@@ -77,7 +77,7 @@ const DesktopUserMenu = ({ profile, roleLabel, isClient, signOut, pathname, sett
         className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-muted transition-colors"
       >
         <div className="flex-1 text-left">
-          <p className="font-mono text-xs text-foreground truncate">{profile?.display_name ?? profile?.email}</p>
+          <p className="font-mono text-xs text-foreground truncate">{profile?.email ?? profile?.display_name}</p>
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{roleLabel}</p>
         </div>
         <ChevronUp className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? '' : 'rotate-180'}`} />
