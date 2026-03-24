@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Separator } from '@/components/ui/separator';
-import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package, Menu, X, Wrench, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package, Menu, X, Wrench, MoreHorizontal, Globe, ChevronUp } from 'lucide-react';
 
 const bottomTabs = [
   { label: 'Clients', to: '/admin/clients', icon: UserCircle },
