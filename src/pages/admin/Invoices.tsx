@@ -240,9 +240,9 @@ export default function Invoices() {
         const av = sortField === 'total' ? a.total : a.invoice_number;
         const bv = sortField === 'total' ? b.total : b.invoice_number;
         cmp = av < bv ? -1 : av > bv ? 1 : 0;
-      } else if (sortField === 'due_date') {
-        const ad = a.due_date ?? '';
-        const bd = b.due_date ?? '';
+      } else if (sortField === 'due_date' || sortField === 'send_date') {
+        const ad = (sortField === 'due_date' ? a.due_date : a.send_date) ?? '';
+        const bd = (sortField === 'due_date' ? b.due_date : b.send_date) ?? '';
         cmp = ad < bd ? -1 : ad > bd ? 1 : 0;
       } else if (sortField === 'status') {
         cmp = a.status < b.status ? -1 : a.status > b.status ? 1 : 0;
