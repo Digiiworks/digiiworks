@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Users, FileText, Mail, TrendingUp, BarChart3 } from 'lucide-react';
+import { Users, FileText, Mail, TrendingUp, BarChart3, AlertCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, subDays, startOfDay, addMonths } from 'date-fns';
 import StatCard from '@/components/admin/StatCard';
@@ -109,6 +109,36 @@ const AdminDashboardContent = () => {
     },
   });
 
+  const { data: revenueThisMonth } = useQuery({
+    queryKey: ['revenue-this-month'],
+    queryFn: async () => {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const { data } = await supabase
+        .from('invoices')
+        .select('total, currency')
+        .eq('status', 'paid')
+        .gte('paid_at', startOfMonth.toISOString());
+      // Sum in USD (simple conversion not needed for MVP — just sum the numbers)
+      return (data ?? []).reduce((sum, inv) => sum + (inv.total ?? 0), 0);
+    },
+  });
+
+  const { data: overdueInvoices } = useQuery({
+    queryKey: ['overdue-invoices-dashboard'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, total, due_date, client_id, client_company_id')
+        .eq('status', 'overdue')
+        .order('due_date', { ascending: true })
+        .limit(10);
+      // Enrich with client name
+      return (data ?? []).map((inv: any) => ({ ...inv, client_name: null }));
+    },
+  });
+
   const getBillingOccurrences = (cycle: string, months: number): number => {
     switch (cycle) {
       case 'weekly':    return Math.round(months * 4.333);
@@ -204,11 +234,36 @@ const AdminDashboardContent = () => {
     <div className="space-y-6">
       <AdminToolbar title="Dashboard" subtitle="Overview of your agency operations" />
 
+      {/* Action Required Banner */}
+      {((stats?.new_leads ?? 0) > 0 || (overdueInvoices?.length ?? 0) > 0) && (
+        <div className="glass-card border border-amber-500/20 bg-amber-500/5 p-3 flex items-center gap-3 flex-wrap">
+          <AlertCircle className="h-4 w-4 text-amber-400 flex-shrink-0" />
+          <div className="flex items-center gap-4 flex-wrap font-mono text-xs">
+            {(overdueInvoices?.length ?? 0) > 0 && (
+              <a href="/admin/invoices" className="text-amber-400 hover:underline">
+                {overdueInvoices!.length} overdue invoice{overdueInvoices!.length !== 1 ? 's' : ''}
+              </a>
+            )}
+            {(stats?.new_leads ?? 0) > 0 && (
+              <a href="/admin/leads" className="text-amber-400 hover:underline">
+                {stats!.new_leads} new lead{stats!.new_leads !== 1 ? 's' : ''}
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Leads" value={leadCount} icon={Mail} iconColor="text-neon-blue" />
         <StatCard label="New Leads" value={newLeads} icon={TrendingUp} iconColor="text-neon-mint" />
         <StatCard label="Blog Posts" value={postCount} icon={FileText} iconColor="text-neon-purple" />
         <StatCard label="Conversion Rate" value={conversionRate} icon={Users} iconColor="text-primary" />
+        <StatCard
+          label="Revenue This Month"
+          value={`$${(revenueThisMonth ?? 0).toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+          icon={TrendingUp}
+          iconColor="text-neon-mint"
+        />
       </div>
 
       {/* Income Forecast */}
@@ -251,6 +306,34 @@ const AdminDashboardContent = () => {
           </p>
         </div>
       </div>
+
+      {/* Overdue Invoices */}
+      {overdueInvoices && overdueInvoices.length > 0 && (
+        <div className="glass-card p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle className="h-4 w-4 text-red-400" />
+            <h3 className="font-mono text-sm font-semibold text-red-400">Overdue Invoices</h3>
+            <span className="font-mono text-xs text-muted-foreground ml-auto">{overdueInvoices.length} total</span>
+          </div>
+          <div className="space-y-2">
+            {overdueInvoices.slice(0, 5).map((inv: any) => {
+              const daysOverdue = Math.floor((Date.now() - new Date(inv.due_date).getTime()) / 86400000);
+              return (
+                <div key={inv.id} className="flex items-center justify-between font-mono text-xs py-1.5 border-b border-border/50 last:border-0">
+                  <div>
+                    <span className="font-medium">{inv.client_name ?? inv.invoice_number}</span>
+                    <span className="text-muted-foreground ml-2">{inv.invoice_number}</span>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="text-red-400">{daysOverdue}d overdue</span>
+                    <span>${(inv.total ?? 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="glass-card p-5">

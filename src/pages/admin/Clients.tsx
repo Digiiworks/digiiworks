@@ -28,6 +28,7 @@ import PageLoader from '@/components/admin/PageLoader';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import RecurringServicesSelector, { type RecurringService } from '@/components/admin/RecurringServicesSelector';
 import ImageCropper from '@/components/admin/ImageCropper';
+import ClientDetailSheet from '@/components/admin/ClientDetailSheet';
 
 type ClientCompany = {
   id: string;
@@ -80,6 +81,7 @@ export default function Clients() {
   const [showCreate, setShowCreate] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [detailCompanyId, setDetailCompanyId] = useState<string | null>(null);
 
   // Form
   const [form, setForm] = useState({
@@ -689,7 +691,7 @@ export default function Clients() {
           {/* Mobile card view */}
           <div className="space-y-3 md:hidden">
             {paginated.map(client => (
-              <div key={client.id} className="rounded-lg border border-border bg-card/50 p-3 space-y-2">
+              <div key={client.id} className="rounded-lg border border-border bg-card/50 p-3 space-y-2 cursor-pointer" onClick={() => setDetailCompanyId(client.id)}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
                     {client.logo_url ? (
@@ -705,7 +707,7 @@ export default function Clients() {
                       <p className="text-xs text-muted-foreground truncate">{client.email ?? '—'}</p>
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(client)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -762,7 +764,7 @@ export default function Clients() {
               </TableHeader>
               <TableBody>
                 {paginated.map(client => (
-                  <TableRow key={client.id} className="border-border/30">
+                  <TableRow key={client.id} className="border-border/30 cursor-pointer hover:bg-muted/30" onClick={() => setDetailCompanyId(client.id)}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         {client.logo_url ? (
@@ -811,7 +813,7 @@ export default function Clients() {
                     <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">
                       {format(new Date(client.created_at), 'MMM d, yyyy')}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(client)}>
                           <Pencil className="h-4 w-4" />
@@ -1226,6 +1228,21 @@ export default function Clients() {
           title="Crop Company Logo"
         />
       )}
+
+      <ClientDetailSheet
+        companyId={detailCompanyId}
+        onClose={() => setDetailCompanyId(null)}
+        onEdit={(id) => {
+          setDetailCompanyId(null);
+          const co = clients.find(c => c.id === id);
+          if (co) setEditClient(co);
+        }}
+        onNewInvoice={(id) => {
+          setDetailCompanyId(null);
+          // navigate to invoices filtered by company — for now just navigate
+          window.location.href = '/admin/invoices';
+        }}
+      />
     </div>
   );
 }
