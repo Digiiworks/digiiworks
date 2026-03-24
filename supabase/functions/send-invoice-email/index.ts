@@ -26,6 +26,7 @@ function currencySymbol(currency: string) {
 function hasAnyBankField(bankInfo: any) {
   if (!bankInfo || typeof bankInfo !== 'object') return false;
 
+  // Only count substantive fields — currency and account_type are defaults, not real details
   return Boolean(
     bankInfo.bank_name ||
       bankInfo.account_name ||
@@ -34,9 +35,7 @@ function hasAnyBankField(bankInfo: any) {
       bankInfo.routing_number ||
       bankInfo.branch_code ||
       bankInfo.branch ||
-      bankInfo.account_type ||
-      bankInfo.reference_note ||
-      bankInfo.currency
+      bankInfo.reference_note
   );
 }
 
