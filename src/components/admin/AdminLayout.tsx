@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { Separator } from '@/components/ui/separator';
 import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package, Menu, X, Wrench, MoreHorizontal } from 'lucide-react';
 
 const bottomTabs = [
@@ -19,6 +20,10 @@ const navItems = [
   { label: 'Blog Posts', to: '/admin/posts', icon: FileText },
   { label: 'Page Content', to: '/admin/content', icon: Settings },
   { label: 'Users', to: '/admin/users', icon: Users },
+];
+
+const externalLinks = [
+  { label: '📱 App Launcher', href: 'https://launch.digiiworks.co' },
 ];
 
 const settingsItem = { label: 'Settings', to: '/admin/settings', icon: Wrench };
@@ -57,6 +62,21 @@ const AdminLayout = () => {
             </Link>
           );
         })}
+
+        <Separator className="mx-3 my-2" />
+
+        {externalLinks.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-mono text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            {link.label}
+          </a>
+        ))}
       </nav>
 
       <div className="border-t border-border/50 px-3 py-4 space-y-3">
