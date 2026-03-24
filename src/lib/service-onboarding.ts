@@ -358,7 +358,7 @@ export const SERVICE_ONBOARDING: Record<string, ServiceOnboardingConfig> = {
     glowHsl: '184 100% 50%',
     headerLabel: '// rent_a_website :: onboarding',
     headline: "Let's get you online — zero upfront",
-    subtitle: '5 quick steps — takes under 2 minutes.',
+    subtitle: '6 quick steps — takes under 2 minutes.',
     steps: [
       {
         question: 'What type of business are you?',
@@ -411,6 +411,18 @@ export const SERVICE_ONBOARDING: Record<string, ServiceOnboardingConfig> = {
           { label: 'Yes — full brand kit', desc: 'Logo, colours, fonts ready' },
           { label: 'Partial — logo only', desc: 'Need help with the rest' },
           { label: 'No — need everything', desc: "We'll create your brand look" },
+        ],
+      },
+      {
+        question: "What's your monthly budget?",
+        subtitle: 'Select one.',
+        type: 'single',
+        key: 'budget',
+        options: [
+          { label: 'Launch — $49/mo', desc: '5 pages, hosting, SSL, SEO foundation, 1 update/mo' },
+          { label: 'Grow — $99/mo', desc: '10 pages, CMS, lead forms, monthly SEO report' },
+          { label: 'Dominate — $199/mo', desc: 'Unlimited pages, AI chatbot, automations, priority support' },
+          { label: 'Not sure — advise me', desc: "We'll recommend the best fit" },
         ],
       },
       {

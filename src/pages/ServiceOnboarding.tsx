@@ -28,10 +28,17 @@ const ServiceOnboarding = () => {
   return <OnboardingForm config={config} preselectedPackage={preselectedPackage} />;
 };
 
-const PACKAGE_MAP: Record<string, string> = {
-  starter: 'Starter — $297/mo',
-  growth: 'Growth — $597/mo',
-  power: 'Power — $997/mo',
+const PACKAGE_MAPS: Record<string, Record<string, string>> = {
+  'ai-powered-social-media': {
+    starter: 'Starter — $297/mo',
+    growth: 'Growth — $597/mo',
+    power: 'Power — $997/mo',
+  },
+  'rent-a-website': {
+    launch: 'Launch — $49/mo',
+    grow: 'Grow — $99/mo',
+    dominate: 'Dominate — $199/mo',
+  },
 };
 
 function OnboardingForm({ config, preselectedPackage }: { config: NonNullable<ReturnType<typeof getServiceOnboarding>>; preselectedPackage?: string | null }) {
@@ -45,9 +52,10 @@ function OnboardingForm({ config, preselectedPackage }: { config: NonNullable<Re
   const [honeypot, setHoneypot] = useState('');
 
   // Quiz answers — pre-select budget if package query param provided
+  const packageMap = PACKAGE_MAPS[config.serviceSlug] || {};
   const [answers, setAnswers] = useState<Record<string, string | string[]>>(() => {
-    if (preselectedPackage && PACKAGE_MAP[preselectedPackage]) {
-      return { budget: PACKAGE_MAP[preselectedPackage] };
+    if (preselectedPackage && packageMap[preselectedPackage]) {
+      return { budget: packageMap[preselectedPackage] };
     }
     return {};
   });
