@@ -1123,11 +1123,18 @@ export default function Invoices() {
 
             <div>
               <Label className="font-mono text-xs mb-2 block">Line Items</Label>
+              <div className="hidden sm:grid sm:grid-cols-[3fr_2.5fr_60px_1.5fr_80px_36px] sm:gap-2 sm:mb-1.5">
+                <span className="text-[10px] font-mono text-muted-foreground">Product</span>
+                <span className="text-[10px] font-mono text-muted-foreground">Description</span>
+                <span className="text-[10px] font-mono text-muted-foreground">Qty</span>
+                <span className="text-[10px] font-mono text-muted-foreground">Price</span>
+                <span className="text-[10px] font-mono text-muted-foreground">Total</span>
+                <span></span>
+              </div>
               <div className="space-y-2">
                 {lineItems.map((li, idx) => (
-                    <div key={idx} className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-[3fr_2.5fr_60px_1.5fr_auto_auto] sm:gap-2 sm:items-end border-b border-border/30 pb-2 sm:border-0 sm:pb-0">
+                    <div key={idx} className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-[3fr_2.5fr_60px_1.5fr_80px_36px] sm:gap-2 sm:items-center border-b border-border/30 pb-2 sm:border-0 sm:pb-0">
                      <div>
-                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground">Product</span>}
                       <ProductCombobox
                         products={products}
                         value={li.product_id}
@@ -1136,27 +1143,22 @@ export default function Invoices() {
                       />
                     </div>
                     <div>
-                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground hidden sm:block">Description</span>}
                       <Input value={li.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} className="h-9 text-xs bg-background border-border" placeholder="Description" />
                     </div>
                     <div>
                       <span className="text-[10px] font-mono text-muted-foreground sm:hidden">Qty</span>
-                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground hidden sm:block">Qty</span>}
                       <Input type="number" min={1} value={li.quantity} onChange={e => updateLineItem(idx, 'quantity', +e.target.value)} className="h-9 text-xs bg-background border-border" />
                     </div>
                     <div>
                       <span className="text-[10px] font-mono text-muted-foreground sm:hidden">Price</span>
-                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground hidden sm:block">Price</span>}
                       <Input type="number" min={0} step={0.01} value={li.unit_price} onChange={e => updateLineItem(idx, 'unit_price', +e.target.value)} className="h-9 text-xs bg-background border-border" />
                     </div>
-                    <div className="flex items-end">
-                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground hidden sm:block">&nbsp;</span>}
-                      <span className="font-mono text-xs text-muted-foreground whitespace-nowrap pb-2">{fmtCurrency(li.total, profiles.find(p => p.user_id === form.client_id)?.currency)}</span>
+                    <div className="flex items-center">
+                      <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">{fmtCurrency(li.total, profiles.find(p => p.user_id === form.client_id)?.currency)}</span>
                     </div>
-                    <div className="flex items-end">
-                      {idx === 0 && <span className="text-[10px] font-mono text-muted-foreground hidden sm:block">&nbsp;</span>}
+                    <div className="flex items-center justify-center">
                       {lineItems.length > 1 && (
-                        <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive shrink-0" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
