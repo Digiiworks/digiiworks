@@ -31,6 +31,7 @@ import InvoicesAdmin from "./pages/admin/Invoices";
 import ClientsAdmin from "./pages/admin/Clients";
 import ProductsAdmin from "./pages/admin/Products";
 import SettingsAdmin from "./pages/admin/Settings";
+import BlogGenerator from "./pages/admin/BlogGenerator";
 
 // Lazy imports for low-traffic / detail pages
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
@@ -127,6 +128,11 @@ const App = () => (
                   <Route path="settings" element={
                     <ProtectedRoute requiredRoles={['admin']}>
                       <SettingsAdmin />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="blog-generator" element={
+                    <ProtectedRoute requiredRoles={['admin', 'editor']}>
+                      <BlogGenerator />
                     </ProtectedRoute>
                   } />
                 </Route>

@@ -3,7 +3,7 @@ import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Separator } from '@/components/ui/separator';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package, Menu, X, Wrench, MoreHorizontal, Globe, ChevronUp } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package, Menu, X, Wrench, MoreHorizontal, Globe, ChevronUp, Sparkles } from 'lucide-react';
 
 const bottomTabs = [
   { label: 'Clients', to: '/admin/clients', icon: UserCircle },
@@ -19,6 +19,7 @@ const navItems = [
   { label: 'Products', to: '/admin/products', icon: Package },
   { label: 'Invoices', to: '/admin/invoices', icon: DollarSign },
   { label: 'Blog Posts', to: '/admin/posts', icon: FileText },
+  { label: 'Blog AI', to: '/admin/blog-generator', icon: Sparkles },
   { label: 'Page Content', to: '/admin/content', icon: Settings },
   { label: 'Users', to: '/admin/users', icon: Users },
 ];
