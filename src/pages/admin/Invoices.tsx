@@ -22,7 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import {
-  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle, Pencil, ExternalLink, CircleDollarSign, CheckSquare,
+  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle, Pencil, ExternalLink, CircleDollarSign, CheckSquare, Download,
 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -135,7 +135,7 @@ function get25thOfCurrentMonth(): Date {
 
 export default function Invoices() {
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -678,6 +678,50 @@ export default function Invoices() {
     }
   };
 
+  const handleDuplicate = async (inv: Invoice) => {
+    // Get the invoice items for this invoice
+    const { data: items } = await supabase
+      .from('invoice_items')
+      .select('description, quantity, unit_price, total, product_id')
+      .eq('invoice_id', inv.id);
+
+    // Get next invoice number
+    const { data: nextNum } = await supabase.rpc('next_invoice_number');
+    const invoiceNumber = nextNum ?? `INV-${Date.now()}`;
+
+    // Create duplicate as draft
+    const { data: newInv, error } = await supabase
+      .from('invoices')
+      .insert({
+        invoice_number: invoiceNumber,
+        client_id: inv.client_id,
+        client_company_id: inv.client_company_id,
+        status: 'draft',
+        subtotal: inv.subtotal,
+        tax_rate: inv.tax_rate,
+        total: inv.total,
+        currency: inv.currency ?? 'USD',
+        notes: inv.notes,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: 'Failed to duplicate', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    // Copy line items
+    if (items?.length && newInv) {
+      await supabase.from('invoice_items').insert(
+        items.map(item => ({ ...item, invoice_id: newInv.id }))
+      );
+    }
+
+    toast({ title: `Invoice duplicated as ${invoiceNumber}` });
+    fetchAll();
+  };
+
   // Bulk actions
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -1107,7 +1151,10 @@ export default function Invoices() {
                               <Badge className={`${STATUS_COLORS[inv.status]} border-0 capitalize`}>{inv.status}</Badge>
                             </SelectTrigger>
                             <SelectContent>
-                              {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                              {(() => {
+                                const allowedStatuses = ALLOWED_TRANSITIONS[inv.status] ?? [];
+                                return allowedStatuses.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>);
+                              })()}
                             </SelectContent>
                           </Select>
                         ) : (
@@ -1167,6 +1214,11 @@ export default function Invoices() {
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewDetail(inv)}>
                             <Eye className="h-4 w-4" />
                           </Button>
+                          {isAdmin && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Duplicate invoice" onClick={() => handleDuplicate(inv)}>
+                              <RefreshCw className="h-4 w-4" />
+                            </Button>
+                          )}
                           {isAdmin && (
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(inv.id)}>
                               <Trash2 className="h-4 w-4" />
@@ -1548,6 +1600,23 @@ export default function Invoices() {
                       Send Email Now
                     </Button>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="font-mono text-xs"
+                    onClick={async () => {
+                      const { data, error } = await supabase.functions.invoke('generate-invoice-token', {
+                        body: { invoice_id: showDetail.id },
+                      });
+                      if (error || !data?.token) {
+                        toast({ title: 'Failed to generate PDF link', description: error?.message, variant: 'destructive' });
+                        return;
+                      }
+                      window.open(`/invoice/${showDetail.id}?token=${data.token}`, '_blank');
+                    }}
+                  >
+                    <Download className="h-3 w-3 mr-1" /> PDF
+                  </Button>
                 </div>
               )}
 

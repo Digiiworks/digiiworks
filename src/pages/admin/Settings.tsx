@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail, CreditCard, Share2, Image, Upload, ShieldCheck, Bell, TrendingUp, Save } from 'lucide-react';
+import { CheckCircle2, Loader2, Globe, Landmark, Link as LinkIcon, BarChart3, Mail, CreditCard, Share2, Image, Upload, ShieldCheck, Bell, TrendingUp, Save, Hash } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PAGE_KEY = 'payment_settings';
@@ -98,6 +98,10 @@ const SettingsPage = () => {
   // Dunning state
   const [dunningRunning, setDunningRunning] = useState(false);
 
+  // Invoice numbering config state
+  const [invoiceConfig, setInvoiceConfig] = useState({ prefix: 'INV-', padding: 4 });
+  const [invConfigLoading, setInvConfigLoading] = useState(false);
+
   // MFA state
   type MfaFactor = { id: string; friendly_name: string; factor_type: string; status: string };
   const [mfaFactors, setMfaFactors] = useState<MfaFactor[]>([]);
@@ -144,6 +148,16 @@ const SettingsPage = () => {
       setLoading(false);
     };
     load();
+  }, []);
+
+  useEffect(() => {
+    supabase.from('page_content').select('content').eq('page_key', 'invoice_config').maybeSingle()
+      .then(({ data }) => {
+        if (data?.content) {
+          const c = data.content as any;
+          setInvoiceConfig({ prefix: c.prefix ?? 'INV-', padding: c.padding ?? 4 });
+        }
+      });
   }, []);
 
   const persist = useCallback(async (newData: BankingInfo) => {
@@ -260,6 +274,16 @@ const SettingsPage = () => {
     } finally {
       setDunningRunning(false);
     }
+  };
+
+  const handleSaveInvoiceConfig = async () => {
+    setInvConfigLoading(true);
+    await supabase.from('page_content').upsert(
+      { page_key: 'invoice_config', content: invoiceConfig as any, title: 'Invoice Config' },
+      { onConflict: 'page_key' }
+    );
+    toast.success('Invoice numbering config saved');
+    setInvConfigLoading(false);
   };
 
   const startMfaEnroll = async () => {
@@ -799,6 +823,47 @@ const SettingsPage = () => {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <Field label="Google Pixel / GA4 Measurement ID" path={['tracking', 'google_pixel_id']} placeholder="G-XXXXXXXXXX or AW-XXXXXXXXX" />
           <Field label="Meta (Facebook) Pixel ID" path={['tracking', 'meta_pixel_id']} placeholder="123456789012345" />
+        </CardContent>
+      </Card>
+
+      {/* Invoice Numbering */}
+      <Card className="border-border bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-mono text-base">
+            <Hash className="h-4 w-4 text-primary" /> Invoice Numbering
+          </CardTitle>
+          <CardDescription>
+            Configure the prefix and padding for auto-generated invoice numbers.
+            Example: prefix "INV-" with 4 digits → INV-0042
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label className="font-mono text-xs">Prefix</Label>
+              <Input
+                value={invoiceConfig.prefix}
+                onChange={e => setInvoiceConfig(p => ({ ...p, prefix: e.target.value }))}
+                placeholder="INV-"
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="font-mono text-xs">Digit Padding</Label>
+              <Input
+                type="number" min={1} max={8}
+                value={invoiceConfig.padding}
+                onChange={e => setInvoiceConfig(p => ({ ...p, padding: parseInt(e.target.value) || 4 }))}
+                className="font-mono text-sm"
+              />
+            </div>
+          </div>
+          <p className="font-mono text-xs text-muted-foreground">
+            Preview: {invoiceConfig.prefix}{String(42).padStart(invoiceConfig.padding, '0')}
+          </p>
+          <Button onClick={handleSaveInvoiceConfig} disabled={invConfigLoading} className="font-mono text-xs">
+            {invConfigLoading ? 'Saving...' : 'Save'}
+          </Button>
         </CardContent>
       </Card>
     </div>
