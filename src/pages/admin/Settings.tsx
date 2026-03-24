@@ -203,10 +203,30 @@ const SettingsPage = () => {
   const handleRefreshRates = async () => {
     setFxRefreshing(true);
     try {
-      const { error } = await supabase.functions.invoke('update-exchange-rates');
+      const { data: result, error } = await supabase.functions.invoke('update-exchange-rates');
       if (error) throw error;
-      await fetchRates();
-      toast.success('Exchange rates updated from live market');
+      const liveRates: Record<string, number> = result?.rates ?? {};
+      // Update UI with live rates (merge with existing margin_pct if already loaded)
+      setFxRates(prev => {
+        const next = Object.entries(liveRates).map(([code, rate]) => {
+          const existing = prev.find(r => r.currency_code === code);
+          return {
+            currency_code: code,
+            rate_vs_usd: String(rate),
+            margin_pct: existing?.margin_pct ?? '0',
+            updated_at: new Date().toISOString(),
+          };
+        });
+        // Keep any rows already in UI that weren't returned (shouldn't happen, but safe)
+        const returned = new Set(next.map(r => r.currency_code));
+        const kept = prev.filter(r => !returned.has(r.currency_code));
+        return [...next, ...kept];
+      });
+      if (result?.db_updated) {
+        toast.success('Exchange rates updated from live market');
+      } else {
+        toast.success('Live rates fetched — run database migration to persist them');
+      }
     } catch (err: any) {
       toast.error('Refresh failed: ' + (err.message || 'Unknown error'));
     } finally {

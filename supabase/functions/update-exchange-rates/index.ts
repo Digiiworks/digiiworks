@@ -17,26 +17,30 @@ Deno.serve(async (req) => {
     if (!res.ok) throw new Error(`Frankfurter API error: ${res.status}`);
     const { rates } = await res.json() as { rates: Record<string, number> };
 
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    // Attempt to persist rates to DB — non-fatal if table doesn't exist yet
+    let dbUpdated = false;
+    try {
+      const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      for (const [currency_code, rate_vs_usd] of Object.entries(rates)) {
+        const { data: existing } = await supabase
+          .from('exchange_rates')
+          .select('margin_pct')
+          .eq('currency_code', currency_code)
+          .maybeSingle();
 
-    // Upsert each currency — preserve existing margin_pct if row already exists
-    for (const [currency_code, rate_vs_usd] of Object.entries(rates)) {
-      const { data: existing } = await supabase
-        .from('exchange_rates')
-        .select('margin_pct')
-        .eq('currency_code', currency_code)
-        .maybeSingle();
+        const { error } = await supabase.from('exchange_rates').upsert({
+          currency_code,
+          rate_vs_usd,
+          margin_pct: existing?.margin_pct ?? 0,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'currency_code' });
 
-      await supabase.from('exchange_rates').upsert({
-        currency_code,
-        rate_vs_usd,
-        margin_pct: existing?.margin_pct ?? 0,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'currency_code' });
-    }
+        if (!error) dbUpdated = true;
+      }
+    } catch { /* DB write is optional — live rates still returned */ }
 
     return new Response(
-      JSON.stringify({ updated: Object.keys(rates), rates }),
+      JSON.stringify({ rates, db_updated: dbUpdated }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err: any) {
