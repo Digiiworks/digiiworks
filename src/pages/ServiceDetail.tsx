@@ -77,6 +77,9 @@ const ServiceDetail = () => {
           </div>
         </motion.section>
 
+        {/* Pricing — social media only */}
+        {service.slug === 'ai-powered-social-media' && <SocialPricing />}
+
         {/* Process */}
         <motion.section className="mb-14 md:mb-20" {...fadeUp} transition={{ duration: 0.5, delay: 0.2 }}>
           <div className="mb-6 flex items-center gap-3">
