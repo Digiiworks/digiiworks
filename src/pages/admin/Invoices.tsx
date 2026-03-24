@@ -1370,23 +1370,24 @@ export default function Invoices() {
               {/* Email Actions */}
               {isAdmin && showDetail.status !== 'cancelled' && (
                 <div className="flex gap-2">
-                  <Button
-                    className="flex-1 gap-2 font-mono"
-                    onClick={() => handleSendEmail(showDetail.id)}
-                    disabled={sendingId === showDetail.id}
-                  >
-                    {sendingId === showDetail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    Send Email Now
-                  </Button>
-                  {detailEmails.some(e => e.status === 'sent') && (
+                  {detailEmails.some(e => e.status === 'sent') ? (
                     <Button
+                      className="flex-1 gap-2 font-mono border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
                       variant="outline"
-                      className="gap-2 font-mono"
-                      onClick={() => handleSendEmail(showDetail.id, true)}
+                      onClick={() => setResendConfirmId(showDetail.id)}
                       disabled={sendingId === showDetail.id}
                     >
-                      <RefreshCw className="h-4 w-4" />
-                      Resend
+                      {sendingId === showDetail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      Resend Email
+                    </Button>
+                  ) : (
+                    <Button
+                      className="flex-1 gap-2 font-mono"
+                      onClick={() => handleSendEmail(showDetail.id)}
+                      disabled={sendingId === showDetail.id}
+                    >
+                      {sendingId === showDetail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      Send Email Now
                     </Button>
                   )}
                 </div>
