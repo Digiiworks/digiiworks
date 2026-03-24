@@ -203,30 +203,29 @@ const SettingsPage = () => {
   const handleRefreshRates = async () => {
     setFxRefreshing(true);
     try {
-      const { data: result, error } = await supabase.functions.invoke('update-exchange-rates');
-      if (error) throw error;
-      const liveRates: Record<string, number> = result?.rates ?? {};
-      // Update UI with live rates (merge with existing margin_pct if already loaded)
-      setFxRates(prev => {
-        const next = Object.entries(liveRates).map(([code, rate]) => {
-          const existing = prev.find(r => r.currency_code === code);
-          return {
-            currency_code: code,
-            rate_vs_usd: String(rate),
-            margin_pct: existing?.margin_pct ?? '0',
-            updated_at: new Date().toISOString(),
-          };
-        });
-        // Keep any rows already in UI that weren't returned (shouldn't happen, but safe)
-        const returned = new Set(next.map(r => r.currency_code));
-        const kept = prev.filter(r => !returned.has(r.currency_code));
-        return [...next, ...kept];
-      });
-      if (result?.db_updated) {
-        toast.success('Exchange rates updated from live market');
-      } else {
-        toast.success('Live rates fetched — run database migration to persist them');
+      // Fetch live rates directly from Frankfurter (no edge function needed)
+      const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=ZAR,THB');
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      const { rates } = await res.json() as { rates: Record<string, number> };
+
+      const updatedAt = new Date().toISOString();
+      const next: typeof fxRates = [];
+
+      for (const [currency_code, rate_vs_usd] of Object.entries(rates)) {
+        const existing = fxRates.find(r => r.currency_code === currency_code);
+        const margin_pct = existing?.margin_pct ?? '0';
+        // Upsert into DB (non-fatal if table doesn't exist yet)
+        await supabase.from('exchange_rates').upsert(
+          { currency_code, rate_vs_usd, margin_pct: parseFloat(margin_pct), updated_at: updatedAt },
+          { onConflict: 'currency_code' }
+        );
+        next.push({ currency_code, rate_vs_usd: String(rate_vs_usd), margin_pct, updated_at: updatedAt });
       }
+
+      // Keep any existing rows not returned by API
+      const returned = new Set(next.map(r => r.currency_code));
+      setFxRates([...next, ...fxRates.filter(r => !returned.has(r.currency_code))]);
+      toast.success('Exchange rates updated from live market');
     } catch (err: any) {
       toast.error('Refresh failed: ' + (err.message || 'Unknown error'));
     } finally {

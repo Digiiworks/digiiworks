@@ -186,18 +186,20 @@ export default function Invoices() {
     setLoading(true);
     setFetchError(false);
     try {
-      const [invRes, profRes, prodRes, compRes, paySettingsRes, ratesRes] = await Promise.all([
+      const [invRes, profRes, prodRes, compRes, paySettingsRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
         supabase.from('profiles').select('user_id, display_name, email, company, currency'),
         supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
         supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
-        supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
       ]);
-      if (ratesRes.data) {
-        setExchangeRates(new Map((ratesRes.data as ExchangeRate[]).map(r => [r.currency_code, r])));
-      }
       if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
+      // Load FX rates separately — non-critical, silently skip if table missing
+      supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct')
+        .then(({ data }) => {
+          if (data?.length) setExchangeRates(new Map((data as ExchangeRate[]).map(r => [r.currency_code, r])));
+        })
+        .catch(() => {});
       const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
       const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
 

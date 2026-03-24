@@ -81,23 +81,30 @@ const AdminDashboardContent = () => {
     queryKey: ['fx-rates-live'],
     staleTime: 60 * 60 * 1000, // cache 1 hour
     queryFn: async () => {
-      // Always fetch live rates from Frankfurter first (ECB-sourced, no API key, CORS-safe)
-      const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=ZAR,THB');
-      if (!res.ok) throw new Error(`FX API unavailable (${res.status})`);
-      const { rates } = await res.json() as { rates: Record<string, number> };
-      const map = new Map<string, { rate_vs_usd: number; margin_pct: number }>(
-        Object.entries(rates).map(([code, rate]) => [code, { rate_vs_usd: rate, margin_pct: 0 }])
-      );
-      // Overlay admin-configured margin_pct from DB if available
-      try {
-        const { data: dbRates } = await supabase
-          .from('exchange_rates')
-          .select('currency_code, margin_pct');
-        (dbRates ?? []).forEach((r: any) => {
-          const existing = map.get(r.currency_code);
-          if (existing) map.set(r.currency_code, { ...existing, margin_pct: r.margin_pct ?? 0 });
+      // Run both sources in parallel — use whichever succeeds
+      const [dbResult, apiResult] = await Promise.allSettled([
+        supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
+        fetch('https://api.frankfurter.app/latest?from=USD&to=ZAR,THB')
+          .then(r => r.ok ? r.json() : Promise.reject(r.status)),
+      ]);
+
+      const map = new Map<string, { rate_vs_usd: number; margin_pct: number }>();
+
+      // DB rates first (seeded by migration; includes admin margin_pct)
+      if (dbResult.status === 'fulfilled' && dbResult.value.data?.length) {
+        (dbResult.value.data as any[]).forEach(r =>
+          map.set(r.currency_code, { rate_vs_usd: r.rate_vs_usd, margin_pct: r.margin_pct ?? 0 })
+        );
+      }
+
+      // Live Frankfurter rates override rate_vs_usd (keep margin_pct from DB)
+      if (apiResult.status === 'fulfilled' && apiResult.value?.rates) {
+        Object.entries(apiResult.value.rates as Record<string, number>).forEach(([code, rate]) => {
+          const existing = map.get(code);
+          map.set(code, { rate_vs_usd: rate, margin_pct: existing?.margin_pct ?? 0 });
         });
-      } catch { /* table may not exist yet — live rates work without margins */ }
+      }
+
       return map;
     },
   });
