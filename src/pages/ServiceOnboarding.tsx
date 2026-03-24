@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Navigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Send, CheckCircle2, Loader2, Clock, Mail, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
