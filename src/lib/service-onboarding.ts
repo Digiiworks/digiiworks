@@ -358,7 +358,7 @@ export const SERVICE_ONBOARDING: Record<string, ServiceOnboardingConfig> = {
     glowHsl: '184 100% 50%',
     headerLabel: '// rent_a_website :: onboarding',
     headline: "Let's get you online — zero upfront",
-    subtitle: '5 quick steps — takes under 2 minutes.',
+    subtitle: '6 quick steps — takes under 2 minutes.',
     steps: [
       {
         question: 'What type of business are you?',
