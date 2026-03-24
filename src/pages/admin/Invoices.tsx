@@ -921,7 +921,7 @@ export default function Invoices() {
                   <TableHead className="font-mono text-xs">Client</TableHead>
                   <SortHeader field="status">Status</SortHeader>
                   <SortHeader field="due_date">Due Date</SortHeader>
-                  <TableHead className="font-mono text-xs">Send Date</TableHead>
+                  <SortHeader field="send_date">Send Date</SortHeader>
                   <SortHeader field="total"><span className="ml-auto">Total</span></SortHeader>
                   <TableHead className="font-mono text-xs text-right">Actions</TableHead>
                 </TableRow>
