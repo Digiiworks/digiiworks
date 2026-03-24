@@ -101,7 +101,7 @@ const AdminLayout = () => {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden w-64 flex-shrink-0 border-r border-border/50 bg-card/50 backdrop-blur-xl lg:flex lg:flex-col">
+      <aside className="sticky top-0 hidden h-screen w-64 flex-shrink-0 overflow-y-auto border-r border-border/50 bg-card/50 backdrop-blur-xl lg:flex lg:flex-col">
         <div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
           <Link to="/">
             <img src="/logo.svg" alt="Digiiworks" style={{ width: 120 }} />
