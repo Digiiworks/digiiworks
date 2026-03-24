@@ -810,14 +810,14 @@ export const SERVICE_ONBOARDING: Record<string, ServiceOnboardingConfig> = {
         ],
       },
       {
-        question: "What's your monthly budget?",
+        question: "Which package fits your needs?",
         type: 'single',
         key: 'budget',
         options: [
-          { label: 'Under $500/mo', desc: 'Starter package' },
-          { label: '$500 – $1.5K/mo', desc: 'Growth package' },
-          { label: '$1.5K – $3K/mo', desc: 'Premium management' },
-          { label: '$3K+/mo', desc: 'Full-service' },
+          { label: 'Starter — $297/mo', desc: '8 posts/mo, 1 platform, templates & scheduling' },
+          { label: 'Growth — $597/mo', desc: '16 posts/mo, 2 platforms, video edits & analytics' },
+          { label: 'Power — $997/mo', desc: '24 posts/mo, 3 platforms, full-service with priority support' },
+          { label: 'Not sure — advise me', desc: "We'll recommend the best fit" },
         ],
       },
       {
