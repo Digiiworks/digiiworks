@@ -148,7 +148,7 @@ function OnboardingForm({ config }: { config: NonNullable<ReturnType<typeof getS
 
     return (
       <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
-        <div className="relative mx-auto max-w-2xl px-6 py-16 md:py-24">
+        <div className="relative mx-auto max-w-2xl px-6 pt-24 pb-12 sm:pt-20 md:pb-20">
           <motion.div className="mb-10 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}>
               <CheckCircle2 className="mx-auto mb-5 h-16 w-16 text-neon-mint" />
@@ -208,9 +208,9 @@ function OnboardingForm({ config }: { config: NonNullable<ReturnType<typeof getS
 
   return (
     <div className="relative min-h-[calc(100vh-65px)] overflow-hidden">
-      <div className="relative mx-auto max-w-3xl px-6 py-12 md:py-20">
+      <div className="relative mx-auto max-w-3xl px-6 pt-24 pb-12 sm:pt-20 md:pb-20">
         {/* Header */}
-        <div className="mb-8 pt-[50px] text-center">
+        <div className="mb-8 text-center">
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-2">{config.headerLabel}</p>
           <h1 className="font-mono text-2xl font-bold text-foreground md:text-4xl">{config.headline}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{config.subtitle}</p>
