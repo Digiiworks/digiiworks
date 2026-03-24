@@ -438,8 +438,23 @@ export default function Invoices() {
       if (itemErr) toast({ title: 'Error updating line items', description: itemErr.message, variant: 'destructive' });
     }
     toast({ title: `Invoice ${editingInvoice.invoice_number} updated` });
-    setSaving(false); setShowEdit(false); resetForm(); fetchAll();
-  };
+    // Check if invoice was previously sent and changes were made
+    const currentSnapshot = JSON.stringify({
+      form: { ...form, send_date: sendDate ? format(sendDate, 'yyyy-MM-dd') : '' },
+      lineItems: lineItems.map(li => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price, total: li.total, product_id: li.product_id })),
+    });
+    const hasChanges = currentSnapshot !== originalFormSnapshot;
+    const wasSent = isSentAlready(editingInvoice.status);
+    setSaving(false);
+    setShowEdit(false);
+    if (hasChanges && wasSent) {
+      setResendAfterEditId(editingInvoice.id);
+      resetForm();
+      fetchAll();
+    } else {
+      resetForm();
+      fetchAll();
+    }
 
   const updateStatus = async (id: string, status: string) => {
     const extra: any = { status };
