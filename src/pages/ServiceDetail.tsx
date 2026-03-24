@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getServiceBySlug } from '@/lib/service-pages';
 import SocialPricing from '@/components/SocialPricing';
+import WebsitePricing from '@/components/WebsitePricing';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
