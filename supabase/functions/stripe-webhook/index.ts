@@ -32,9 +32,9 @@ async function verifyStripeSignature(
   const timestamp = tPart.slice(2);
   const signature = v1Part.slice(3);
 
-  // Reject events older than 5 minutes to prevent replay attacks
+  // Reject events older than 1 minute to prevent replay attacks
   const eventAge = Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
-  if (eventAge > 300) return false;
+  if (eventAge > 60) return false;
 
   const signedPayload = `${timestamp}.${payload}`;
   const encoder = new TextEncoder();

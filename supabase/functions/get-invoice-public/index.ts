@@ -71,8 +71,8 @@ Deno.serve(async (req) => {
     );
 
     const [invRes, itemsRes, settingsRes] = await Promise.all([
-      supabase.from("invoices").select("*").eq("id", invoice_id).single(),
-      supabase.from("invoice_items").select("*").eq("invoice_id", invoice_id),
+      supabase.from("invoices").select("id, invoice_number, status, due_date, total, subtotal, tax_rate, notes, created_at, currency, client_id, client_company_id, paid_amount, send_date").eq("id", invoice_id).single(),
+      supabase.from("invoice_items").select("id, invoice_id, description, quantity, unit_price, total, product_id").eq("invoice_id", invoice_id),
       supabase.from("page_content").select("content").eq("page_key", "payment_settings").single(),
     ]);
 

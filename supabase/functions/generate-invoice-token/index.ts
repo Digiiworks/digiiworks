@@ -90,7 +90,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const tokenSecret = Deno.env.get("INVOICE_TOKEN_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const tokenSecret = Deno.env.get("INVOICE_TOKEN_SECRET") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!tokenSecret) {
+      return new Response(JSON.stringify({ error: "Server misconfigured: INVOICE_TOKEN_SECRET not set" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const token = await hmacSign(invoice_id, tokenSecret);
 
     return new Response(

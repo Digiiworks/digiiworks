@@ -569,7 +569,11 @@ Deno.serve(async (req) => {
         .eq("id", invoice.client_company_id)
         .single();
       if (company?.currency) companyCurrency = company.currency;
-      if (company?.cc_emails) ccEmails = company.cc_emails;
+      if (company?.cc_emails) {
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const validCcEmails = (company.cc_emails ?? []).filter((e: string) => EMAIL_REGEX.test(e.trim()));
+        ccEmails = validCcEmails;
+      }
     }
 
     const { data: items } = await supabase
