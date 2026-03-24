@@ -60,6 +60,10 @@ interface BankingInfo {
     linkedin: string;
     github: string;
   };
+  branding: {
+    apple_touch_icon_url: string;
+    favicon_url: string;
+  };
 }
 
 const defaultData: BankingInfo = {
