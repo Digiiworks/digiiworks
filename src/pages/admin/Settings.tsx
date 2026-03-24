@@ -93,6 +93,7 @@ const SettingsPage = () => {
   type FxRow = { currency_code: string; rate_vs_usd: string; margin_pct: string; updated_at?: string };
   const [fxRates, setFxRates] = useState<FxRow[]>([]);
   const [fxSaving, setFxSaving] = useState<string | null>(null);
+  const [fxRefreshing, setFxRefreshing] = useState(false);
 
   // Dunning state
   const [dunningRunning, setDunningRunning] = useState(false);
@@ -185,6 +186,32 @@ const SettingsPage = () => {
     let v = obj;
     for (const k of path) v = v?.[k] ?? '';
     return v;
+  };
+
+  const fetchRates = async () => {
+    const { data: rates } = await supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct, updated_at');
+    if (rates) {
+      setFxRates(rates.map(r => ({
+        currency_code: r.currency_code,
+        rate_vs_usd: String(r.rate_vs_usd),
+        margin_pct: String(r.margin_pct),
+        updated_at: r.updated_at,
+      })));
+    }
+  };
+
+  const handleRefreshRates = async () => {
+    setFxRefreshing(true);
+    try {
+      const { error } = await supabase.functions.invoke('update-exchange-rates');
+      if (error) throw error;
+      await fetchRates();
+      toast.success('Exchange rates updated from live market');
+    } catch (err: any) {
+      toast.error('Refresh failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setFxRefreshing(false);
+    }
   };
 
   const saveFxRate = async (code: string) => {
@@ -506,15 +533,29 @@ const SettingsPage = () => {
       {/* ─── SECTION: FX Rates ─── */}
       <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-base">
-            <TrendingUp className="h-4 w-4 text-primary" /> Exchange Rates
-          </CardTitle>
-          <CardDescription>
-            Used to auto-price products in ZAR/THB when no direct price column is set. Products with a specific price always take priority.
-          </CardDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2 font-mono text-base">
+                <TrendingUp className="h-4 w-4 text-primary" /> Exchange Rates
+              </CardTitle>
+              <CardDescription className="mt-1.5">
+                Used to auto-price products in ZAR/THB when no direct price column is set. Products with a specific price always take priority.
+              </CardDescription>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="font-mono text-xs gap-1.5 whitespace-nowrap"
+              onClick={handleRefreshRates}
+              disabled={fxRefreshing}
+            >
+              {fxRefreshing ? <Loader2 className="h-3 w-3 animate-spin" /> : <TrendingUp className="h-3 w-3" />}
+              {fxRefreshing ? 'Fetching...' : 'Refresh Live Rates'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {fxRates.length === 0 && <p className="text-xs text-muted-foreground font-mono">No exchange rates found. Run the database migration to seed defaults.</p>}
+          {fxRates.length === 0 && <p className="text-xs text-muted-foreground font-mono">No exchange rates found. Click "Refresh Live Rates" to fetch current rates from the market.</p>}
           {fxRates.map(r => (
             <div key={r.currency_code} className="rounded-lg border border-border p-4 space-y-3">
               <div className="flex items-center justify-between">

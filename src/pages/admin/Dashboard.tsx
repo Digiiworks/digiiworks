@@ -13,11 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const COLORS = ['hsl(184, 100%, 50%)', 'hsl(280, 99%, 53%)', 'hsl(106, 100%, 55%)', 'hsl(0, 72%, 51%)', 'hsl(45, 100%, 60%)'];
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', ZAR: 'R', THB: '฿' };
 
-// Fallback FX rates used when exchange_rates table is empty or unavailable
-const FALLBACK_FX: Record<string, { rate_vs_usd: number; margin_pct: number }> = {
-  ZAR: { rate_vs_usd: 18.5, margin_pct: 0 },
-  THB: { rate_vs_usd: 35.0, margin_pct: 0 },
-};
 
 const AdminDashboardContent = () => {
   const [forecastMonths, setForecastMonths] = useState<1 | 3 | 6 | 12>(3);
@@ -86,12 +81,22 @@ const AdminDashboardContent = () => {
     queryKey: ['exchange-rates-dashboard'],
     queryFn: async () => {
       const { data } = await supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct');
-      // Seed with fallbacks so conversion always works even if table is empty
-      const map = new Map<string, { rate_vs_usd: number; margin_pct: number }>(
-        Object.entries(FALLBACK_FX)
-      );
-      (data ?? []).forEach((r: any) => map.set(r.currency_code, r));
-      return map;
+      if (data && data.length > 0) {
+        return new Map(data.map((r: any) => [r.currency_code, r]));
+      }
+      // DB empty — fetch live rates directly from Frankfurter (CORS-safe, no API key)
+      try {
+        const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=ZAR,THB');
+        const { rates } = await res.json() as { rates: Record<string, number> };
+        return new Map(
+          Object.entries(rates).map(([code, rate]) => [
+            code,
+            { currency_code: code, rate_vs_usd: rate, margin_pct: 0 },
+          ])
+        );
+      } catch {
+        return new Map<string, { rate_vs_usd: number; margin_pct: number }>();
+      }
     },
   });
 
