@@ -386,11 +386,20 @@ export default function Invoices() {
     });
     setSendDate(inv.send_date ? new Date(inv.send_date + 'T00:00:00') : undefined);
     const { data: items } = await supabase.from('invoice_items').select('*').eq('invoice_id', inv.id);
-    setLineItems(
-      (items && items.length > 0)
-        ? items.map(it => ({ id: it.id, description: it.description, quantity: it.quantity, unit_price: it.unit_price, total: it.total, product_id: it.product_id }))
-        : [{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }]
-    );
+    const loadedItems = (items && items.length > 0)
+      ? items.map(it => ({ id: it.id, description: it.description, quantity: it.quantity, unit_price: it.unit_price, total: it.total, product_id: it.product_id }))
+      : [{ description: '', quantity: 1, unit_price: 0, total: 0, product_id: null }];
+    setLineItems(loadedItems);
+    // Capture snapshot for change detection on sent invoices
+    const formSnap = {
+      client_id: inv.client_id,
+      client_company_id: inv.client_company_id ?? '',
+      due_date: inv.due_date ?? '',
+      notes: inv.notes ?? '',
+      tax_rate: inv.tax_rate,
+      send_date: inv.send_date ?? '',
+    };
+    setOriginalFormSnapshot(JSON.stringify({ form: formSnap, lineItems: loadedItems }));
     setShowEdit(true);
   };
 
