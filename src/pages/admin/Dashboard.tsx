@@ -49,15 +49,25 @@ const AdminDashboardContent = () => {
   const { data: forecastInvoices } = useQuery({
     queryKey: ['income-forecast', forecastMonths],
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
       const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
+      // Drafts: always include (no date filter — outstanding regardless of due date)
+      // Sent/overdue/partial: include if due_date is within the period or unset
       const { data } = await supabase
         .from('invoices')
         .select('id, total, paid_amount, currency, status, due_date')
-        .in('status', ['sent', 'overdue', 'partial'])
-        .not('due_date', 'is', null)
-        .gte('due_date', today)
-        .lte('due_date', cutoff);
+        .in('status', ['draft', 'sent', 'overdue', 'partial'])
+        .or(`status.eq.draft,due_date.is.null,due_date.lte.${cutoff}`);
+      return data ?? [];
+    },
+  });
+
+  const { data: recurringServices } = useQuery({
+    queryKey: ['recurring-services-forecast'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('client_recurring_services')
+        .select('id, quantity, unit_price_override, billing_cycle, products(price_usd, price_zar, price_thb), client_companies(currency)')
+        .eq('active', true);
       return data ?? [];
     },
   });
@@ -70,8 +80,17 @@ const AdminDashboardContent = () => {
     },
   });
 
+  const getBillingOccurrences = (cycle: string, months: number): number => {
+    switch (cycle) {
+      case 'weekly':    return Math.round(months * 4.333);
+      case 'monthly':   return months;
+      case 'quarterly': return Math.floor(months / 3);
+      case 'yearly':    return Math.floor(months / 12);
+      default:          return months;
+    }
+  };
+
   const forecastTotal = useMemo(() => {
-    if (!forecastInvoices) return 0;
     const convertToDisplay = (amount: number, fromCurrency: string): number => {
       if (fromCurrency === forecastCurrency) return amount;
       let usdAmount = amount;
@@ -84,13 +103,35 @@ const AdminDashboardContent = () => {
       if (r) return usdAmount * r.rate_vs_usd * (1 + r.margin_pct / 100);
       return usdAmount;
     };
-    return forecastInvoices.reduce((sum: number, inv: any) => {
+
+    // Component 1: outstanding invoices (draft + sent + overdue + partial)
+    const invoiceTotal = (forecastInvoices ?? []).reduce((sum: number, inv: any) => {
       const remaining = inv.status === 'partial'
         ? (inv.total - (inv.paid_amount ?? 0))
         : inv.total;
       return sum + convertToDisplay(remaining, inv.currency ?? 'USD');
     }, 0);
-  }, [forecastInvoices, forecastCurrency, fxRates]);
+
+    // Component 2: projected recurring service revenue for the period
+    const recurringTotal = (recurringServices ?? []).reduce((sum: number, svc: any) => {
+      const occurrences = getBillingOccurrences(svc.billing_cycle ?? 'monthly', forecastMonths);
+      if (occurrences === 0) return sum;
+      const clientCurrency = (svc.client_companies as any)?.currency ?? 'USD';
+      let unitPrice: number;
+      if (svc.unit_price_override != null) {
+        unitPrice = svc.unit_price_override;
+      } else {
+        const p = svc.products as any;
+        if (!p) return sum;
+        if (clientCurrency === 'ZAR' && p.price_zar) unitPrice = p.price_zar;
+        else if (clientCurrency === 'THB' && p.price_thb) unitPrice = p.price_thb;
+        else unitPrice = p.price_usd ?? 0;
+      }
+      return sum + convertToDisplay(unitPrice * (svc.quantity ?? 1) * occurrences, clientCurrency);
+    }, 0);
+
+    return invoiceTotal + recurringTotal;
+  }, [forecastInvoices, recurringServices, forecastCurrency, fxRates, forecastMonths]);
 
   const fmtForecast = (amount: number) => {
     const sym = CURRENCY_SYMBOLS[forecastCurrency] ?? '';
@@ -177,7 +218,7 @@ const AdminDashboardContent = () => {
             {fmtForecast(forecastTotal)}
           </p>
           <p className="font-mono text-xs text-muted-foreground">
-            {forecastInvoices?.length ?? 0} outstanding invoice{forecastInvoices?.length !== 1 ? 's' : ''} due within {forecastMonths} month{forecastMonths !== 1 ? 's' : ''}
+            {forecastInvoices?.length ?? 0} outstanding invoice{forecastInvoices?.length !== 1 ? 's' : ''} · {recurringServices?.length ?? 0} recurring service{recurringServices?.length !== 1 ? 's' : ''} × {forecastMonths} month{forecastMonths !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
