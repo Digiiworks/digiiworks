@@ -13,6 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const COLORS = ['hsl(184, 100%, 50%)', 'hsl(280, 99%, 53%)', 'hsl(106, 100%, 55%)', 'hsl(0, 72%, 51%)', 'hsl(45, 100%, 60%)'];
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', ZAR: 'R', THB: '฿' };
 
+// Fallback FX rates used when exchange_rates table is empty or unavailable
+const FALLBACK_FX: Record<string, { rate_vs_usd: number; margin_pct: number }> = {
+  ZAR: { rate_vs_usd: 18.5, margin_pct: 0 },
+  THB: { rate_vs_usd: 35.0, margin_pct: 0 },
+};
+
 const AdminDashboardContent = () => {
   const [forecastMonths, setForecastMonths] = useState<1 | 3 | 6 | 12>(3);
   const [forecastCurrency, setForecastCurrency] = useState<'USD' | 'ZAR' | 'THB'>('USD');
@@ -50,14 +56,18 @@ const AdminDashboardContent = () => {
     queryKey: ['income-forecast', forecastMonths],
     queryFn: async () => {
       const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
-      // Drafts: always include (no date filter — outstanding regardless of due date)
-      // Sent/overdue/partial: include if due_date is within the period or unset
-      const { data } = await supabase
+      // Drafts: always include regardless of due date
+      const { data: drafts } = await supabase
         .from('invoices')
         .select('id, total, paid_amount, currency, status, due_date')
-        .in('status', ['draft', 'sent', 'overdue', 'partial'])
-        .or(`status.eq.draft,due_date.is.null,due_date.lte.${cutoff}`);
-      return data ?? [];
+        .eq('status', 'draft');
+      // Sent/overdue/partial: include if due within period or no due date set
+      const { data: nonDrafts } = await supabase
+        .from('invoices')
+        .select('id, total, paid_amount, currency, status, due_date')
+        .in('status', ['sent', 'overdue', 'partial'])
+        .or(`due_date.is.null,due_date.lte.${cutoff}`);
+      return [...(drafts ?? []), ...(nonDrafts ?? [])];
     },
   });
 
@@ -76,7 +86,12 @@ const AdminDashboardContent = () => {
     queryKey: ['exchange-rates-dashboard'],
     queryFn: async () => {
       const { data } = await supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct');
-      return new Map((data ?? []).map((r: any) => [r.currency_code, r]));
+      // Seed with fallbacks so conversion always works even if table is empty
+      const map = new Map<string, { rate_vs_usd: number; margin_pct: number }>(
+        Object.entries(FALLBACK_FX)
+      );
+      (data ?? []).forEach((r: any) => map.set(r.currency_code, r));
+      return map;
     },
   });
 
@@ -107,8 +122,8 @@ const AdminDashboardContent = () => {
     // Component 1: outstanding invoices (draft + sent + overdue + partial)
     const invoiceTotal = (forecastInvoices ?? []).reduce((sum: number, inv: any) => {
       const remaining = inv.status === 'partial'
-        ? (inv.total - (inv.paid_amount ?? 0))
-        : inv.total;
+        ? ((inv.total ?? 0) - (inv.paid_amount ?? 0))
+        : (inv.total ?? 0);
       return sum + convertToDisplay(remaining, inv.currency ?? 'USD');
     }, 0);
 
