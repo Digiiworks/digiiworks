@@ -22,7 +22,10 @@ const ServiceOnboarding = () => {
 
   if (!config) return <Navigate to="/services" replace />;
 
-  return <OnboardingForm config={typeof config === 'object' ? config : config} />;
+  const [searchParams] = useSearchParams();
+  const preselectedPackage = searchParams.get('package');
+
+  return <OnboardingForm config={config} preselectedPackage={preselectedPackage} />;
 };
 
 function OnboardingForm({ config }: { config: NonNullable<ReturnType<typeof getServiceOnboarding>> }) {
