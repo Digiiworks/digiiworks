@@ -28,7 +28,13 @@ const ServiceOnboarding = () => {
   return <OnboardingForm config={config} preselectedPackage={preselectedPackage} />;
 };
 
-function OnboardingForm({ config }: { config: NonNullable<ReturnType<typeof getServiceOnboarding>> }) {
+const PACKAGE_MAP: Record<string, string> = {
+  starter: 'Starter — $297/mo',
+  growth: 'Growth — $597/mo',
+  power: 'Power — $997/mo',
+};
+
+function OnboardingForm({ config, preselectedPackage }: { config: NonNullable<ReturnType<typeof getServiceOnboarding>>; preselectedPackage?: string | null }) {
   const { toast } = useToast();
   const TOTAL_STEPS = config.steps.length + 1; // +1 for contact step
   const [step, setStep] = useState(0);
