@@ -79,7 +79,18 @@ const AdminLayout = () => {
         ))}
       </nav>
 
-      <div className="border-t border-border/50 px-3 py-4 space-y-3">
+      <DesktopUserMenu
+        profile={profile}
+        roleLabel={roleLabel}
+        isClient={isClient}
+        signOut={signOut}
+        pathname={pathname}
+        settingsItem={settingsItem}
+        setMobileOpen={setMobileOpen}
+      />
+
+      {/* Mobile-only: keep inline footer */}
+      <div className="lg:hidden border-t border-border/50 px-3 py-4 space-y-3">
         {!isClient && (() => {
           const active = pathname === settingsItem.to || pathname.startsWith(settingsItem.to);
           return (
@@ -101,7 +112,7 @@ const AdminLayout = () => {
         </div>
         <div className="flex gap-2 px-3">
           <Link
-            to={homeLink}
+            to="/"
             onClick={() => setMobileOpen(false)}
             className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
           >
