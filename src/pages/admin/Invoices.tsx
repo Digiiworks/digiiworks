@@ -1556,6 +1556,37 @@ export default function Invoices() {
         confirmLabel="Delete"
         onConfirm={handleDelete}
       />
+
+      <ConfirmDialog
+        open={!!resendConfirmId}
+        onOpenChange={() => setResendConfirmId(null)}
+        title="Email Already Sent"
+        description="This invoice has already been emailed to the client. Are you sure you want to resend it?"
+        confirmLabel="Resend"
+        variant="default"
+        onConfirm={() => { handleSendEmail(resendConfirmId!, true); setResendConfirmId(null); }}
+      />
+
+      <ConfirmDialog
+        open={!!editSentInvoice}
+        onOpenChange={() => setEditSentInvoice(null)}
+        title="Editing Sent Invoice"
+        description="This invoice has already been sent to the client. Changes won't be reflected in emails already delivered. Continue?"
+        confirmLabel="Edit Anyway"
+        variant="default"
+        onConfirm={() => { openEdit(editSentInvoice!); setEditSentInvoice(null); }}
+      />
+
+      <ConfirmDialog
+        open={!!resendAfterEditId}
+        onOpenChange={() => setResendAfterEditId(null)}
+        title="Invoice Updated"
+        description="This invoice has been sent before. Would you like to resend the updated version to the client?"
+        confirmLabel="Resend Now"
+        cancelLabel="Not Now"
+        variant="default"
+        onConfirm={() => { handleSendEmail(resendAfterEditId!, true); setResendAfterEditId(null); }}
+      />
     </div>
   );
 }
