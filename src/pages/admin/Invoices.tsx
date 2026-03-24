@@ -38,7 +38,8 @@ type Invoice = {
   invoice_number: string;
   client_id: string;
   client_company_id: string | null;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'partial';
+  paid_amount: number;
   subtotal: number;
   tax_rate: number;
   total: number;
@@ -80,11 +81,13 @@ type InvoiceEmail = {
 type Profile = { user_id: string; display_name: string | null; email: string | null; company: string | null; currency?: string };
 type ClientCompanyOption = { id: string; user_id: string; company_name: string; currency: string; display_name: string | null; email: string | null };
 type Product = { id: string; name: string; price_usd: number; price_zar: number; price_thb: number; description?: string | null; category?: string | null };
+type ExchangeRate = { currency_code: string; rate_vs_usd: number; margin_pct: number };
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   sent: 'bg-primary/80 text-primary-foreground',
   paid: 'bg-primary/20 text-primary',
+  partial: 'bg-yellow-500/20 text-yellow-400',
   overdue: 'bg-orange-500/20 text-orange-400',
   cancelled: 'bg-muted text-muted-foreground line-through',
 };
@@ -95,19 +98,21 @@ const EMAIL_STATUS_ICON: Record<string, React.ReactNode> = {
   scheduled: <Clock className="h-3.5 w-3.5 text-blue-400" />,
 };
 
-const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const;
+const STATUSES = ['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'] as const;
 const PAGE_SIZE = 10;
 
 // Valid invoice status transitions — terminal states (paid, cancelled) have no outgoing transitions
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   draft:     ['sent', 'cancelled'],
-  sent:      ['paid', 'overdue', 'cancelled'],
-  overdue:   ['paid', 'cancelled'],
+  sent:      ['paid', 'partial', 'overdue', 'cancelled'],
+  overdue:   ['paid', 'partial', 'cancelled'],
+  partial:   ['paid', 'cancelled'],
   paid:      [],
   cancelled: [],
 };
 
 const isPayableStatus = (status: Invoice['status']) => !['paid', 'cancelled'].includes(status);
+const isPartialStatus = (status: Invoice['status']) => status === 'partial';
 const isSentAlready = (status: string) => ['sent', 'overdue', 'paid'].includes(status);
 
 const fmtCurrency = (amount: number, currency: string = 'USD') => {
@@ -136,6 +141,7 @@ export default function Invoices() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [clientCompanies, setClientCompanies] = useState<ClientCompanyOption[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [exchangeRates, setExchangeRates] = useState<Map<string, ExchangeRate>>(new Map());
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -163,6 +169,7 @@ export default function Invoices() {
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [payingMethod, setPayingMethod] = useState<string | null>(null);
   const [manualPayNotes, setManualPayNotes] = useState('');
+  const [partialAmount, setPartialAmount] = useState('');
 
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -179,13 +186,17 @@ export default function Invoices() {
     setLoading(true);
     setFetchError(false);
     try {
-      const [invRes, profRes, prodRes, compRes, paySettingsRes] = await Promise.all([
+      const [invRes, profRes, prodRes, compRes, paySettingsRes, ratesRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
         supabase.from('profiles').select('user_id, display_name, email, company, currency'),
         supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
         supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
+        supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
       ]);
+      if (ratesRes.data) {
+        setExchangeRates(new Map((ratesRes.data as ExchangeRate[]).map(r => [r.currency_code, r])));
+      }
       if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
       const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
       const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
@@ -323,9 +334,17 @@ export default function Invoices() {
     });
   };
 
-  const getProductPrice = (p: Product, currency: string = 'USD') => {
-    if (currency === 'ZAR') return p.price_zar || p.price_usd;
-    if (currency === 'THB') return p.price_thb || p.price_usd;
+  const getProductPrice = (p: Product, currency: string = 'USD'): number => {
+    if (currency === 'ZAR') {
+      if (p.price_zar) return p.price_zar;
+      const r = exchangeRates.get('ZAR');
+      if (r) return Math.round(p.price_usd * r.rate_vs_usd * (1 + r.margin_pct / 100) * 100) / 100;
+    }
+    if (currency === 'THB') {
+      if (p.price_thb) return p.price_thb;
+      const r = exchangeRates.get('THB');
+      if (r) return Math.round(p.price_usd * r.rate_vs_usd * (1 + r.margin_pct / 100) * 100) / 100;
+    }
     return p.price_usd;
   };
 
@@ -579,6 +598,36 @@ export default function Invoices() {
       setManualPayNotes('');
     } catch (err: any) {
       toast({ title: 'Failed to mark as paid', description: err.message, variant: 'destructive' });
+    }
+    setPayingMethod(null);
+  };
+
+  const handlePartialPay = async () => {
+    if (!payDialog) return;
+    const amount = parseFloat(partialAmount);
+    if (isNaN(amount) || amount <= 0 || amount >= payDialog.total) {
+      toast({ title: 'Enter a valid partial amount (must be less than the invoice total)', variant: 'destructive' });
+      return;
+    }
+    setPayingMethod('partial');
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: 'partial', paid_amount: amount, payment_method: 'manual' })
+        .eq('id', payDialog.id);
+      if (error) throw error;
+      supabase.from('audit_logs').insert({
+        resource_type: 'invoice', resource_id: payDialog.id, action: 'partial_payment',
+        actor_id: user?.id ?? null,
+        old_values: { status: payDialog.status, paid_amount: payDialog.paid_amount },
+        new_values: { status: 'partial', paid_amount: amount, payment_method: 'manual' },
+      }).then();
+      toast({ title: `Partial payment of ${fmtCurrency(amount, payDialog.currency)} recorded` });
+      fetchAll();
+      setPayDialog(null);
+      setPartialAmount('');
+    } catch (err: any) {
+      toast({ title: 'Failed to record partial payment', description: err.message, variant: 'destructive' });
     }
     setPayingMethod(null);
   };
@@ -1071,6 +1120,9 @@ export default function Invoices() {
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
                         <span className={isOverdue ? 'text-orange-400 font-bold' : ''}>{fmtCurrency(inv.total, inv.currency)}</span>
+                        {inv.status === 'partial' && (
+                          <span className="block text-[10px] text-yellow-400">{fmtCurrency(inv.total - inv.paid_amount, inv.currency)} remaining</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -1426,6 +1478,12 @@ export default function Invoices() {
                 <div><span className="text-muted-foreground">Client:</span> {showDetail.client_name}</div>
                 <div><span className="text-muted-foreground">Status:</span> <Badge className={`${STATUS_COLORS[showDetail.status]} border-0 capitalize`}>{showDetail.status}</Badge></div>
                 <div><span className="text-muted-foreground">Due:</span> {showDetail.due_date ? format(new Date(showDetail.due_date), 'MMM d, yyyy') : '—'}</div>
+                {showDetail.status === 'partial' && (
+                  <>
+                    <div><span className="text-muted-foreground">Paid so far:</span> <span className="text-yellow-400 font-mono">{fmtCurrency(showDetail.paid_amount, showDetail.currency)}</span></div>
+                    <div><span className="text-muted-foreground">Remaining:</span> <span className="text-orange-400 font-mono">{fmtCurrency(showDetail.total - showDetail.paid_amount, showDetail.currency)}</span></div>
+                  </>
+                )}
                 <div><span className="text-muted-foreground">Created:</span> {format(new Date(showDetail.created_at), 'MMM d, yyyy')}</div>
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Send Date:</span>{' '}
@@ -1635,6 +1693,31 @@ export default function Invoices() {
                         rows={2}
                         className="mt-1 text-xs font-mono resize-none"
                       />
+                    </div>
+                    {/* Partial payment */}
+                    <div className="px-1 space-y-1">
+                      <Label className="text-[10px] text-muted-foreground font-mono uppercase tracking-wide">Partial amount received</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          placeholder={`0.00 of ${fmtCurrency(payDialog?.total ?? 0, payDialog?.currency)}`}
+                          value={partialAmount}
+                          onChange={e => setPartialAmount(e.target.value)}
+                          className="text-xs font-mono"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="font-mono text-xs whitespace-nowrap"
+                          onClick={handlePartialPay}
+                          disabled={!!payingMethod}
+                        >
+                          {payingMethod === 'partial' ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                          Record Partial
+                        </Button>
+                      </div>
                     </div>
                     <Button
                       variant="ghost"

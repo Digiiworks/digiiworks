@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Separator } from '@/components/ui/separator';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { LayoutDashboard, Users, FileText, Settings, LogOut, Mail, ChevronLeft, DollarSign, UserCircle, Package, Menu, X, Wrench, MoreHorizontal, Globe, ChevronUp } from 'lucide-react';
 
 const bottomTabs = [
@@ -29,7 +30,7 @@ const externalLinks = [
 const settingsItem = { label: 'Settings', to: '/admin/settings', icon: Wrench };
 
 /* Desktop popover user menu at sidebar bottom */
-const DesktopUserMenu = ({ profile, roleLabel, isClient, signOut, pathname, settingsItem, setMobileOpen }: any) => {
+const DesktopUserMenu = ({ profile, roleLabel, isClient, onLogoutClick, pathname, settingsItem, setMobileOpen }: any) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -65,7 +66,7 @@ const DesktopUserMenu = ({ profile, roleLabel, isClient, signOut, pathname, sett
             </Link>
           )}
           <button
-            onClick={() => { signOut(); setOpen(false); }}
+            onClick={() => { setOpen(false); onLogoutClick(); }}
             className="flex w-full items-center gap-3 px-3 py-2.5 font-mono text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
             <LogOut className="h-4 w-4" /> Logout
@@ -91,6 +92,7 @@ const AdminLayout = () => {
   const { profile, signOut, isAdmin, isEditor, isClient } = useAuth();
   const roleLabel = isAdmin ? 'Admin' : isEditor ? 'Editor' : isClient ? 'Client' : 'User';
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Close menu on route change
   useEffect(() => { setMobileOpen(false); }, [pathname]);
@@ -141,7 +143,7 @@ const AdminLayout = () => {
         profile={profile}
         roleLabel={roleLabel}
         isClient={isClient}
-        signOut={signOut}
+        onLogoutClick={() => setShowLogoutConfirm(true)}
         pathname={pathname}
         settingsItem={settingsItem}
         setMobileOpen={setMobileOpen}
@@ -177,7 +179,7 @@ const AdminLayout = () => {
             <ChevronLeft className="h-3 w-3" /> Site
           </Link>
           <button
-            onClick={signOut}
+            onClick={() => setShowLogoutConfirm(true)}
             className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-destructive transition-colors ml-auto"
           >
             <LogOut className="h-3 w-3" /> Sign Out
@@ -246,6 +248,16 @@ const AdminLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        title="Sign out?"
+        description="Any unsaved changes will be lost."
+        confirmLabel="Sign Out"
+        variant="destructive"
+        onConfirm={() => { signOut(); setShowLogoutConfirm(false); }}
+      />
 
       {/* Mobile bottom tab bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur-xl lg:hidden">

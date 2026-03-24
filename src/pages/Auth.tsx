@@ -20,6 +20,8 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailSent, setShowEmailSent] = useState(false);
   const [resending, setResending] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -53,6 +55,13 @@ const Auth = () => {
       } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        // Check if MFA challenge is required
+        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aalData?.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel) {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const totp = factors?.totp?.[0];
+          if (totp) { setMfaFactorId(totp.id); return; }
+        }
         navigate('/admin');
       } else {
         const { error } = await supabase.auth.signUp({
@@ -87,6 +96,22 @@ const Auth = () => {
     }
   };
 
+  const handleMfaVerify = async () => {
+    if (!mfaFactorId || mfaCode.length !== 6) return;
+    setLoading(true);
+    try {
+      const { data: challenge, error: cErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+      if (cErr) throw cErr;
+      const { error: vErr } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: challenge.id, code: mfaCode });
+      if (vErr) throw vErr;
+      navigate('/admin');
+    } catch (err: any) {
+      toast({ title: 'Invalid code', description: err.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Show loading indicator while checking auth state
   if (authLoading) {
     return (
@@ -107,13 +132,41 @@ const Auth = () => {
           </Link>
           <h1 className="font-mono text-2xl font-bold">
             <span className="text-gradient">
-              {forgotPassword ? 'Reset Password' : isLogin ? '' : showEmailSent ? 'Check Your Inbox' : 'Create Account'}
+              {mfaFactorId ? 'Two-Factor Auth' : forgotPassword ? 'Reset Password' : isLogin ? '' : showEmailSent ? 'Check Your Inbox' : 'Create Account'}
             </span>
           </h1>
         </div>
 
         <div className="glass-card glass-card-glow p-6 md:p-8">
-          {showEmailSent ? (
+          {mfaFactorId ? (
+            <div className="space-y-4">
+              <p className="font-mono text-sm text-center text-muted-foreground">
+                Enter the 6-digit code from your authenticator app
+              </p>
+              <Input
+                value={mfaCode}
+                onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                maxLength={6}
+                placeholder="000000"
+                className="text-center font-mono text-lg tracking-widest border-border bg-background/50 focus:border-primary/50"
+                inputMode="numeric"
+                autoFocus
+              />
+              <Button
+                className="w-full font-mono glow-blue bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={handleMfaVerify}
+                disabled={loading || mfaCode.length !== 6}
+              >
+                {loading ? 'Verifying...' : 'Verify'}
+              </Button>
+              <button
+                onClick={() => { setMfaFactorId(null); setMfaCode(''); }}
+                className="block w-full font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                ← Back to Sign In
+              </button>
+            </div>
+          ) : showEmailSent ? (
             /* Email confirmation card */
             <div className="space-y-5 text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
