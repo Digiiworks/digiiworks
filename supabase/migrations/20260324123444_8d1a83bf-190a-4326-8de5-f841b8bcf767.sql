@@ -1,0 +1,1 @@
+UPDATE product_categories SET name = 'Architecture' WHERE id = 'f5f36bfb-c250-4ae7-907b-4204f941aa03';
