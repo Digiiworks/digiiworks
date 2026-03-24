@@ -78,25 +78,27 @@ const AdminDashboardContent = () => {
   });
 
   const { data: fxRates } = useQuery({
-    queryKey: ['exchange-rates-dashboard'],
+    queryKey: ['fx-rates-live'],
+    staleTime: 60 * 60 * 1000, // cache 1 hour
     queryFn: async () => {
-      const { data } = await supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct');
-      if (data && data.length > 0) {
-        return new Map(data.map((r: any) => [r.currency_code, r]));
-      }
-      // DB empty — fetch live rates directly from Frankfurter (CORS-safe, no API key)
+      // Always fetch live rates from Frankfurter first (ECB-sourced, no API key, CORS-safe)
+      const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=ZAR,THB');
+      if (!res.ok) throw new Error(`FX API unavailable (${res.status})`);
+      const { rates } = await res.json() as { rates: Record<string, number> };
+      const map = new Map<string, { rate_vs_usd: number; margin_pct: number }>(
+        Object.entries(rates).map(([code, rate]) => [code, { rate_vs_usd: rate, margin_pct: 0 }])
+      );
+      // Overlay admin-configured margin_pct from DB if available
       try {
-        const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=ZAR,THB');
-        const { rates } = await res.json() as { rates: Record<string, number> };
-        return new Map(
-          Object.entries(rates).map(([code, rate]) => [
-            code,
-            { currency_code: code, rate_vs_usd: rate, margin_pct: 0 },
-          ])
-        );
-      } catch {
-        return new Map<string, { rate_vs_usd: number; margin_pct: number }>();
-      }
+        const { data: dbRates } = await supabase
+          .from('exchange_rates')
+          .select('currency_code, margin_pct');
+        (dbRates ?? []).forEach((r: any) => {
+          const existing = map.get(r.currency_code);
+          if (existing) map.set(r.currency_code, { ...existing, margin_pct: r.margin_pct ?? 0 });
+        });
+      } catch { /* table may not exist yet — live rates work without margins */ }
+      return map;
     },
   });
 
