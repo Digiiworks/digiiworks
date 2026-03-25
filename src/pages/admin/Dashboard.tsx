@@ -150,59 +150,75 @@ const AdminDashboardContent = () => {
   };
 
   // null means "rates not yet loaded from DB" — distinct from 0
-  const forecastTotal = useMemo((): number | null => {
+  type ForecastBreakdown = { currency: string; native: number; converted: number | null };
+
+  const forecast = useMemo((): { total: number | null; breakdown: ForecastBreakdown[] } => {
     const getEntry = (code: string) => (fxRates?.get(code) as any) ?? null;
 
-    // Returns null if a required rate is missing from the DB
-    const convertToDisplay = (amount: number, fromCurrency: string): number | null => {
+    const toDisplay = (amount: number, fromCurrency: string): number | null => {
       if (fromCurrency === forecastCurrency) return amount;
-      // Step 1: convert source → USD
       let usdAmount = amount;
       if (fromCurrency !== 'USD') {
-        const entry = getEntry(fromCurrency);
-        if (!entry) return null;
-        usdAmount = amount / entry.rate_vs_usd;
+        const e = getEntry(fromCurrency);
+        if (!e) return null;
+        usdAmount = amount / e.rate_vs_usd;
       }
-      // Step 2: convert USD → target currency
       if (forecastCurrency === 'USD') return usdAmount;
-      const entry = getEntry(forecastCurrency);
-      if (!entry) return null;
-      return usdAmount * entry.rate_vs_usd * (1 + entry.margin_pct / 100);
+      const e = getEntry(forecastCurrency);
+      if (!e) return null;
+      return usdAmount * e.rate_vs_usd * (1 + e.margin_pct / 100);
     };
 
-    // Component 1: outstanding invoices (draft + sent + overdue + partial)
-    let invoiceTotal = 0;
+    // Accumulate amounts grouped by their actual stored currency
+    const byCurrency: Record<string, number> = {};
+
+    // Outstanding invoices (draft + sent + overdue + partial)
     for (const inv of (forecastInvoices ?? [])) {
+      const currency = inv.currency ?? 'USD';
       const remaining = inv.status === 'partial'
         ? ((inv.total ?? 0) - (inv.paid_amount ?? 0))
         : (inv.total ?? 0);
-      const converted = convertToDisplay(remaining, inv.currency ?? 'USD');
-      if (converted === null) return null; // rate missing — don't show a wrong number
-      invoiceTotal += converted;
+      byCurrency[currency] = (byCurrency[currency] ?? 0) + remaining;
     }
 
-    // Component 2: projected recurring service revenue for the period
-    let recurringTotal = 0;
+    // Recurring services — use the price column that matches the product's pricing,
+    // NOT the client currency, so we never mislabel a USD price as ZAR
     for (const svc of (recurringServices ?? [])) {
       const occurrences = getBillingOccurrences(svc.billing_cycle ?? 'monthly', forecastMonths);
       if (occurrences === 0) continue;
-      const clientCurrency = (svc.client_companies as any)?.currency ?? 'USD';
-      let unitPrice: number;
+
+      let priceAmount: number;
+      let priceCurrency: string;
+
       if (svc.unit_price_override != null) {
-        unitPrice = svc.unit_price_override;
+        // Override is always stored in the client's currency
+        const clientCurrency = (svc.client_companies as any)?.currency ?? 'USD';
+        priceAmount = svc.unit_price_override;
+        priceCurrency = clientCurrency;
       } else {
         const p = svc.products as any;
         if (!p) continue;
-        if (clientCurrency === 'ZAR' && p.price_zar) unitPrice = p.price_zar;
-        else if (clientCurrency === 'THB' && p.price_thb) unitPrice = p.price_thb;
-        else unitPrice = p.price_usd ?? 0;
+        const clientCurrency = (svc.client_companies as any)?.currency ?? 'USD';
+        // Use the direct price column if it exists, currency must match
+        if (clientCurrency === 'ZAR' && p.price_zar) { priceAmount = p.price_zar; priceCurrency = 'ZAR'; }
+        else if (clientCurrency === 'THB' && p.price_thb) { priceAmount = p.price_thb; priceCurrency = 'THB'; }
+        else { priceAmount = p.price_usd ?? 0; priceCurrency = 'USD'; } // fallback is always USD
       }
-      const converted = convertToDisplay(unitPrice * (svc.quantity ?? 1) * occurrences, clientCurrency);
-      if (converted === null) return null;
-      recurringTotal += converted;
+
+      byCurrency[priceCurrency] = (byCurrency[priceCurrency] ?? 0) + priceAmount * (svc.quantity ?? 1) * occurrences;
     }
 
-    return invoiceTotal + recurringTotal;
+    // Convert each currency bucket to the display currency
+    let total = 0;
+    const breakdown: ForecastBreakdown[] = [];
+    for (const [currency, native] of Object.entries(byCurrency)) {
+      const converted = toDisplay(native, currency);
+      breakdown.push({ currency, native, converted });
+      if (converted === null) return { total: null, breakdown };
+      total += converted;
+    }
+
+    return { total, breakdown };
   }, [forecastInvoices, recurringServices, forecastCurrency, fxRates, forecastMonths]);
 
   const fmtForecast = (amount: number) => {
@@ -320,19 +336,34 @@ const AdminDashboardContent = () => {
             </Select>
           </div>
         </div>
-        <div className="space-y-1">
-          {forecastTotal === null ? (
+        <div className="space-y-2">
+          {forecast.total === null ? (
             <p className="font-mono text-sm text-amber-400">
               Exchange rates not configured — go to Settings → Exchange Rates and click "Refresh Live Rates"
             </p>
           ) : (
             <p className="font-mono text-3xl font-bold text-neon-mint">
-              {fmtForecast(forecastTotal)}
+              {fmtForecast(forecast.total)}
             </p>
           )}
           <p className="font-mono text-xs text-muted-foreground">
             {forecastInvoices?.length ?? 0} outstanding invoice{forecastInvoices?.length !== 1 ? 's' : ''} · {recurringServices?.length ?? 0} recurring service{recurringServices?.length !== 1 ? 's' : ''} × {forecastMonths} month{forecastMonths !== 1 ? 's' : ''}
           </p>
+          {/* Per-currency breakdown so it's clear what is and isn't being converted */}
+          {forecast.breakdown.length > 0 && (
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5 pt-1 border-t border-border/30">
+              {forecast.breakdown.map(({ currency, native }) => {
+                const sym = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
+                const isConverted = currency !== forecastCurrency;
+                return (
+                  <span key={currency} className="font-mono text-[11px] text-muted-foreground">
+                    {sym}{native.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {isConverted && <span className="text-primary/60"> →converted</span>}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
