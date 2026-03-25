@@ -85,7 +85,7 @@ const AdminDashboardContent = () => {
     queryFn: async () => {
       // Run both sources in parallel — use whichever succeeds
       const [dbResult, apiResult] = await Promise.allSettled([
-        supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
+        (supabase as any).from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
         fetch('https://api.frankfurter.app/latest?from=USD&to=ZAR,THB')
           .then(r => r.ok ? r.json() : Promise.reject(r.status)),
       ]);
