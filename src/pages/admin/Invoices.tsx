@@ -366,7 +366,9 @@ export default function Invoices() {
   const taxCents = Math.round((subtotalCents * form.tax_rate) / 100);
   const grandTotalCents = subtotalCents + taxCents;
   const subtotal = subtotalCents / 100;
+  const taxAmount = taxCents / 100;
   const grandTotal = grandTotalCents / 100;
+  const nextNumber = 'INV-…';
 
   const handleCreate = async () => {
     if (!form.client_company_id || lineItems.every(li => !li.description)) {
