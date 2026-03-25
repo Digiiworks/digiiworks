@@ -59,7 +59,7 @@ const AdminDashboardContent = () => {
         .select('id, total, paid_amount, currency, status, due_date')
         .eq('status', 'draft');
       // Sent/overdue/partial: include if due within period or no due date set
-      const { data: nonDrafts } = await supabase
+      const { data: nonDrafts } = await (supabase as any)
         .from('invoices')
         .select('id, total, paid_amount, currency, status, due_date')
         .in('status', ['sent', 'overdue', 'partial'])
@@ -85,7 +85,7 @@ const AdminDashboardContent = () => {
     queryFn: async () => {
       // Run both sources in parallel — use whichever succeeds
       const [dbResult, apiResult] = await Promise.allSettled([
-        supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
+        (supabase as any).from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
         fetch('https://api.frankfurter.app/latest?from=USD&to=ZAR,THB')
           .then(r => r.ok ? r.json() : Promise.reject(r.status)),
       ]);
@@ -117,13 +117,12 @@ const AdminDashboardContent = () => {
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('invoices')
         .select('total, currency')
         .eq('status', 'paid')
         .gte('paid_at', startOfMonth.toISOString());
-      // Sum in USD (simple conversion not needed for MVP — just sum the numbers)
-      return (data ?? []).reduce((sum, inv) => sum + (inv.total ?? 0), 0);
+      return (data ?? []).reduce((sum: number, inv: any) => sum + (inv.total ?? 0), 0);
     },
   });
 

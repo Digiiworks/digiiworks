@@ -43,13 +43,13 @@ export default function ClientDetailSheet({ companyId, onClose, onEdit, onNewInv
     queryKey: ['client-invoices', companyId],
     enabled: !!companyId,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('invoices')
         .select('id, invoice_number, status, total, paid_amount, currency, due_date, created_at')
         .eq('client_company_id', companyId!)
         .order('created_at', { ascending: false })
         .limit(5);
-      return data ?? [];
+      return (data ?? []) as any[];
     },
   });
 
@@ -97,7 +97,7 @@ export default function ClientDetailSheet({ companyId, onClose, onEdit, onNewInv
                   <SheetHeader>
                     <SheetTitle className="font-mono text-base truncate">{company.company_name}</SheetTitle>
                   </SheetHeader>
-                  <p className="text-xs text-muted-foreground font-mono">{currency} · {company.country ?? 'N/A'}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{currency} · {(company as any).country ?? 'N/A'}</p>
                 </div>
                 <Badge className={company.active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-500/20 text-zinc-400'}>
                   {company.active ? 'Active' : 'Inactive'}

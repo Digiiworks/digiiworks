@@ -14,12 +14,109 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          resource_id: string
+          resource_type: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id: string
+          resource_type: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string
+          resource_type?: string
+        }
+        Relationships: []
+      }
+      blog_generation_config: {
+        Row: {
+          auto_publish: boolean
+          created_at: string
+          default_category: string
+          id: string
+          tone: string
+          topics_queue: string[]
+          updated_at: string
+        }
+        Insert: {
+          auto_publish?: boolean
+          created_at?: string
+          default_category?: string
+          id?: string
+          tone?: string
+          topics_queue?: string[]
+          updated_at?: string
+        }
+        Update: {
+          auto_publish?: boolean
+          created_at?: string
+          default_category?: string
+          id?: string
+          tone?: string
+          topics_queue?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      blog_generation_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          post_id: string | null
+          scheduled_for: string | null
+          status: string
+          topic: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          post_id?: string | null
+          scheduled_for?: string | null
+          status?: string
+          topic: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          post_id?: string | null
+          scheduled_for?: string | null
+          status?: string
+          topic?: string
+        }
+        Relationships: []
+      }
       client_companies: {
         Row: {
           active: boolean
           address: string | null
           cc_emails: string[] | null
           company_name: string
+          country: string | null
           created_at: string
           currency: string
           id: string
@@ -34,6 +131,7 @@ export type Database = {
           address?: string | null
           cc_emails?: string[] | null
           company_name: string
+          country?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -48,6 +146,7 @@ export type Database = {
           address?: string | null
           cc_emails?: string[] | null
           company_name?: string
+          country?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -115,6 +214,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      dunning_sends: {
+        Row: {
+          created_at: string
+          days_overdue: number
+          id: string
+          invoice_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_overdue: number
+          id?: string
+          invoice_id: string
+        }
+        Update: {
+          created_at?: string
+          days_overdue?: number
+          id?: string
+          invoice_id?: string
+        }
+        Relationships: []
+      }
+      exchange_rates: {
+        Row: {
+          currency_code: string
+          margin_pct: number
+          rate_vs_usd: number
+          updated_at: string
+        }
+        Insert: {
+          currency_code: string
+          margin_pct?: number
+          rate_vs_usd?: number
+          updated_at?: string
+        }
+        Update: {
+          currency_code?: string
+          margin_pct?: number
+          rate_vs_usd?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       invoice_emails: {
         Row: {
@@ -210,10 +351,12 @@ export type Database = {
           client_company_id: string | null
           client_id: string
           created_at: string
+          currency: string
           due_date: string | null
           id: string
           invoice_number: string
           notes: string | null
+          paid_amount: number
           paid_at: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
           payment_reference: string | null
@@ -228,10 +371,12 @@ export type Database = {
           client_company_id?: string | null
           client_id: string
           created_at?: string
+          currency?: string
           due_date?: string | null
           id?: string
           invoice_number: string
           notes?: string | null
+          paid_amount?: number
           paid_at?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_reference?: string | null
@@ -246,10 +391,12 @@ export type Database = {
           client_company_id?: string | null
           client_id?: string
           created_at?: string
+          currency?: string
           due_date?: string | null
           id?: string
           invoice_number?: string
           notes?: string | null
+          paid_amount?: number
           paid_at?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_reference?: string | null
@@ -535,11 +682,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      next_invoice_number: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "editor" | "client"
       invoice_email_status: "scheduled" | "sent" | "failed"
-      invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
+      invoice_status:
+        | "draft"
+        | "sent"
+        | "paid"
+        | "overdue"
+        | "cancelled"
+        | "partial"
       lead_status: "new" | "contacted" | "qualified" | "converted" | "lost"
       payment_method: "stripe" | "yoco" | "manual"
       post_status: "draft" | "published"
@@ -672,7 +826,14 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "editor", "client"],
       invoice_email_status: ["scheduled", "sent", "failed"],
-      invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
+      invoice_status: [
+        "draft",
+        "sent",
+        "paid",
+        "overdue",
+        "cancelled",
+        "partial",
+      ],
       lead_status: ["new", "contacted", "qualified", "converted", "lost"],
       payment_method: ["stripe", "yoco", "manual"],
       post_status: ["draft", "published"],

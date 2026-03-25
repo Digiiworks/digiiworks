@@ -54,7 +54,6 @@ type Invoice = {
   updated_at: string;
   client_name?: string;
   client_email?: string;
-  currency?: string;
   company_name?: string;
 };
 
@@ -195,11 +194,10 @@ export default function Invoices() {
       ]);
       if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
       // Load FX rates separately — non-critical, silently skip if table missing
-      supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct')
-        .then(({ data }) => {
-          if (data?.length) setExchangeRates(new Map((data as ExchangeRate[]).map(r => [r.currency_code, r])));
-        })
-        .catch(() => {});
+      try {
+        const { data: fxData } = await (supabase as any).from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct');
+        if (fxData?.length) setExchangeRates(new Map((fxData as ExchangeRate[]).map(r => [r.currency_code, r])));
+      } catch { /* silently skip */ }
       const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
       const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
 
@@ -368,7 +366,9 @@ export default function Invoices() {
   const taxCents = Math.round((subtotalCents * form.tax_rate) / 100);
   const grandTotalCents = subtotalCents + taxCents;
   const subtotal = subtotalCents / 100;
+  const taxAmount = taxCents / 100;
   const grandTotal = grandTotalCents / 100;
+  const nextNumber = 'INV-…';
 
   const handleCreate = async () => {
     if (!form.client_company_id || lineItems.every(li => !li.description)) {
@@ -383,7 +383,7 @@ export default function Invoices() {
     setSaving(true);
 
     // Generate invoice number atomically via DB sequence (race-condition safe)
-    const { data: generatedNumber, error: numErr } = await supabase.rpc('next_invoice_number');
+    const { data: generatedNumber, error: numErr } = await (supabase as any).rpc('next_invoice_number');
     if (numErr || !generatedNumber) {
       toast({ title: 'Error generating invoice number', description: numErr?.message, variant: 'destructive' });
       setSaving(false); return;
@@ -523,7 +523,7 @@ export default function Invoices() {
     const { error } = await supabase.from('invoices').update(extra).eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
     // Audit log
-    supabase.from('audit_logs').insert({
+    (supabase as any).from('audit_logs').insert({
       resource_type: 'invoice', resource_id: id, action: 'status_changed',
       actor_id: user?.id ?? null,
       old_values: inv ? { status: inv.status } : null,
@@ -585,7 +585,7 @@ export default function Invoices() {
         .eq('id', payDialog.id);
       if (error) throw error;
       // Audit log — record who marked it paid and any reference notes
-      supabase.from('audit_logs').insert({
+      (supabase as any).from('audit_logs').insert({
         resource_type: 'invoice', resource_id: payDialog.id, action: 'mark_paid_manual',
         actor_id: user?.id ?? null,
         old_values: { status: payDialog.status },
@@ -613,12 +613,12 @@ export default function Invoices() {
     }
     setPayingMethod('partial');
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('invoices')
         .update({ status: 'partial', paid_amount: amount, payment_method: 'manual' })
         .eq('id', payDialog.id);
       if (error) throw error;
-      supabase.from('audit_logs').insert({
+      (supabase as any).from('audit_logs').insert({
         resource_type: 'invoice', resource_id: payDialog.id, action: 'partial_payment',
         actor_id: user?.id ?? null,
         old_values: { status: payDialog.status, paid_amount: payDialog.paid_amount },
@@ -686,7 +686,7 @@ export default function Invoices() {
       .eq('invoice_id', inv.id);
 
     // Get next invoice number
-    const { data: nextNum } = await supabase.rpc('next_invoice_number');
+    const { data: nextNum } = await (supabase as any).rpc('next_invoice_number');
     const invoiceNumber = nextNum ?? `INV-${Date.now()}`;
 
     // Create duplicate as draft
@@ -752,7 +752,7 @@ export default function Invoices() {
       if (error) {
         failed.push(`${inv.invoice_number}: ${error.message}`);
       } else {
-        supabase.from('audit_logs').insert({
+        (supabase as any).from('audit_logs').insert({
           resource_type: 'invoice', resource_id: inv.id, action: 'mark_paid_manual',
           actor_id: user?.id ?? null,
           old_values: { status: inv.status },
