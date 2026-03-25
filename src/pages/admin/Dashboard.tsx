@@ -52,21 +52,18 @@ const AdminDashboardContent = () => {
     queryKey: ['income-forecast', forecastMonths],
     queryFn: async () => {
       const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
-      // Join client_companies to get the real currency (inv.currency defaults to USD in DB)
+      // inv.currency is now reliable — the DB trigger (migration 20260325130000)
+      // keeps it in sync with client_companies.currency on every INSERT/UPDATE.
       const { data: drafts } = await supabase
         .from('invoices')
-        .select('id, total, paid_amount, currency, status, due_date, client_companies(currency)')
+        .select('id, total, paid_amount, currency, status, due_date')
         .eq('status', 'draft');
       const { data: nonDrafts } = await (supabase as any)
         .from('invoices')
-        .select('id, total, paid_amount, currency, status, due_date, client_companies(currency)')
+        .select('id, total, paid_amount, currency, status, due_date')
         .in('status', ['sent', 'overdue', 'partial'])
         .or(`due_date.is.null,due_date.lte.${cutoff}`);
-      const normalize = (inv: any) => ({
-        ...inv,
-        currency: (inv.client_companies as any)?.currency ?? inv.currency ?? 'USD',
-      });
-      return [...(drafts ?? []), ...(nonDrafts ?? [])].map(normalize);
+      return [...(drafts ?? []), ...(nonDrafts ?? [])];
     },
   });
 
@@ -75,9 +72,13 @@ const AdminDashboardContent = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('client_recurring_services')
-        .select('id, quantity, unit_price_override, billing_cycle, products!product_id(price_usd, price_zar, price_thb), client_companies!client_company_id(currency)')
+        .select('id, quantity, unit_price_override, billing_cycle, products!product_id(price_usd, price_zar, price_thb), client_companies!client_company_id(currency), profiles!client_id(currency)')
         .eq('active', true);
-      return data ?? [];
+      // Resolve currency: company first, then profile, then USD
+      return (data ?? []).map((svc: any) => ({
+        ...svc,
+        resolvedClientCurrency: svc.client_companies?.currency ?? svc.profiles?.currency ?? 'USD',
+      }));
     },
   });
 
@@ -191,13 +192,15 @@ const AdminDashboardContent = () => {
       const occurrences = getBillingOccurrences(svc.billing_cycle ?? 'monthly', forecastMonths);
       if (occurrences === 0) continue;
 
-      const clientCurrency = (svc.client_companies as any)?.currency ?? null;
+      // resolvedClientCurrency is always set (company → profile → USD)
+      const clientCurrency: string = (svc as any).resolvedClientCurrency ?? 'USD';
       let priceAmount: number;
       let priceCurrency: string;
 
       if (svc.unit_price_override != null) {
+        // unit_price_override is stored in the client's currency
         priceAmount = svc.unit_price_override;
-        priceCurrency = clientCurrency ?? 'USD';
+        priceCurrency = clientCurrency;
       } else {
         const p = svc.products as any;
         if (!p) continue;

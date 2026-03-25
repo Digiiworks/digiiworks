@@ -219,10 +219,9 @@ export default function Invoices() {
           ...inv,
           client_name: company?.company_name ?? profile?.display_name ?? 'Unknown',
           client_email: profile?.email ?? '',
-          // Always use the client company's currency as the source of truth.
-          // inv.currency in the DB defaulted to USD for all rows and cannot be trusted
-          // until the backfill migration has been confirmed to run.
-          currency: company?.currency ?? profile?.currency ?? inv.currency ?? 'USD',
+          // inv.currency is the DB source of truth — kept in sync by the
+          // invoice_currency_sync trigger (migration 20260325130000).
+          currency: inv.currency ?? 'USD',
           company_name: company?.company_name ?? profile?.company ?? '',
         };
       });
