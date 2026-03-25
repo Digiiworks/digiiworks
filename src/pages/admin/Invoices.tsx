@@ -752,7 +752,7 @@ export default function Invoices() {
       if (error) {
         failed.push(`${inv.invoice_number}: ${error.message}`);
       } else {
-        supabase.from('audit_logs').insert({
+        (supabase as any).from('audit_logs').insert({
           resource_type: 'invoice', resource_id: inv.id, action: 'mark_paid_manual',
           actor_id: user?.id ?? null,
           old_values: { status: inv.status },
