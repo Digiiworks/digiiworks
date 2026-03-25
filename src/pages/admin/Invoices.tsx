@@ -613,12 +613,12 @@ export default function Invoices() {
     }
     setPayingMethod('partial');
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('invoices')
         .update({ status: 'partial', paid_amount: amount, payment_method: 'manual' })
         .eq('id', payDialog.id);
       if (error) throw error;
-      supabase.from('audit_logs').insert({
+      (supabase as any).from('audit_logs').insert({
         resource_type: 'invoice', resource_id: payDialog.id, action: 'partial_payment',
         actor_id: user?.id ?? null,
         old_values: { status: payDialog.status, paid_amount: payDialog.paid_amount },
