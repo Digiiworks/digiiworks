@@ -2,10 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY");
-
-const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,8 +18,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!ANTHROPIC_API_KEY) {
+      return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -42,23 +40,21 @@ Deno.serve(async (req) => {
     const { data: job } = await supabase.from("blog_generation_jobs").insert({ topic, status: "running", scheduled_for: scheduled ? new Date().toISOString() : null }).select().single();
     const jobId = job?.id;
 
-    // Call Lovable AI Gateway (OpenAI-compatible)
-    const aiRes = await fetch(AI_GATEWAY_URL, {
+    // Call Anthropic Claude API
+    const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4096,
         messages: [
           {
-            role: "system",
-            content: "You are an expert content writer for Digiiworks, a web agency specialising in AI automation, web development, SEO and digital marketing based in South Africa and Thailand.",
-          },
-          {
             role: "user",
-            content: `Write a professional blog post about: ${topic}\nTone: ${tone}\nCategory: ${category}\n\nIMPORTANT: Return ONLY valid JSON with no markdown code blocks, no backticks, no extra text. Just the raw JSON object:\n{\n  "title": "engaging SEO-friendly title",\n  "slug": "url-slug-with-hyphens",\n  "excerpt": "1-2 sentence compelling description for meta tag and preview cards",\n  "content": "<h2>First Section</h2><p>Opening paragraph...</p>",\n  "tags": ["tag1", "tag2", "tag3"],\n  "image_search_query": "3-5 word descriptive search term for relevant stock photo"\n}\n\nRequirements:\n- Post should be 800-1200 words\n- Use h2 and h3 headings\n- Keep paragraphs short (2-4 sentences)\n- Include practical actionable insights\n- Naturally mention Digiiworks services where relevant\n- Tags from: Web Development, AI Automation, SEO, UX Design, Digital Marketing, Technology, Performance, Business, Architecture`,
+            content: `You are an expert content writer for Digiiworks, a web agency specialising in AI automation, web development, SEO and digital marketing based in South Africa and Thailand.\n\nWrite a professional blog post about: ${topic}\nTone: ${tone}\nCategory: ${category}\n\nIMPORTANT: Return ONLY valid JSON with no markdown code blocks, no backticks, no extra text. Just the raw JSON object:\n{\n  "title": "engaging SEO-friendly title",\n  "slug": "url-slug-with-hyphens",\n  "excerpt": "1-2 sentence compelling description for meta tag and preview cards",\n  "content": "<h2>First Section</h2><p>Opening paragraph...</p>",\n  "tags": ["tag1", "tag2", "tag3"],\n  "image_search_query": "3-5 word descriptive search term for relevant stock photo"\n}\n\nRequirements:\n- Post should be 800-1200 words\n- Use h2 and h3 headings\n- Keep paragraphs short (2-4 sentences)\n- Include practical actionable insights\n- Naturally mention Digiiworks services where relevant\n- Tags from: Web Development, AI Automation, SEO, UX Design, Digital Marketing, Technology, Performance, Business, Architecture`,
           },
         ],
       }),
@@ -67,13 +63,11 @@ Deno.serve(async (req) => {
     if (!aiRes.ok) {
       const errText = await aiRes.text();
       if (jobId) await supabase.from("blog_generation_jobs").update({ status: "failed", error: errText, completed_at: new Date().toISOString() }).eq("id", jobId);
-      if (aiRes.status === 429) throw new Error("Rate limited — please try again in a moment.");
-      if (aiRes.status === 402) throw new Error("AI credits exhausted — add funds in Settings > Workspace > Usage.");
-      throw new Error(`AI gateway error ${aiRes.status}: ${errText}`);
+      throw new Error(`Anthropic API error ${aiRes.status}: ${errText}`);
     }
 
     const aiData = await aiRes.json();
-    const rawContent = aiData.choices?.[0]?.message?.content ?? "";
+    const rawContent = aiData.content?.[0]?.text ?? "";
 
     let parsed: any;
     try {
@@ -95,7 +89,7 @@ Deno.serve(async (req) => {
       } catch { /* post still created without image */ }
     }
 
-    const { data: post, error: postError } = await supabase.from("posts").insert({ title: parsed.title, slug, content: parsed.content, excerpt: parsed.excerpt, featured_image, tags: parsed.tags ?? [], status: auto_publish ? "published" : "draft", generated_by: "lovable-ai" }).select().single();
+    const { data: post, error: postError } = await supabase.from("posts").insert({ title: parsed.title, slug, content: parsed.content, excerpt: parsed.excerpt, featured_image, tags: parsed.tags ?? [], status: auto_publish ? "published" : "draft", generated_by: "anthropic-claude" }).select().single();
     if (postError) {
       if (jobId) await supabase.from("blog_generation_jobs").update({ status: "failed", error: postError.message, completed_at: new Date().toISOString() }).eq("id", jobId);
       throw new Error(`Failed to save post: ${postError.message}`);
