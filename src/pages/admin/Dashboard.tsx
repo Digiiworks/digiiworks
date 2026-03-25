@@ -59,7 +59,7 @@ const AdminDashboardContent = () => {
         .select('id, total, paid_amount, currency, status, due_date')
         .eq('status', 'draft');
       // Sent/overdue/partial: include if due within period or no due date set
-      const { data: nonDrafts } = await supabase
+      const { data: nonDrafts } = await (supabase as any)
         .from('invoices')
         .select('id, total, paid_amount, currency, status, due_date')
         .in('status', ['sent', 'overdue', 'partial'])
