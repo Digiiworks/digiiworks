@@ -121,7 +121,7 @@ export default function BlogGenerator() {
         <Sparkles className="h-5 w-5 text-primary" />
         <div>
           <h1 className="font-mono text-xl font-bold">Blog AI Generator</h1>
-          <p className="font-mono text-xs text-muted-foreground">Generate blog posts with Claude AI + Unsplash images</p>
+          <p className="font-mono text-xs text-muted-foreground">Generate blog posts with AI + Unsplash images</p>
         </div>
       </div>
 
@@ -138,7 +138,7 @@ export default function BlogGenerator() {
             <CardHeader>
               <CardTitle className="font-mono text-sm">Generate a Blog Post</CardTitle>
               <CardDescription className="font-mono text-xs">
-                Claude will write a full post (~800-1200 words) with a relevant Unsplash image
+                AI will write a full post (~800-1200 words) with a relevant Unsplash image
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

@@ -2,8 +2,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY");
+
+const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,8 +20,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    if (!ANTHROPIC_API_KEY) {
-      return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY not configured in Supabase secrets" }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -40,30 +42,45 @@ Deno.serve(async (req) => {
     const { data: job } = await supabase.from("blog_generation_jobs").insert({ topic, status: "running", scheduled_for: scheduled ? new Date().toISOString() : null }).select().single();
     const jobId = job?.id;
 
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+    // Call Lovable AI Gateway (OpenAI-compatible)
+    const aiRes = await fetch(AI_GATEWAY_URL, {
       method: "POST",
-      headers: { "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 4000,
-        messages: [{ role: "user", content: `You are an expert content writer for Digiiworks, a web agency specialising in AI automation, web development, SEO and digital marketing based in South Africa and Thailand.\n\nWrite a professional blog post about: ${topic}\nTone: ${tone}\nCategory: ${category}\n\nIMPORTANT: Return ONLY valid JSON with no markdown code blocks, no backticks, no extra text. Just the raw JSON object:\n{\n  "title": "engaging SEO-friendly title",\n  "slug": "url-slug-with-hyphens",\n  "excerpt": "1-2 sentence compelling description for meta tag and preview cards",\n  "content": "<h2>First Section</h2><p>Opening paragraph...</p>",\n  "tags": ["tag1", "tag2", "tag3"],\n  "image_search_query": "3-5 word descriptive search term for relevant stock photo"\n}\n\nRequirements:\n- Post should be 800-1200 words\n- Use h2 and h3 headings\n- Keep paragraphs short (2-4 sentences)\n- Include practical actionable insights\n- Naturally mention Digiiworks services where relevant\n- Tags from: Web Development, AI Automation, SEO, UX Design, Digital Marketing, Technology, Performance, Business` }],
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert content writer for Digiiworks, a web agency specialising in AI automation, web development, SEO and digital marketing based in South Africa and Thailand.",
+          },
+          {
+            role: "user",
+            content: `Write a professional blog post about: ${topic}\nTone: ${tone}\nCategory: ${category}\n\nIMPORTANT: Return ONLY valid JSON with no markdown code blocks, no backticks, no extra text. Just the raw JSON object:\n{\n  "title": "engaging SEO-friendly title",\n  "slug": "url-slug-with-hyphens",\n  "excerpt": "1-2 sentence compelling description for meta tag and preview cards",\n  "content": "<h2>First Section</h2><p>Opening paragraph...</p>",\n  "tags": ["tag1", "tag2", "tag3"],\n  "image_search_query": "3-5 word descriptive search term for relevant stock photo"\n}\n\nRequirements:\n- Post should be 800-1200 words\n- Use h2 and h3 headings\n- Keep paragraphs short (2-4 sentences)\n- Include practical actionable insights\n- Naturally mention Digiiworks services where relevant\n- Tags from: Web Development, AI Automation, SEO, UX Design, Digital Marketing, Technology, Performance, Business, Architecture`,
+          },
+        ],
       }),
     });
 
-    if (!claudeRes.ok) {
-      const errText = await claudeRes.text();
+    if (!aiRes.ok) {
+      const errText = await aiRes.text();
       if (jobId) await supabase.from("blog_generation_jobs").update({ status: "failed", error: errText, completed_at: new Date().toISOString() }).eq("id", jobId);
-      throw new Error(`Claude API error ${claudeRes.status}: ${errText}`);
+      if (aiRes.status === 429) throw new Error("Rate limited — please try again in a moment.");
+      if (aiRes.status === 402) throw new Error("AI credits exhausted — add funds in Settings > Workspace > Usage.");
+      throw new Error(`AI gateway error ${aiRes.status}: ${errText}`);
     }
 
-    const claudeData = await claudeRes.json();
-    const rawContent = claudeData.content?.[0]?.text ?? "";
+    const aiData = await aiRes.json();
+    const rawContent = aiData.choices?.[0]?.message?.content ?? "";
+
     let parsed: any;
     try {
       parsed = JSON.parse(rawContent.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim());
     } catch (e) {
       if (jobId) await supabase.from("blog_generation_jobs").update({ status: "failed", error: `JSON parse error: ${String(e)}`, completed_at: new Date().toISOString() }).eq("id", jobId);
-      throw new Error(`Failed to parse Claude response as JSON: ${rawContent.slice(0, 300)}`);
+      throw new Error(`Failed to parse AI response as JSON: ${rawContent.slice(0, 300)}`);
     }
 
     let slug = generateSlug(parsed.slug || parsed.title);
@@ -78,7 +95,7 @@ Deno.serve(async (req) => {
       } catch { /* post still created without image */ }
     }
 
-    const { data: post, error: postError } = await supabase.from("posts").insert({ title: parsed.title, slug, content: parsed.content, excerpt: parsed.excerpt, featured_image, tags: parsed.tags ?? [], status: auto_publish ? "published" : "draft", generated_by: "anthropic-api" }).select().single();
+    const { data: post, error: postError } = await supabase.from("posts").insert({ title: parsed.title, slug, content: parsed.content, excerpt: parsed.excerpt, featured_image, tags: parsed.tags ?? [], status: auto_publish ? "published" : "draft", generated_by: "lovable-ai" }).select().single();
     if (postError) {
       if (jobId) await supabase.from("blog_generation_jobs").update({ status: "failed", error: postError.message, completed_at: new Date().toISOString() }).eq("id", jobId);
       throw new Error(`Failed to save post: ${postError.message}`);
