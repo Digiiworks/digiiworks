@@ -12,6 +12,8 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Plus, Trash2, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { format } from 'date-fns';
 
 const CATEGORIES = ['Web Development', 'AI Automation', 'SEO', 'UX Design', 'Digital Marketing', 'Technology', 'Performance', 'Business'];
