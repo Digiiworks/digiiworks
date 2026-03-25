@@ -117,13 +117,12 @@ const AdminDashboardContent = () => {
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('invoices')
         .select('total, currency')
         .eq('status', 'paid')
         .gte('paid_at', startOfMonth.toISOString());
-      // Sum in USD (simple conversion not needed for MVP — just sum the numbers)
-      return (data ?? []).reduce((sum, inv) => sum + (inv.total ?? 0), 0);
+      return (data ?? []).reduce((sum: number, inv: any) => sum + (inv.total ?? 0), 0);
     },
   });
 
