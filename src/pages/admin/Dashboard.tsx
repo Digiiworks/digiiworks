@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Users, FileText, Mail, TrendingUp, BarChart3, AlertCircle } from 'lucide-react';
+import { Users, FileText, Mail, TrendingUp, BarChart3, AlertCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, subDays, startOfDay, addMonths } from 'date-fns';
 import StatCard from '@/components/admin/StatCard';
@@ -77,9 +78,9 @@ const AdminDashboardContent = () => {
     },
   });
 
-  const { data: fxRates } = useQuery({
+  const { data: fxRates, refetch: refetchFx, isFetching: fxFetching } = useQuery({
     queryKey: ['fx-rates-live'],
-    staleTime: 60 * 60 * 1000, // cache 1 hour
+    staleTime: 0, // always refetch on explicit refetch()
     queryFn: async () => {
       // Run both sources in parallel — use whichever succeeds
       const [dbResult, apiResult] = await Promise.allSettled([
@@ -286,6 +287,16 @@ const AdminDashboardContent = () => {
             <h3 className="font-mono text-sm font-semibold">Income Forecast</h3>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              title="Refresh exchange rates"
+              onClick={() => refetchFx()}
+              disabled={fxFetching}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${fxFetching ? 'animate-spin' : ''}`} />
+            </Button>
             <Select value={forecastCurrency} onValueChange={(v) => setForecastCurrency(v as 'USD' | 'ZAR' | 'THB')}>
               <SelectTrigger className="w-20 h-7 border-border bg-background/50 font-mono text-xs">
                 <SelectValue />
