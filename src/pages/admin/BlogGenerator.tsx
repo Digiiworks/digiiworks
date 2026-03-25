@@ -138,7 +138,7 @@ export default function BlogGenerator() {
             <CardHeader>
               <CardTitle className="font-mono text-sm">Generate a Blog Post</CardTitle>
               <CardDescription className="font-mono text-xs">
-                Claude will write a full post (~800-1200 words) with a relevant Unsplash image
+                AI will write a full post (~800-1200 words) with a relevant Unsplash image
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
