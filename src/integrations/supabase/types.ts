@@ -214,8 +214,6 @@ export type Database = {
           id: string
           invoice_number: string
           notes: string | null
-          currency: string
-          paid_amount: number
           paid_at: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
           payment_reference: string | null
@@ -230,12 +228,10 @@ export type Database = {
           client_company_id?: string | null
           client_id: string
           created_at?: string
-          currency?: string
           due_date?: string | null
           id?: string
           invoice_number: string
           notes?: string | null
-          paid_amount?: number
           paid_at?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_reference?: string | null
@@ -250,12 +246,10 @@ export type Database = {
           client_company_id?: string | null
           client_id?: string
           created_at?: string
-          currency?: string
           due_date?: string | null
           id?: string
           invoice_number?: string
           notes?: string | null
-          paid_amount?: number
           paid_at?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_reference?: string | null
@@ -510,183 +504,6 @@ export type Database = {
         }
         Relationships: []
       }
-      audit_logs: {
-        Row: {
-          id: string
-          resource_type: string
-          resource_id: string
-          action: string
-          actor_id: string | null
-          old_values: Json | null
-          new_values: Json | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          resource_type: string
-          resource_id: string
-          action: string
-          actor_id?: string | null
-          old_values?: Json | null
-          new_values?: Json | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          resource_type?: string
-          resource_id?: string
-          action?: string
-          actor_id?: string | null
-          old_values?: Json | null
-          new_values?: Json | null
-          created_at?: string
-        }
-        Relationships: []
-      }
-      dunning_sends: {
-        Row: {
-          id: string
-          invoice_id: string
-          days_overdue: number
-          sent_at: string
-        }
-        Insert: {
-          id?: string
-          invoice_id: string
-          days_overdue: number
-          sent_at?: string
-        }
-        Update: {
-          id?: string
-          invoice_id?: string
-          days_overdue?: number
-          sent_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "dunning_sends_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      exchange_rates: {
-        Row: {
-          id: string
-          currency_code: string
-          rate_vs_usd: number
-          margin_pct: number
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          currency_code: string
-          rate_vs_usd: number
-          margin_pct?: number
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          currency_code?: string
-          rate_vs_usd?: number
-          margin_pct?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      payment_sessions: {
-        Row: {
-          id: string
-          invoice_id: string
-          gateway: string
-          session_id: string
-          status: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          invoice_id: string
-          gateway: string
-          session_id: string
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          invoice_id?: string
-          gateway?: string
-          session_id?: string
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payment_sessions_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rate_limit_checks: {
-        Row: {
-          id: string
-          key: string
-          window_start: string
-          count: number
-        }
-        Insert: {
-          id?: string
-          key: string
-          window_start: string
-          count?: number
-        }
-        Update: {
-          id?: string
-          key?: string
-          window_start?: string
-          count?: number
-        }
-        Relationships: []
-      }
-      recurring_invoice_runs: {
-        Row: {
-          id: string
-          client_id: string
-          billing_month: string
-          invoice_id: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          client_id: string
-          billing_month: string
-          invoice_id?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          client_id?: string
-          billing_month?: string
-          invoice_id?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "recurring_invoice_runs_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           id: string
@@ -722,7 +539,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "editor" | "client"
       invoice_email_status: "scheduled" | "sent" | "failed"
-      invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled" | "partial"
+      invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
       lead_status: "new" | "contacted" | "qualified" | "converted" | "lost"
       payment_method: "stripe" | "yoco" | "manual"
       post_status: "draft" | "published"
@@ -855,7 +672,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "editor", "client"],
       invoice_email_status: ["scheduled", "sent", "failed"],
-      invoice_status: ["draft", "sent", "paid", "overdue", "cancelled", "partial"],
+      invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
       lead_status: ["new", "contacted", "qualified", "converted", "lost"],
       payment_method: ["stripe", "yoco", "manual"],
       post_status: ["draft", "published"],
