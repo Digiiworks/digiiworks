@@ -220,7 +220,9 @@ export default function Invoices() {
           ...inv,
           client_name: company?.company_name ?? profile?.display_name ?? 'Unknown',
           client_email: profile?.email ?? '',
-          currency: company?.currency ?? profile?.currency ?? 'USD',
+          // Use the currency stored on the invoice at creation time (denormalised for audit safety).
+          // Only fall back to company/profile if the invoice has no currency stored (legacy rows).
+          currency: inv.currency ?? company?.currency ?? profile?.currency ?? 'USD',
           company_name: company?.company_name ?? profile?.company ?? '',
         };
       });
@@ -334,16 +336,19 @@ export default function Invoices() {
     });
   };
 
+  const FALLBACK_FX: Record<string, number> = { ZAR: 18.5, THB: 35.0 };
   const getProductPrice = (p: Product, currency: string = 'USD'): number => {
     if (currency === 'ZAR') {
       if (p.price_zar) return p.price_zar;
-      const r = exchangeRates.get('ZAR');
-      if (r) return Math.round(p.price_usd * r.rate_vs_usd * (1 + r.margin_pct / 100) * 100) / 100;
+      const rate = exchangeRates.get('ZAR')?.rate_vs_usd ?? FALLBACK_FX.ZAR;
+      const margin = exchangeRates.get('ZAR')?.margin_pct ?? 0;
+      return Math.round(p.price_usd * rate * (1 + margin / 100) * 100) / 100;
     }
     if (currency === 'THB') {
       if (p.price_thb) return p.price_thb;
-      const r = exchangeRates.get('THB');
-      if (r) return Math.round(p.price_usd * r.rate_vs_usd * (1 + r.margin_pct / 100) * 100) / 100;
+      const rate = exchangeRates.get('THB')?.rate_vs_usd ?? FALLBACK_FX.THB;
+      const margin = exchangeRates.get('THB')?.margin_pct ?? 0;
+      return Math.round(p.price_usd * rate * (1 + margin / 100) * 100) / 100;
     }
     return p.price_usd;
   };
