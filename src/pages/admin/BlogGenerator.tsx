@@ -87,7 +87,7 @@ export default function BlogGenerator() {
   const handleSaveConfig = async () => {
     if (!config) return;
     setSavingConfig(true);
-    await supabase.from('blog_generation_config').update({
+    await (supabase as any).from('blog_generation_config').update({
       tone: config.tone,
       default_category: config.default_category,
       auto_publish: config.auto_publish,
