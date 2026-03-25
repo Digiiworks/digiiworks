@@ -54,7 +54,6 @@ type Invoice = {
   updated_at: string;
   client_name?: string;
   client_email?: string;
-  currency?: string;
   company_name?: string;
 };
 
