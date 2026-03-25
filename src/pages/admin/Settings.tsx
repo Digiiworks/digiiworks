@@ -217,29 +217,25 @@ const SettingsPage = () => {
   const handleRefreshRates = async () => {
     setFxRefreshing(true);
     try {
-      // Fetch live rates directly from Frankfurter (no edge function needed)
       const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=ZAR,THB');
-      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      if (!res.ok) throw new Error(`Frankfurter API error: ${res.status}`);
       const { rates } = await res.json() as { rates: Record<string, number> };
 
       const updatedAt = new Date().toISOString();
-      const next: typeof fxRates = [];
 
       for (const [currency_code, rate_vs_usd] of Object.entries(rates)) {
         const existing = fxRates.find(r => r.currency_code === currency_code);
-        const margin_pct = existing?.margin_pct ?? '0';
-        // Upsert into DB (non-fatal if table doesn't exist yet)
-        await supabase.from('exchange_rates').upsert(
-          { currency_code, rate_vs_usd, margin_pct: parseFloat(margin_pct), updated_at: updatedAt },
+        const margin_pct = parseFloat(existing?.margin_pct ?? '0');
+        const { error } = await supabase.from('exchange_rates').upsert(
+          { currency_code, rate_vs_usd, margin_pct, updated_at: updatedAt },
           { onConflict: 'currency_code' }
         );
-        next.push({ currency_code, rate_vs_usd: String(rate_vs_usd), margin_pct, updated_at: updatedAt });
+        if (error) throw new Error(`DB save failed for ${currency_code}: ${error.message}`);
       }
 
-      // Keep any existing rows not returned by API
-      const returned = new Set(next.map(r => r.currency_code));
-      setFxRates([...next, ...fxRates.filter(r => !returned.has(r.currency_code))]);
-      toast.success('Exchange rates updated from live market');
+      // Re-fetch from DB so UI reflects exactly what was saved
+      await fetchRates();
+      toast.success('Exchange rates refreshed and saved');
     } catch (err: any) {
       toast.error('Refresh failed: ' + (err.message || 'Unknown error'));
     } finally {
@@ -259,7 +255,7 @@ const SettingsPage = () => {
       currency_code: code, rate_vs_usd: rate, margin_pct: margin, updated_at: new Date().toISOString(),
     }, { onConflict: 'currency_code' });
     if (error) toast.error('Failed to save: ' + error.message);
-    else toast.success(`${code} rate saved`);
+    else { await fetchRates(); toast.success(`${code} rate saved`); }
     setFxSaving(null);
   };
 
