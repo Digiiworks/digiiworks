@@ -585,7 +585,7 @@ export default function Invoices() {
         .eq('id', payDialog.id);
       if (error) throw error;
       // Audit log — record who marked it paid and any reference notes
-      supabase.from('audit_logs').insert({
+      (supabase as any).from('audit_logs').insert({
         resource_type: 'invoice', resource_id: payDialog.id, action: 'mark_paid_manual',
         actor_id: user?.id ?? null,
         old_values: { status: payDialog.status },
