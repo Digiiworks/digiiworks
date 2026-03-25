@@ -48,8 +48,8 @@ export default function BlogGenerator() {
 
   // Load config
   useEffect(() => {
-    supabase.from('blog_generation_config').select('*').limit(1).single()
-      .then(({ data }) => { if (data) setConfig(data as Config); });
+    (supabase as any).from('blog_generation_config').select('*').limit(1).single()
+      .then(({ data }: any) => { if (data) setConfig(data as Config); });
   }, []);
 
   // Load job history
