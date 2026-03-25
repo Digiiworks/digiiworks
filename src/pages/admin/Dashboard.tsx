@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const COLORS = ['hsl(184, 100%, 50%)', 'hsl(280, 99%, 53%)', 'hsl(106, 100%, 55%)', 'hsl(0, 72%, 51%)', 'hsl(45, 100%, 60%)'];
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', ZAR: 'R', THB: '฿' };
+// Fallback rates used when DB and live API are both unavailable
+const FALLBACK_RATES: Record<string, number> = { ZAR: 18.5, THB: 35.0 };
 
 
 const AdminDashboardContent = () => {
@@ -150,17 +152,18 @@ const AdminDashboardContent = () => {
   };
 
   const forecastTotal = useMemo(() => {
+    const getRate = (code: string): number =>
+      (fxRates?.get(code) as any)?.rate_vs_usd ?? FALLBACK_RATES[code] ?? 1;
+    const getMargin = (code: string): number =>
+      (fxRates?.get(code) as any)?.margin_pct ?? 0;
+
     const convertToDisplay = (amount: number, fromCurrency: string): number => {
       if (fromCurrency === forecastCurrency) return amount;
-      let usdAmount = amount;
-      if (fromCurrency !== 'USD') {
-        const r = fxRates?.get(fromCurrency) as any;
-        if (r) usdAmount = amount / r.rate_vs_usd;
-      }
+      // Step 1: convert source currency → USD
+      const usdAmount = fromCurrency === 'USD' ? amount : amount / getRate(fromCurrency);
+      // Step 2: convert USD → target currency
       if (forecastCurrency === 'USD') return usdAmount;
-      const r = fxRates?.get(forecastCurrency) as any;
-      if (r) return usdAmount * r.rate_vs_usd * (1 + r.margin_pct / 100);
-      return usdAmount;
+      return usdAmount * getRate(forecastCurrency) * (1 + getMargin(forecastCurrency) / 100);
     };
 
     // Component 1: outstanding invoices (draft + sent + overdue + partial)
