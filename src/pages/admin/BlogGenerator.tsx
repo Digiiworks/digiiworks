@@ -46,6 +46,8 @@ export default function BlogGenerator() {
   const [newTopic, setNewTopic] = useState('');
   const [config, setConfig] = useState<Config | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
 
   // Load config
