@@ -523,7 +523,7 @@ export default function Invoices() {
     const { error } = await supabase.from('invoices').update(extra).eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
     // Audit log
-    supabase.from('audit_logs').insert({
+    (supabase as any).from('audit_logs').insert({
       resource_type: 'invoice', resource_id: id, action: 'status_changed',
       actor_id: user?.id ?? null,
       old_values: inv ? { status: inv.status } : null,
