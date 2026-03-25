@@ -56,7 +56,7 @@ export default function BlogGenerator() {
   const { data: jobs, refetch: refetchJobs } = useQuery({
     queryKey: ['blog-generation-jobs'],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('blog_generation_jobs')
         .select('*')
         .order('created_at', { ascending: false })
