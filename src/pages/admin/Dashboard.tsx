@@ -75,7 +75,7 @@ const AdminDashboardContent = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('client_recurring_services')
-        .select('id, quantity, unit_price_override, billing_cycle, products(price_usd, price_zar, price_thb), client_companies(currency)')
+        .select('id, quantity, unit_price_override, billing_cycle, products!product_id(price_usd, price_zar, price_thb), client_companies!client_company_id(currency)')
         .eq('active', true);
       return data ?? [];
     },
@@ -152,10 +152,13 @@ const AdminDashboardContent = () => {
     }
   };
 
-  // null means "rates not yet loaded from DB" — distinct from 0
-  type ForecastBreakdown = { currency: string; native: number; converted: number | null };
+  type ForecastBreakdown = { currency: string; native: number };
 
-  const forecast = useMemo((): { total: number | null; breakdown: ForecastBreakdown[] } => {
+  const forecast = useMemo((): {
+    total: number | null;
+    invoiceBreakdown: ForecastBreakdown[];
+    recurringBreakdown: ForecastBreakdown[];
+  } => {
     const getEntry = (code: string) => (fxRates?.get(code) as any) ?? null;
 
     const toDisplay = (amount: number, fromCurrency: string): number | null => {
@@ -172,56 +175,59 @@ const AdminDashboardContent = () => {
       return usdAmount * e.rate_vs_usd * (1 + e.margin_pct / 100);
     };
 
-    // Accumulate amounts grouped by their actual stored currency
-    const byCurrency: Record<string, number> = {};
-
-    // Outstanding invoices (draft + sent + overdue + partial)
+    // --- Invoice bucket ---
+    const invByCurrency: Record<string, number> = {};
     for (const inv of (forecastInvoices ?? [])) {
       const currency = inv.currency ?? 'USD';
       const remaining = inv.status === 'partial'
         ? ((inv.total ?? 0) - (inv.paid_amount ?? 0))
         : (inv.total ?? 0);
-      byCurrency[currency] = (byCurrency[currency] ?? 0) + remaining;
+      invByCurrency[currency] = (invByCurrency[currency] ?? 0) + remaining;
     }
 
-    // Recurring services — use the price column that matches the product's pricing,
-    // NOT the client currency, so we never mislabel a USD price as ZAR
+    // --- Recurring services bucket ---
+    const recByCurrency: Record<string, number> = {};
     for (const svc of (recurringServices ?? [])) {
       const occurrences = getBillingOccurrences(svc.billing_cycle ?? 'monthly', forecastMonths);
       if (occurrences === 0) continue;
 
+      const clientCurrency = (svc.client_companies as any)?.currency ?? null;
       let priceAmount: number;
       let priceCurrency: string;
 
       if (svc.unit_price_override != null) {
-        // Override is always stored in the client's currency
-        const clientCurrency = (svc.client_companies as any)?.currency ?? 'USD';
         priceAmount = svc.unit_price_override;
-        priceCurrency = clientCurrency;
+        priceCurrency = clientCurrency ?? 'USD';
       } else {
         const p = svc.products as any;
         if (!p) continue;
-        const clientCurrency = (svc.client_companies as any)?.currency ?? 'USD';
-        // Use the direct price column if it exists, currency must match
         if (clientCurrency === 'ZAR' && p.price_zar) { priceAmount = p.price_zar; priceCurrency = 'ZAR'; }
         else if (clientCurrency === 'THB' && p.price_thb) { priceAmount = p.price_thb; priceCurrency = 'THB'; }
-        else { priceAmount = p.price_usd ?? 0; priceCurrency = 'USD'; } // fallback is always USD
+        else { priceAmount = p.price_usd ?? 0; priceCurrency = 'USD'; }
       }
 
-      byCurrency[priceCurrency] = (byCurrency[priceCurrency] ?? 0) + priceAmount * (svc.quantity ?? 1) * occurrences;
+      recByCurrency[priceCurrency] = (recByCurrency[priceCurrency] ?? 0) + priceAmount * (svc.quantity ?? 1) * occurrences;
     }
 
-    // Convert each currency bucket to the display currency
+    // Convert all buckets and sum
     let total = 0;
-    const breakdown: ForecastBreakdown[] = [];
-    for (const [currency, native] of Object.entries(byCurrency)) {
+    const invoiceBreakdown: ForecastBreakdown[] = [];
+    const recurringBreakdown: ForecastBreakdown[] = [];
+
+    for (const [currency, native] of Object.entries(invByCurrency)) {
       const converted = toDisplay(native, currency);
-      breakdown.push({ currency, native, converted });
-      if (converted === null) return { total: null, breakdown };
+      invoiceBreakdown.push({ currency, native });
+      if (converted === null) return { total: null, invoiceBreakdown, recurringBreakdown };
+      total += converted;
+    }
+    for (const [currency, native] of Object.entries(recByCurrency)) {
+      const converted = toDisplay(native, currency);
+      recurringBreakdown.push({ currency, native });
+      if (converted === null) return { total: null, invoiceBreakdown, recurringBreakdown };
       total += converted;
     }
 
-    return { total, breakdown };
+    return { total, invoiceBreakdown, recurringBreakdown };
   }, [forecastInvoices, recurringServices, forecastCurrency, fxRates, forecastMonths]);
 
   const fmtForecast = (amount: number) => {
@@ -349,19 +355,31 @@ const AdminDashboardContent = () => {
               {fmtForecast(forecast.total)}
             </p>
           )}
-          <p className="font-mono text-xs text-muted-foreground">
-            {forecastInvoices?.length ?? 0} outstanding invoice{forecastInvoices?.length !== 1 ? 's' : ''} · {recurringServices?.length ?? 0} recurring service{recurringServices?.length !== 1 ? 's' : ''} × {forecastMonths} month{forecastMonths !== 1 ? 's' : ''}
-          </p>
-          {/* Per-currency breakdown so it's clear what is and isn't being converted */}
-          {forecast.breakdown.length > 0 && (
-            <div className="flex flex-wrap gap-x-4 gap-y-0.5 pt-1 border-t border-border/30">
-              {forecast.breakdown.map(({ currency, native }) => {
+          {/* Invoices breakdown */}
+          {forecast.invoiceBreakdown.length > 0 && (
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+              <span className="font-mono text-[11px] text-muted-foreground/60 w-full">Invoices:</span>
+              {forecast.invoiceBreakdown.map(({ currency, native }) => {
                 const sym = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
-                const isConverted = currency !== forecastCurrency;
                 return (
                   <span key={currency} className="font-mono text-[11px] text-muted-foreground">
                     {sym}{native.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    {isConverted && <span className="text-primary/60"> →converted</span>}
+                    {currency !== forecastCurrency && <span className="text-primary/60"> →{forecastCurrency}</span>}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+          {/* Recurring services breakdown */}
+          {forecast.recurringBreakdown.length > 0 && (
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+              <span className="font-mono text-[11px] text-muted-foreground/60 w-full">Recurring ({recurringServices?.length ?? 0} × {forecastMonths}mo):</span>
+              {forecast.recurringBreakdown.map(({ currency, native }) => {
+                const sym = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
+                return (
+                  <span key={currency} className="font-mono text-[11px] text-muted-foreground">
+                    {sym}{native.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {currency !== forecastCurrency && <span className="text-primary/60"> →{forecastCurrency}</span>}
                   </span>
                 );
               })}
