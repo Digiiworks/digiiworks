@@ -186,7 +186,7 @@ export default function Invoices() {
     setFetchError(false);
     try {
       const [invRes, profRes, prodRes, compRes, paySettingsRes, fxRes] = await Promise.all([
-        supabase.from('invoices').select('*').order('created_at', { ascending: false }),
+        supabase.from('invoices').select('*, client_companies!client_company_id(currency, company_name)').order('created_at', { ascending: false }),
         supabase.from('profiles').select('user_id, display_name, email, company, currency'),
         supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
         supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
@@ -212,17 +212,19 @@ export default function Invoices() {
         };
       });
 
-      const enriched = (invRes.data ?? []).map(inv => {
+      const enriched = (invRes.data ?? []).map((inv: any) => {
+        // Inline FK join result (most reliable — server-side join)
+        const joinedCompany = inv.client_companies as { currency: string; company_name: string } | null;
+        // Fallback: separate companyMap lookup (covers edge cases)
         const company = inv.client_company_id ? companyMap.get(inv.client_company_id) : null;
         const profile = profileMap.get(inv.client_id);
         return {
           ...inv,
-          client_name: company?.company_name ?? profile?.display_name ?? 'Unknown',
+          client_name: joinedCompany?.company_name ?? company?.company_name ?? profile?.display_name ?? 'Unknown',
           client_email: profile?.email ?? '',
-          // Use company currency first — migration 20260325130000 will make
-          // inv.currency reliable once Lovable applies it.
-          currency: company?.currency ?? profile?.currency ?? inv.currency ?? 'USD',
-          company_name: company?.company_name ?? profile?.company ?? '',
+          // Priority: inline FK join → separate map → profile → DB column
+          currency: joinedCompany?.currency ?? company?.currency ?? profile?.currency ?? inv.currency ?? 'USD',
+          company_name: joinedCompany?.company_name ?? company?.company_name ?? profile?.company ?? '',
         };
       });
       setInvoices(enriched);
