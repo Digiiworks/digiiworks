@@ -195,8 +195,8 @@ export default function Invoices() {
       if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
       // Load FX rates separately — non-critical, silently skip if table missing
       try {
-        const { data: fxData } = await supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct');
-        if (fxData?.length) setExchangeRates(new Map((fxData as unknown as ExchangeRate[]).map(r => [r.currency_code, r])));
+        const { data: fxData } = await (supabase as any).from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct');
+        if (fxData?.length) setExchangeRates(new Map((fxData as ExchangeRate[]).map(r => [r.currency_code, r])));
       } catch { /* silently skip */ }
       const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
       const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
