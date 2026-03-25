@@ -121,7 +121,7 @@ export default function BlogGenerator() {
         <Sparkles className="h-5 w-5 text-primary" />
         <div>
           <h1 className="font-mono text-xl font-bold">Blog AI Generator</h1>
-          <p className="font-mono text-xs text-muted-foreground">Generate blog posts with Claude AI + Unsplash images</p>
+          <p className="font-mono text-xs text-muted-foreground">Generate blog posts with AI + Unsplash images</p>
         </div>
       </div>
 
