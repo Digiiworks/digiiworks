@@ -112,6 +112,16 @@ export default function BlogGenerator() {
     setConfig(prev => prev ? { ...prev, topics_queue: prev.topics_queue.filter((_, i) => i !== idx) } : prev);
   };
 
+  const handleDeleteJob = async () => {
+    if (!deleteJobId) return;
+    setDeleting(true);
+    const { error } = await (supabase as any).from('blog_generation_jobs').delete().eq('id', deleteJobId);
+    if (error) toast.error('Failed to delete');
+    else { toast.success('Job deleted'); refetchJobs(); }
+    setDeleting(false);
+    setDeleteJobId(null);
+  };
+
   const StatusIcon = ({ status }: { status: string }) => {
     if (status === 'completed') return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />;
     if (status === 'failed') return <XCircle className="h-3.5 w-3.5 text-red-400" />;
