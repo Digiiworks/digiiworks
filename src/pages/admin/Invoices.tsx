@@ -467,6 +467,7 @@ export default function Invoices() {
     const { error } = await supabase.from('invoices').update({
       client_id: selectedCompany?.user_id ?? form.client_id,
       client_company_id: form.client_company_id || null,
+      currency: selectedCompany?.currency ?? 'USD',
       due_date: form.due_date || null,
       notes: form.notes || null,
       tax_rate: form.tax_rate,
