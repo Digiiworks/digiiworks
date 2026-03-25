@@ -43,13 +43,13 @@ export default function ClientDetailSheet({ companyId, onClose, onEdit, onNewInv
     queryKey: ['client-invoices', companyId],
     enabled: !!companyId,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('invoices')
         .select('id, invoice_number, status, total, paid_amount, currency, due_date, created_at')
         .eq('client_company_id', companyId!)
         .order('created_at', { ascending: false })
         .limit(5);
-      return data ?? [];
+      return (data ?? []) as any[];
     },
   });
 
