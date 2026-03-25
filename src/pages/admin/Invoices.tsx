@@ -383,7 +383,7 @@ export default function Invoices() {
     setSaving(true);
 
     // Generate invoice number atomically via DB sequence (race-condition safe)
-    const { data: generatedNumber, error: numErr } = await supabase.rpc('next_invoice_number');
+    const { data: generatedNumber, error: numErr } = await (supabase as any).rpc('next_invoice_number');
     if (numErr || !generatedNumber) {
       toast({ title: 'Error generating invoice number', description: numErr?.message, variant: 'destructive' });
       setSaving(false); return;
