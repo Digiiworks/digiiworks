@@ -12,6 +12,8 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Plus, Trash2, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { format } from 'date-fns';
 
 const CATEGORIES = ['Web Development', 'AI Automation', 'SEO', 'UX Design', 'Digital Marketing', 'Technology', 'Performance', 'Business'];
@@ -44,6 +46,8 @@ export default function BlogGenerator() {
   const [newTopic, setNewTopic] = useState('');
   const [config, setConfig] = useState<Config | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
 
   // Load config
@@ -106,6 +110,16 @@ export default function BlogGenerator() {
 
   const removeTopicFromQueue = (idx: number) => {
     setConfig(prev => prev ? { ...prev, topics_queue: prev.topics_queue.filter((_, i) => i !== idx) } : prev);
+  };
+
+  const handleDeleteJob = async () => {
+    if (!deleteJobId) return;
+    setDeleting(true);
+    const { error } = await (supabase as any).from('blog_generation_jobs').delete().eq('id', deleteJobId);
+    if (error) toast.error('Failed to delete');
+    else { toast.success('Job deleted'); refetchJobs(); }
+    setDeleting(false);
+    setDeleteJobId(null);
   };
 
   const StatusIcon = ({ status }: { status: string }) => {
@@ -306,45 +320,59 @@ export default function BlogGenerator() {
               {jobs?.length === 0 ? (
                 <p className="font-mono text-xs text-muted-foreground text-center py-4">No generation history yet</p>
               ) : (
-                <div className="space-y-2">
-                  {jobs?.map(job => (
-                    <div key={job.id} className="flex items-start gap-3 p-3 border border-border rounded-lg">
-                      <StatusIcon status={job.status} />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-mono text-xs font-medium truncate">{job.topic}</p>
-                        <p className="font-mono text-[10px] text-muted-foreground">
-                          {format(new Date(job.created_at), 'dd MMM yyyy HH:mm')}
-                        </p>
-                        {job.error && (
-                          <p className="font-mono text-[10px] text-red-400 mt-1 truncate">{job.error}</p>
-                        )}
-                      </div>
-                      <div className="flex-shrink-0 flex items-center gap-2">
-                        <Badge className={
-                          job.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
-                          job.status === 'failed' ? 'bg-red-500/20 text-red-400' :
-                          job.status === 'running' ? 'bg-blue-500/20 text-blue-400' :
-                          'bg-zinc-500/20 text-zinc-400'
-                        }>
-                          {job.status}
-                        </Badge>
-                        {job.post_id && (
-                          <a
-                            href={`/admin/posts`}
-                            className="font-mono text-[10px] text-primary hover:underline"
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-2 pr-3">
+                    {jobs?.map(job => (
+                      <div key={job.id} className="flex items-start gap-3 p-3 border border-border rounded-lg overflow-hidden">
+                        <StatusIcon status={job.status} />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-mono text-xs font-medium truncate">{job.topic}</p>
+                          <p className="font-mono text-[10px] text-muted-foreground">
+                            {format(new Date(job.created_at), 'dd MMM yyyy HH:mm')}
+                          </p>
+                          {job.error && (
+                            <p className="font-mono text-[10px] text-red-400 mt-1 line-clamp-2 break-all">{job.error}</p>
+                          )}
+                        </div>
+                        <div className="flex-shrink-0 flex items-center gap-1.5">
+                          <Badge className={`text-[10px] ${
+                            job.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
+                            job.status === 'failed' ? 'bg-red-500/20 text-red-400' :
+                            job.status === 'running' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-zinc-500/20 text-zinc-400'
+                          }`}>
+                            {job.status}
+                          </Badge>
+                          {job.post_id && (
+                            <a href="/admin/posts" className="font-mono text-[10px] text-primary hover:underline whitespace-nowrap">
+                              View
+                            </a>
+                          )}
+                          <button
+                            onClick={() => setDeleteJobId(job.id)}
+                            className="text-muted-foreground hover:text-red-400 transition-colors ml-1"
                           >
-                            View post
-                          </a>
-                        )}
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      <ConfirmDialog
+        open={!!deleteJobId}
+        onOpenChange={open => !open && setDeleteJobId(null)}
+        title="Delete generation job?"
+        description="This will permanently remove this job from history."
+        confirmLabel={deleting ? 'Deleting...' : 'Delete'}
+        onConfirm={handleDeleteJob}
+      />
     </div>
   );
 }
