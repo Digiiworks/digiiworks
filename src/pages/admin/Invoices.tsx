@@ -219,9 +219,9 @@ export default function Invoices() {
           ...inv,
           client_name: company?.company_name ?? profile?.display_name ?? 'Unknown',
           client_email: profile?.email ?? '',
-          // inv.currency is the DB source of truth — kept in sync by the
-          // invoice_currency_sync trigger (migration 20260325130000).
-          currency: inv.currency ?? 'USD',
+          // Use company currency first — migration 20260325130000 will make
+          // inv.currency reliable once Lovable applies it.
+          currency: company?.currency ?? profile?.currency ?? inv.currency ?? 'USD',
           company_name: company?.company_name ?? profile?.company ?? '',
         };
       });
