@@ -686,7 +686,7 @@ export default function Invoices() {
       .eq('invoice_id', inv.id);
 
     // Get next invoice number
-    const { data: nextNum } = await supabase.rpc('next_invoice_number');
+    const { data: nextNum } = await (supabase as any).rpc('next_invoice_number');
     const invoiceNumber = nextNum ?? `INV-${Date.now()}`;
 
     // Create duplicate as draft
