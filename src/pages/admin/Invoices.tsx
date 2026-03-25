@@ -185,19 +185,18 @@ export default function Invoices() {
     setLoading(true);
     setFetchError(false);
     try {
-      const [invRes, profRes, prodRes, compRes, paySettingsRes] = await Promise.all([
+      const [invRes, profRes, prodRes, compRes, paySettingsRes, fxRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
         supabase.from('profiles').select('user_id, display_name, email, company, currency'),
         supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
         supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
+        supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
       ]);
       if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
-      // Load FX rates separately — non-critical, silently skip if table missing
-      try {
-        const { data: fxData } = await (supabase as any).from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct');
-        if (fxData?.length) setExchangeRates(new Map((fxData as ExchangeRate[]).map(r => [r.currency_code, r])));
-      } catch { /* silently skip */ }
+      if (fxRes.data?.length) {
+        setExchangeRates(new Map((fxRes.data as ExchangeRate[]).map(r => [r.currency_code, r])));
+      }
       const profileMap = new Map((profRes.data ?? []).map(p => [p.user_id, p]));
       const companyMap = new Map((compRes.data ?? []).map((c: any) => [c.id, c]));
 
@@ -336,19 +335,16 @@ export default function Invoices() {
     });
   };
 
-  const FALLBACK_FX: Record<string, number> = { ZAR: 18.5, THB: 35.0 };
   const getProductPrice = (p: Product, currency: string = 'USD'): number => {
     if (currency === 'ZAR') {
       if (p.price_zar) return p.price_zar;
-      const rate = exchangeRates.get('ZAR')?.rate_vs_usd ?? FALLBACK_FX.ZAR;
-      const margin = exchangeRates.get('ZAR')?.margin_pct ?? 0;
-      return Math.round(p.price_usd * rate * (1 + margin / 100) * 100) / 100;
+      const r = exchangeRates.get('ZAR');
+      if (r) return Math.round(p.price_usd * r.rate_vs_usd * (1 + r.margin_pct / 100) * 100) / 100;
     }
     if (currency === 'THB') {
       if (p.price_thb) return p.price_thb;
-      const rate = exchangeRates.get('THB')?.rate_vs_usd ?? FALLBACK_FX.THB;
-      const margin = exchangeRates.get('THB')?.margin_pct ?? 0;
-      return Math.round(p.price_usd * rate * (1 + margin / 100) * 100) / 100;
+      const r = exchangeRates.get('THB');
+      if (r) return Math.round(p.price_usd * r.rate_vs_usd * (1 + r.margin_pct / 100) * 100) / 100;
     }
     return p.price_usd;
   };
