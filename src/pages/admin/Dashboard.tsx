@@ -52,18 +52,21 @@ const AdminDashboardContent = () => {
     queryKey: ['income-forecast', forecastMonths],
     queryFn: async () => {
       const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
-      // Drafts: always include regardless of due date
+      // Join client_companies to get the real currency (inv.currency defaults to USD in DB)
       const { data: drafts } = await supabase
         .from('invoices')
-        .select('id, total, paid_amount, currency, status, due_date')
+        .select('id, total, paid_amount, currency, status, due_date, client_companies(currency)')
         .eq('status', 'draft');
-      // Sent/overdue/partial: include if due within period or no due date set
       const { data: nonDrafts } = await (supabase as any)
         .from('invoices')
-        .select('id, total, paid_amount, currency, status, due_date')
+        .select('id, total, paid_amount, currency, status, due_date, client_companies(currency)')
         .in('status', ['sent', 'overdue', 'partial'])
         .or(`due_date.is.null,due_date.lte.${cutoff}`);
-      return [...(drafts ?? []), ...(nonDrafts ?? [])];
+      const normalize = (inv: any) => ({
+        ...inv,
+        currency: (inv.client_companies as any)?.currency ?? inv.currency ?? 'USD',
+      });
+      return [...(drafts ?? []), ...(nonDrafts ?? [])].map(normalize);
     },
   });
 
