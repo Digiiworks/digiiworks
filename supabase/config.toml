@@ -17,3 +17,33 @@ verify_jwt = false
 
 [functions.create-stripe-checkout]
 verify_jwt = false
+
+[functions.create-client]
+verify_jwt = false
+
+[functions.generate-blog-post]
+verify_jwt = false
+
+[functions.generate-invoice-token]
+verify_jwt = false
+
+[functions.create-stripe-checkout-public]
+verify_jwt = false
+
+[functions.notify-lead]
+verify_jwt = false
+
+[functions.send-dunning-reminders]
+verify_jwt = false
+
+[functions.mark-overdue-invoices]
+verify_jwt = false
+
+[functions.update-exchange-rates]
+verify_jwt = false
+
+[functions.generate-sitemap]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
