@@ -14,7 +14,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  */
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("BASE_URL") || "https://digiiworks.lovable.app",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "stripe-signature, content-type",
 };
 

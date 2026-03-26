@@ -7,7 +7,7 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const MILESTONES = [1, 7, 14];
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('BASE_URL') || 'https://digiiworks.lovable.app',
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
