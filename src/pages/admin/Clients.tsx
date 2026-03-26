@@ -524,55 +524,99 @@ export default function Clients() {
 
     const currency = countryToCurrency(form.country);
 
-    const { data, error } = await supabase.functions.invoke('create-client', {
-      body: {
-        email: form.email,
-        display_name: form.display_name,
-        phone: form.phone,
-        company: form.company,
-        address: form.address,
-        currency,
-        existing_user_id: selectedExistingUser?.user_id || undefined,
-        cc_emails: ccEmails.filter(e => e.trim()),
-      },
-    });
+    try {
+      let userId: string;
+      let resetEmailSent = false;
 
-    if (error) {
-      toast({ title: 'Error creating client', description: error.message, variant: 'destructive' });
-    } else if (data?.error === 'user_exists') {
-      // User exists — offer to link
-      toast({
-        title: 'User already exists',
-        description: data.message + ' Select them from the dropdown to add a new company.',
-        variant: 'destructive',
-      });
-      if (data.existing_user_id) {
-        setEmailMatches([{
-          user_id: data.existing_user_id,
+      if (selectedExistingUser) {
+        userId = selectedExistingUser.user_id;
+      } else {
+        // Create the auth user via public signUp (does NOT sign out the admin
+        // when email confirmation is required, which is the default).
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: form.email,
-          display_name: data.existing_display_name,
-          company: null,
-          companies: [],
-        }]);
-        setShowEmailDropdown(true);
+          password: crypto.randomUUID() + 'Aa1!',
+          options: { data: { display_name: form.display_name || '' } },
+        });
+
+        if (signUpError) {
+          toast({ title: 'Error creating user', description: signUpError.message, variant: 'destructive' });
+          setSaving(false); return;
+        }
+
+        // Safety: if signUp auto-signed-in (email confirmation disabled), bail out
+        if (signUpData.session) {
+          toast({ title: 'Configuration error', description: 'Email confirmation must be enabled in Supabase Auth settings.', variant: 'destructive' });
+          setSaving(false); return;
+        }
+
+        // identities: [] means user already exists with this email
+        if (!signUpData.user || (signUpData.user.identities && signUpData.user.identities.length === 0)) {
+          toast({
+            title: 'User already exists',
+            description: `A user with ${form.email} already exists. Search for them using the email field to link a new company.`,
+            variant: 'destructive',
+          });
+          setSaving(false); return;
+        }
+
+        userId = signUpData.user.id;
+
+        // Assign client role
+        await supabase.from('user_roles').insert({ user_id: userId, role: 'client' });
+
+        // Update profile with extra details (requires admin UPDATE policy on profiles)
+        await supabase.from('profiles').update({
+          phone: form.phone || null,
+          company: form.company || null,
+          address: form.address || null,
+          display_name: form.display_name || null,
+          currency,
+        }).eq('user_id', userId);
+
+        // Send password reset so the client can set their own password
+        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(form.email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        resetEmailSent = !resetErr;
       }
-    } else if (data?.error) {
-      toast({ title: 'Error creating client', description: data.error, variant: 'destructive' });
-    } else {
+
+      // Create the company record
+      const { data: companyRow, error: companyError } = await supabase
+        .from('client_companies')
+        .insert({
+          user_id: userId,
+          company_name: form.company,
+          address: form.address || null,
+          currency,
+          phone: form.phone || null,
+          cc_emails: ccEmails.filter(e => e.trim()),
+        })
+        .select('id')
+        .single();
+
+      if (companyError) {
+        toast({ title: 'Error creating company', description: companyError.message, variant: 'destructive' });
+        setSaving(false); return;
+      }
+
+      const clientCompanyId = companyRow.id;
+
       // Upload logo if provided
-      if (data?.client_company_id && logoFile) {
-        const logoUrl = await uploadLogo(data.client_company_id);
+      if (logoFile) {
+        const logoUrl = await uploadLogo(clientCompanyId);
         if (logoUrl) {
-          await supabase.from('client_companies').update({ logo_url: logoUrl }).eq('id', data.client_company_id);
+          await supabase.from('client_companies').update({ logo_url: logoUrl }).eq('id', clientCompanyId);
         }
       }
+
       // Save recurring services
       const activeServices = recurringServices.filter(s => s.active);
-      if (data?.user_id && data?.client_company_id && recurringServices.length > 0) {
+      if (activeServices.length > 0) {
         await supabase.from('client_recurring_services').insert(
-          recurringServices.map(s => ({
-            client_id: data.user_id,
-            client_company_id: data.client_company_id,
+          activeServices.map(s => ({
+            client_id: userId,
+            client_company_id: clientCompanyId,
             product_id: s.product_id,
             quantity: s.quantity,
             active: s.active,
@@ -582,32 +626,32 @@ export default function Clients() {
           }))
         );
       }
-      const isExisting = !!selectedExistingUser;
-      const resetMsg = isExisting
+
+      const resetMsg = selectedExistingUser
         ? 'New company linked to existing user.'
-        : data?.reset_email_sent
-          ? 'A password reset email has been sent so they can set their password.'
-          : 'Client created, but the reset email could not be sent.';
+        : resetEmailSent
+          ? 'A password setup email has been sent to the client.'
+          : 'Client created. Password setup email could not be sent.';
       toast({ title: 'Client created successfully', description: resetMsg });
       setShowCreate(false);
 
       // Check if we should prompt for invoice generation
       const today = new Date();
-      if (activeServices.length > 0 && today.getDate() >= 3 && data?.client_company_id) {
+      if (activeServices.length > 0 && today.getDate() >= 3) {
         const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
         const nextMonthStart = format(startOfMonth(addMonths(today, 1)), 'yyyy-MM-dd');
         const { data: existingInvoices } = await supabase
           .from('invoices')
           .select('id')
-          .eq('client_company_id', data.client_company_id)
+          .eq('client_company_id', clientCompanyId)
           .gte('created_at', monthStart)
           .lt('created_at', nextMonthStart)
           .limit(1);
 
         if (!existingInvoices || existingInvoices.length === 0) {
           setPendingInvoiceData({
-            user_id: data.user_id,
-            client_company_id: data.client_company_id,
+            user_id: userId,
+            client_company_id: clientCompanyId,
             currency: countryToCurrency(form.country),
             company_name: form.company,
             services: activeServices,
@@ -617,6 +661,8 @@ export default function Clients() {
       }
 
       fetchClients();
+    } catch (err: any) {
+      toast({ title: 'Error creating client', description: err.message ?? 'Unexpected error', variant: 'destructive' });
     }
     setSaving(false);
   };
