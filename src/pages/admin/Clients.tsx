@@ -6,6 +6,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -92,6 +93,7 @@ export default function Clients() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
+  const [sendPasswordSetup, setSendPasswordSetup] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
@@ -399,6 +401,7 @@ export default function Clients() {
     setRecurringServices([]);
     setBillingCycle('monthly');
     setStartDate(null);
+    setSendPasswordSetup(false);
     setSelectedExistingUser(null);
     setEmailQuery('');
     setEmailMatches([]);
@@ -574,11 +577,13 @@ export default function Clients() {
           currency,
         }).eq('user_id', userId);
 
-        // Send password reset so the client can set their own password
-        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(form.email, {
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
-        resetEmailSent = !resetErr;
+        // Send password setup email only if the admin checked the box
+        if (sendPasswordSetup) {
+          const { error: resetErr } = await supabase.auth.resetPasswordForEmail(form.email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          });
+          resetEmailSent = !resetErr;
+        }
       }
 
       // Create the company record
@@ -629,9 +634,11 @@ export default function Clients() {
 
       const resetMsg = selectedExistingUser
         ? 'New company linked to existing user.'
-        : resetEmailSent
-          ? 'A password setup email has been sent to the client.'
-          : 'Client created. Password setup email could not be sent.';
+        : !sendPasswordSetup
+          ? 'Client created. No setup email sent.'
+          : resetEmailSent
+            ? 'A password setup email has been sent to the client.'
+            : 'Client created, but the setup email failed to send.';
       toast({ title: 'Client created successfully', description: resetMsg });
       setShowCreate(false);
 
@@ -1165,6 +1172,18 @@ export default function Clients() {
               </Select>
             </div>
             <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} currency={countryToCurrency(form.country)} billingCycle={billingCycle} onBillingCycleChange={setBillingCycle} startDate={startDate} onStartDateChange={setStartDate} />
+            {!selectedExistingUser && (
+              <div className="flex items-center gap-2 pt-1">
+                <Checkbox
+                  id="send-password-setup"
+                  checked={sendPasswordSetup}
+                  onCheckedChange={(v) => setSendPasswordSetup(!!v)}
+                />
+                <Label htmlFor="send-password-setup" className="font-mono text-xs cursor-pointer">
+                  Send password setup email to client
+                </Label>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
