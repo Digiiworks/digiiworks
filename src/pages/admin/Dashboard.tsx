@@ -52,22 +52,18 @@ const AdminDashboardContent = () => {
     queryKey: ['income-forecast', forecastMonths],
     queryFn: async () => {
       const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
-      // Join client_companies to get real currency — inv.currency in DB defaults
-      // to USD until the trigger migration (20260325130000) has been applied.
-      const { data: drafts } = await supabase
+      // Fetch all non-cancelled invoices within the forecast window.
+      // Join client_companies for real currency (inv.currency defaults to USD in DB
+      // until the trigger migration 20260325130000 is applied by Lovable).
+      const { data } = await (supabase as any)
         .from('invoices')
         .select('id, total, paid_amount, currency, status, due_date, client_companies!client_company_id(currency)')
-        .eq('status', 'draft');
-      const { data: nonDrafts } = await (supabase as any)
-        .from('invoices')
-        .select('id, total, paid_amount, currency, status, due_date, client_companies!client_company_id(currency)')
-        .in('status', ['sent', 'overdue', 'partial'])
+        .not('status', 'eq', 'cancelled')
         .or(`due_date.is.null,due_date.lte.${cutoff}`);
-      const normalize = (inv: any) => ({
+      return (data ?? []).map((inv: any) => ({
         ...inv,
         currency: inv.client_companies?.currency ?? inv.currency ?? 'USD',
-      });
-      return [...(drafts ?? []), ...(nonDrafts ?? [])].map(normalize);
+      }));
     },
   });
 
@@ -216,20 +212,19 @@ const AdminDashboardContent = () => {
       recByCurrency[priceCurrency] = (recByCurrency[priceCurrency] ?? 0) + priceAmount * (svc.quantity ?? 1) * occurrences;
     }
 
-    // Convert all buckets and sum
-    let total = 0;
-    const invoiceBreakdown: ForecastBreakdown[] = [];
-    const recurringBreakdown: ForecastBreakdown[] = [];
+    // Build breakdowns first (always complete), then sum
+    const invoiceBreakdown: ForecastBreakdown[] = Object.entries(invByCurrency).map(([currency, native]) => ({ currency, native }));
+    const recurringBreakdown: ForecastBreakdown[] = Object.entries(recByCurrency).map(([currency, native]) => ({ currency, native }));
 
-    for (const [currency, native] of Object.entries(invByCurrency)) {
+    // Convert and sum — if any rate is missing, return null total but keep full breakdown visible
+    let total = 0;
+    for (const { currency, native } of invoiceBreakdown) {
       const converted = toDisplay(native, currency);
-      invoiceBreakdown.push({ currency, native });
       if (converted === null) return { total: null, invoiceBreakdown, recurringBreakdown };
       total += converted;
     }
-    for (const [currency, native] of Object.entries(recByCurrency)) {
+    for (const { currency, native } of recurringBreakdown) {
       const converted = toDisplay(native, currency);
-      recurringBreakdown.push({ currency, native });
       if (converted === null) return { total: null, invoiceBreakdown, recurringBreakdown };
       total += converted;
     }
