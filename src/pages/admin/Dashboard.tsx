@@ -52,18 +52,22 @@ const AdminDashboardContent = () => {
     queryKey: ['income-forecast', forecastMonths],
     queryFn: async () => {
       const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
-      // inv.currency is now reliable — the DB trigger (migration 20260325130000)
-      // keeps it in sync with client_companies.currency on every INSERT/UPDATE.
+      // Join client_companies to get real currency — inv.currency in DB defaults
+      // to USD until the trigger migration (20260325130000) has been applied.
       const { data: drafts } = await supabase
         .from('invoices')
-        .select('id, total, paid_amount, currency, status, due_date')
+        .select('id, total, paid_amount, currency, status, due_date, client_companies!client_company_id(currency)')
         .eq('status', 'draft');
       const { data: nonDrafts } = await (supabase as any)
         .from('invoices')
-        .select('id, total, paid_amount, currency, status, due_date')
+        .select('id, total, paid_amount, currency, status, due_date, client_companies!client_company_id(currency)')
         .in('status', ['sent', 'overdue', 'partial'])
         .or(`due_date.is.null,due_date.lte.${cutoff}`);
-      return [...(drafts ?? []), ...(nonDrafts ?? [])];
+      const normalize = (inv: any) => ({
+        ...inv,
+        currency: inv.client_companies?.currency ?? inv.currency ?? 'USD',
+      });
+      return [...(drafts ?? []), ...(nonDrafts ?? [])].map(normalize);
     },
   });
 
