@@ -169,13 +169,14 @@ export default function Clients() {
         supabase.from('profiles').select('user_id, email, display_name, avatar_url').in('user_id', userIds),
         supabase.from('invoices').select('client_id, client_company_id, status, total'),
         supabase.from('client_recurring_services').select('client_company_id').eq('active', true),
-        (supabase as any).from('client_credit_balances').select('client_company_id, balance'),
+        supabase.from('client_credits').select('client_company_id, amount'),
       ]);
 
-      // Build credit balance map from the ledger view
+      // Build credit balance map by summing the credits ledger
       const creditMap = new Map<string, number>();
-      ((creditsRes.data ?? []) as any[]).forEach((r: any) => {
-        creditMap.set(r.client_company_id, Number(r.balance ?? 0));
+      (creditsRes.data ?? []).forEach((r) => {
+        const prev = creditMap.get(r.client_company_id) ?? 0;
+        creditMap.set(r.client_company_id, prev + Number(r.amount ?? 0));
       });
 
       const profileMap = new Map((profileRes.data ?? []).map(p => [p.user_id, p]));
@@ -503,7 +504,7 @@ export default function Clients() {
       toast({ title: 'Enter a valid credit amount', variant: 'destructive' }); return;
     }
     setCreditSaving(true);
-    const { error } = await (supabase as any).from('client_credits').insert({
+    const { error } = await supabase.from('client_credits').insert({
       client_company_id: creditClient.id,
       amount,
       note: creditNote || null,
@@ -547,15 +548,21 @@ export default function Clients() {
         logo_url: logoUrl,
         cc_emails: ccEmails.filter(e => e.trim() && isValidEmail(e)),
         default_tax_rate: parseFloat(form.defaultTaxRate) || 0,
-        client_status: form.clientStatus || 'active',
-        tags: tags,
-        payment_terms_days: parseInt(form.paymentTermsDays) || 30,
       } as any)
       .eq('id', editClient.id);
 
     if (error) {
       toast({ title: 'Error updating client', description: error.message, variant: 'destructive' });
     } else {
+      // Try to save new-schema columns (silently skip if migration not yet applied)
+      try {
+        await (supabase as any).from('client_companies').update({
+          client_status: form.clientStatus || 'active',
+          tags: tags,
+          payment_terms_days: parseInt(form.paymentTermsDays) || 30,
+        }).eq('id', editClient.id);
+      } catch (_) { /* columns don't exist yet — migration pending */ }
+
       // Also update profile display_name if changed
       await supabase
         .from('profiles')
@@ -565,17 +572,17 @@ export default function Clients() {
       // Save contacts: delete removed ones, upsert new/existing
       const toDelete = contacts.filter(c => c.isDeleted && c.id);
       for (const c of toDelete) {
-        await (supabase as any).from('client_contacts').delete().eq('id', c.id);
+        await supabase.from('client_contacts').delete().eq('id', c.id);
       }
       const toSave = contacts.filter(c => !c.isDeleted);
       for (const c of toSave) {
         if (c.isNew) {
-          await (supabase as any).from('client_contacts').insert({
+          await supabase.from('client_contacts').insert({
             client_company_id: editClient.id, name: c.name, email: c.email,
             phone: c.phone || null, role: c.role, is_primary: c.is_primary,
           });
         } else if (c.id) {
-          await (supabase as any).from('client_contacts').update({
+          await supabase.from('client_contacts').update({
             name: c.name, email: c.email, phone: c.phone || null, role: c.role, is_primary: c.is_primary,
           }).eq('id', c.id);
         }
@@ -702,9 +709,6 @@ export default function Clients() {
           phone: form.phone || null,
           cc_emails: ccEmails.filter(e => e.trim()),
           default_tax_rate: parseFloat(form.defaultTaxRate) || 0,
-          client_status: form.clientStatus || 'active',
-          tags: tags,
-          payment_terms_days: parseInt(form.paymentTermsDays) || 30,
         })
         .select('id')
         .single();
@@ -715,6 +719,15 @@ export default function Clients() {
       }
 
       const clientCompanyId = companyRow.id;
+
+      // Try to save new-schema columns (silently skip if migration not yet applied)
+      try {
+        await (supabase as any).from('client_companies').update({
+          client_status: form.clientStatus || 'active',
+          tags: tags,
+          payment_terms_days: parseInt(form.paymentTermsDays) || 30,
+        }).eq('id', clientCompanyId);
+      } catch (_) { /* columns don't exist yet — migration pending */ }
 
       // Upload logo if provided
       if (logoFile) {
@@ -727,7 +740,7 @@ export default function Clients() {
       // Save contacts
       const activeContacts = contacts.filter(c => !c.isDeleted && c.name && c.email);
       if (activeContacts.length > 0) {
-        await (supabase as any).from('client_contacts').insert(
+        await supabase.from('client_contacts').insert(
           activeContacts.map(c => ({
             client_company_id: clientCompanyId, name: c.name, email: c.email,
             phone: c.phone || null, role: c.role, is_primary: c.is_primary,

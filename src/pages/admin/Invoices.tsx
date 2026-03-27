@@ -206,12 +206,13 @@ export default function Invoices() {
         supabase.from('client_companies').select('id, user_id, company_name, currency, payment_terms_days').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
         supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
-        (supabase as any).from('client_credit_balances').select('client_company_id, balance'),
+        supabase.from('client_credits').select('client_company_id, amount'),
       ]);
-      // Build credit balance map from the ledger view
+      // Build credit balance map by summing the credits ledger
       const creditBalanceMap = new Map<string, number>();
-      ((creditsRes.data ?? []) as any[]).forEach((r: any) => {
-        creditBalanceMap.set(r.client_company_id, Number(r.balance ?? 0));
+      (creditsRes.data ?? []).forEach((r) => {
+        const prev = creditBalanceMap.get(r.client_company_id) ?? 0;
+        creditBalanceMap.set(r.client_company_id, prev + Number(r.amount ?? 0));
       });
       if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
       if (fxRes.data?.length) {
@@ -516,7 +517,7 @@ export default function Invoices() {
     const creditItem = lineItems.find(li => li.description === 'Credit applied');
     if (creditItem && form.client_company_id) {
       const creditUsed = Math.abs(creditItem.unit_price);
-      await (supabase as any).from('client_credits').insert({
+      await supabase.from('client_credits').insert({
         client_company_id: form.client_company_id,
         amount: -creditUsed,
         note: `Applied to ${invoiceNumber}`,

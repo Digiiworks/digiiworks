@@ -62,7 +62,7 @@ export default function ClientDetailSheet({ companyId, onClose, onEdit, onNewInv
     queryKey: ['client-invoices', companyId],
     enabled: !!companyId,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('invoices')
         .select('id, invoice_number, status, total, paid_amount, currency, due_date, created_at')
         .eq('client_company_id', companyId!)
@@ -77,7 +77,7 @@ export default function ClientDetailSheet({ companyId, onClose, onEdit, onNewInv
     queryKey: ['client-contacts', companyId],
     enabled: !!companyId,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('client_contacts')
         .select('id, name, email, phone, role, is_primary')
         .eq('client_company_id', companyId!)
