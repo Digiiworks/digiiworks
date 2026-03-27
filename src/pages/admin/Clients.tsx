@@ -129,7 +129,7 @@ export default function Clients() {
       // Get all client companies joined with profiles
       const { data: companies } = await supabase
         .from('client_companies')
-        .select('*, credit_balance')
+        .select('*')
         .eq('active', true)
         .order('created_at', { ascending: false });
 
