@@ -185,14 +185,20 @@ export default function Invoices() {
     setLoading(true);
     setFetchError(false);
     try {
-      const [invRes, profRes, prodRes, compRes, paySettingsRes, fxRes] = await Promise.all([
+      const [invRes, profRes, prodRes, compRes, paySettingsRes, fxRes, creditsRes] = await Promise.all([
         supabase.from('invoices').select('*, client_companies!client_company_id(currency, company_name)').order('created_at', { ascending: false }),
         supabase.from('profiles').select('user_id, display_name, email, company, currency'),
         supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
-        supabase.from('client_companies').select('id, user_id, company_name, currency, credit_balance').eq('active', true),
+        supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
         supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
+        (supabase as any).from('client_credits').select('client_company_id, amount'),
       ]);
+      // Sum credits per company for the invoice create banner
+      const creditBalanceMap = new Map<string, number>();
+      ((creditsRes.data ?? []) as any[]).forEach((r: any) => {
+        creditBalanceMap.set(r.client_company_id, (creditBalanceMap.get(r.client_company_id) ?? 0) + Number(r.amount));
+      });
       if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
       if (fxRes.data?.length) {
         setExchangeRates(new Map((fxRes.data as ExchangeRate[]).map(r => [r.currency_code, r])));
@@ -209,7 +215,7 @@ export default function Invoices() {
           currency: c.currency,
           display_name: profile?.display_name ?? null,
           email: profile?.email ?? null,
-          credit_balance: c.credit_balance ?? 0,
+          credit_balance: creditBalanceMap.get(c.id) ?? 0,
         };
       });
 
@@ -416,13 +422,15 @@ export default function Invoices() {
       const { error: itemErr } = await supabase.from('invoice_items').insert(items);
       if (itemErr) toast({ title: 'Error adding line items', description: itemErr.message, variant: 'destructive' });
     }
-    // If a credit line item was applied, deduct it from the client's credit balance
+    // If a credit line item was applied, record a negative entry in client_credits
     const creditItem = lineItems.find(li => li.description === 'Credit applied');
     if (creditItem && form.client_company_id) {
       const creditUsed = Math.abs(creditItem.unit_price);
-      const company = clientCompanies.find(c => c.id === form.client_company_id);
-      const newBalance = Math.max(0, (company?.credit_balance ?? 0) - creditUsed);
-      await supabase.from('client_companies').update({ credit_balance: newBalance }).eq('id', form.client_company_id);
+      await (supabase as any).from('client_credits').insert({
+        client_company_id: form.client_company_id,
+        amount: -creditUsed,
+        note: `Applied to ${invoiceNumber}`,
+      });
     }
     toast({ title: `Invoice ${invoiceNumber} created` });
     setSaving(false); setShowCreate(false); resetForm(); fetchAll();

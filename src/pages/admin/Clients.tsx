@@ -141,11 +141,18 @@ export default function Clients() {
 
       const userIds = [...new Set(companies.map(c => c.user_id))];
 
-      const [profileRes, invoiceRes, recurringRes] = await Promise.all([
+      const [profileRes, invoiceRes, recurringRes, creditsRes] = await Promise.all([
         supabase.from('profiles').select('user_id, email, display_name, avatar_url').in('user_id', userIds),
         supabase.from('invoices').select('client_id, client_company_id, status, total'),
         supabase.from('client_recurring_services').select('client_company_id').eq('active', true),
+        (supabase as any).from('client_credits').select('client_company_id, amount'),
       ]);
+
+      // Sum credits per company
+      const creditMap = new Map<string, number>();
+      ((creditsRes.data ?? []) as any[]).forEach((r: any) => {
+        creditMap.set(r.client_company_id, (creditMap.get(r.client_company_id) ?? 0) + Number(r.amount));
+      });
 
       const profileMap = new Map((profileRes.data ?? []).map(p => [p.user_id, p]));
 
@@ -179,6 +186,7 @@ export default function Clients() {
           invoice_count: invoiceMap.get(c.id)?.count ?? invoiceMap.get(c.user_id)?.count ?? 0,
           outstanding: invoiceMap.get(c.id)?.outstanding ?? invoiceMap.get(c.user_id)?.outstanding ?? 0,
           recurring_count: recurringMap.get(c.id) ?? 0,
+          credit_balance: creditMap.get(c.id) ?? 0,
         };
       });
 
@@ -449,11 +457,15 @@ export default function Clients() {
       toast({ title: 'Enter a valid credit amount', variant: 'destructive' }); return;
     }
     setCreditSaving(true);
-    const newBalance = (creditClient.credit_balance ?? 0) + amount;
-    const { error } = await supabase
-      .from('client_companies')
-      .update({ credit_balance: newBalance })
-      .eq('id', creditClient.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await (supabase as any)
+      .from('client_credits')
+      .insert({
+        client_company_id: creditClient.id,
+        amount,
+        note: creditNote || null,
+        created_by: user?.id ?? null,
+      });
     if (error) {
       toast({ title: 'Error adding credit', description: error.message, variant: 'destructive' });
     } else {
