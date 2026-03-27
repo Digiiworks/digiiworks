@@ -1,10 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Building2, Mail, Phone, MapPin, FileText } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, FileText, List } from 'lucide-react';
 import { format } from 'date-fns';
+
+// STATUS_COLORS for client status classification
+const CLIENT_STATUS_COLORS: Record<string, string> = {
+  prospect: 'bg-blue-500/20 text-blue-400',
+  active: 'bg-emerald-500/20 text-emerald-400',
+  vip: 'bg-purple-500/20 text-purple-400',
+  on_hold: 'bg-amber-500/20 text-amber-400',
+  churned: 'bg-zinc-500/20 text-zinc-400',
+};
+
+const CLIENT_STATUS_LABELS: Record<string, string> = {
+  prospect: 'Prospect',
+  active: 'Active',
+  vip: 'VIP',
+  on_hold: 'On Hold',
+  churned: 'Churned',
+};
 
 // STATUS_COLORS for invoices
 const INV_STATUS_COLORS: Record<string, string> = {
@@ -24,6 +42,7 @@ type Props = {
 };
 
 export default function ClientDetailSheet({ companyId, onClose, onEdit, onNewInvoice }: Props) {
+  const navigate = useNavigate();
   // Fetch company details
   const { data: company } = useQuery({
     queryKey: ['client-detail', companyId],
@@ -49,6 +68,20 @@ export default function ClientDetailSheet({ companyId, onClose, onEdit, onNewInv
         .eq('client_company_id', companyId!)
         .order('created_at', { ascending: false })
         .limit(5);
+      return (data ?? []) as any[];
+    },
+  });
+
+  // Fetch additional contacts for this company
+  const { data: contacts } = useQuery({
+    queryKey: ['client-contacts', companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from('client_contacts')
+        .select('id, name, email, phone, role, is_primary')
+        .eq('client_company_id', companyId!)
+        .order('is_primary', { ascending: false });
       return (data ?? []) as any[];
     },
   });
@@ -99,14 +132,32 @@ export default function ClientDetailSheet({ companyId, onClose, onEdit, onNewInv
                   </SheetHeader>
                   <p className="text-xs text-muted-foreground font-mono">{currency} · {(company as any).country ?? 'N/A'}</p>
                 </div>
-                <Badge className={company.active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-500/20 text-zinc-400'}>
-                  {company.active ? 'Active' : 'Inactive'}
-                </Badge>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge className={CLIENT_STATUS_COLORS[(company as any).client_status ?? 'active'] ?? CLIENT_STATUS_COLORS.active}>
+                    {CLIENT_STATUS_LABELS[(company as any).client_status ?? 'active'] ?? 'Active'}
+                  </Badge>
+                  {!company.active && (
+                    <Badge className="bg-zinc-700/20 text-zinc-500 text-[10px]">Inactive</Badge>
+                  )}
+                </div>
               </div>
+              {/* Tags */}
+              {((company as any).tags?.length ?? 0) > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {((company as any).tags as string[]).map((tag: string) => (
+                    <span key={tag} className="px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-mono">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
               {/* Action buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button size="sm" variant="outline" className="font-mono text-xs flex-1" onClick={() => onEdit(company.id)}>
                   Edit
+                </Button>
+                <Button size="sm" variant="outline" className="font-mono text-xs flex-1" onClick={() => { onClose(); navigate(`/admin/invoices?company=${company.id}`); }}>
+                  <List className="h-3 w-3 mr-1" /> All Invoices
                 </Button>
                 <Button size="sm" className="font-mono text-xs flex-1" onClick={() => onNewInvoice(company.id)}>
                   <FileText className="h-3 w-3 mr-1" /> New Invoice
@@ -144,6 +195,31 @@ export default function ClientDetailSheet({ companyId, onClose, onEdit, onNewInv
                       <p key={e} className="font-mono text-xs text-muted-foreground">{e}</p>
                     ))}
                   </div>
+                </div>
+              )}
+              {/* Additional contacts */}
+              {(contacts?.length ?? 0) > 0 && (
+                <div className="space-y-2 pt-1">
+                  <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wide">Additional Contacts</p>
+                  {contacts!.map((c: any) => (
+                    <div key={c.id} className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-mono text-xs font-medium">{c.name}
+                          <span className="ml-1.5 text-[10px] text-muted-foreground capitalize">({c.role})</span>
+                        </p>
+                        <p className="font-mono text-[10px] text-muted-foreground">{c.email}</p>
+                        {c.phone && <p className="font-mono text-[10px] text-muted-foreground">{c.phone}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(company as any).payment_terms_days != null && (
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wide">Payment Terms:</span>
+                  <span className="font-mono text-xs">
+                    {(company as any).payment_terms_days === 0 ? 'Due on receipt' : `Net ${(company as any).payment_terms_days}`}
+                  </span>
                 </div>
               )}
               {company.notes && (

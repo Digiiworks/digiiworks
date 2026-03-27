@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -144,8 +145,14 @@ export default function Invoices() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterCompany, setFilterCompany] = useState<string | null>(null);
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterAmountMin, setFilterAmountMin] = useState('');
+  const [filterAmountMax, setFilterAmountMax] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
   const visibleStatuses = isAdmin ? STATUSES : STATUSES.filter((s) => s !== 'draft');
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -157,6 +164,8 @@ export default function Invoices() {
   const [showDetail, setShowDetail] = useState<Invoice | null>(null);
   const [detailItems, setDetailItems] = useState<InvoiceItem[]>([]);
   const [detailEmails, setDetailEmails] = useState<InvoiceEmail[]>([]);
+  const [detailAuditLogs, setDetailAuditLogs] = useState<any[]>([]);
+  const [showAuditLog, setShowAuditLog] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
@@ -174,6 +183,11 @@ export default function Invoices() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState<string | null>(null);
 
+  // View toggle: invoices vs recurring services
+  const [activeView, setActiveView] = useState<'invoices' | 'recurring'>('invoices');
+  const [recurringServices, setRecurringServices] = useState<any[]>([]);
+  const [recurringLoading, setRecurringLoading] = useState(false);
+
   // Create/Edit form
   const [form, setForm] = useState({ client_id: '', client_company_id: '', due_date: format(getFirstOfNextMonth(), 'yyyy-MM-dd'), notes: '', tax_rate: 0 });
   const [sendDate, setSendDate] = useState<Date | undefined>(get25thOfCurrentMonth());
@@ -189,16 +203,15 @@ export default function Invoices() {
         supabase.from('invoices').select('*, client_companies!client_company_id(currency, company_name)').order('created_at', { ascending: false }),
         supabase.from('profiles').select('user_id, display_name, email, company, currency'),
         supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
-        supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
+        supabase.from('client_companies').select('id, user_id, company_name, currency, payment_terms_days').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
         supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
-        supabase.from('page_content').select('page_key, content').like('page_key', 'client_credit_%'),
+        (supabase as any).from('client_credit_balances').select('client_company_id, balance'),
       ]);
-      // Build credit balance map from page_content JSON
+      // Build credit balance map from the ledger view
       const creditBalanceMap = new Map<string, number>();
       ((creditsRes.data ?? []) as any[]).forEach((r: any) => {
-        const companyId = r.page_key?.replace('client_credit_', '');
-        if (companyId) creditBalanceMap.set(companyId, (r.content as any)?.balance ?? 0);
+        creditBalanceMap.set(r.client_company_id, Number(r.balance ?? 0));
       });
       if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
       if (fxRes.data?.length) {
@@ -248,6 +261,45 @@ export default function Invoices() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const fetchRecurring = async () => {
+    setRecurringLoading(true);
+    const { data } = await supabase
+      .from('client_recurring_services')
+      .select(`
+        id, quantity, unit_price_override, billing_cycle, start_date, active,
+        products!product_id(id, name, price_usd, price_zar, price_thb),
+        client_companies!client_company_id(id, company_name, currency)
+      `)
+      .order('active', { ascending: false });
+
+    // Enrich with last invoiced date from recurring_invoice_runs
+    const { data: runs } = await supabase
+      .from('recurring_invoice_runs')
+      .select('client_id, billing_month')
+      .order('billing_month', { ascending: false });
+
+    const lastRunByClient = new Map<string, string>();
+    (runs ?? []).forEach((r: any) => {
+      if (!lastRunByClient.has(r.client_id)) lastRunByClient.set(r.client_id, r.billing_month);
+    });
+
+    setRecurringServices((data ?? []).map((s: any) => ({
+      ...s,
+      lastInvoiced: lastRunByClient.get(s.client_companies?.user_id) ?? null,
+    })));
+    setRecurringLoading(false);
+  };
+
+  useEffect(() => {
+    if (activeView === 'recurring' && recurringServices.length === 0) fetchRecurring();
+  }, [activeView]);
+
+  // Read ?company= from URL on mount to support drill-down from client detail
+  useEffect(() => {
+    const companyParam = searchParams.get('company');
+    if (companyParam) setFilterCompany(companyParam);
+  }, []);
+
   const visibleInvoices = useMemo(
     () => (isAdmin ? invoices : invoices.filter(i => i.status !== 'draft')),
     [invoices, isAdmin]
@@ -257,6 +309,14 @@ export default function Invoices() {
   const processed = useMemo(() => {
     let list = [...visibleInvoices];
     if (filterStatus !== 'all') list = list.filter(i => i.status === filterStatus);
+    // Company filter (from URL drill-down)
+    if (filterCompany) list = list.filter(i => i.client_company_id === filterCompany);
+    // Date range filter on due_date
+    if (filterDateFrom) list = list.filter(i => i.due_date && i.due_date >= filterDateFrom);
+    if (filterDateTo) list = list.filter(i => i.due_date && i.due_date <= filterDateTo);
+    // Amount range filter
+    if (filterAmountMin !== '') list = list.filter(i => i.total >= parseFloat(filterAmountMin));
+    if (filterAmountMax !== '') list = list.filter(i => i.total <= parseFloat(filterAmountMax));
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(i =>
@@ -285,12 +345,12 @@ export default function Invoices() {
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return list;
-  }, [visibleInvoices, filterStatus, search, sortField, sortDir]);
+  }, [visibleInvoices, filterStatus, filterCompany, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax, search, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const paginated = processed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  useEffect(() => { setPage(1); }, [filterStatus, search, sortField, sortDir]);
+  useEffect(() => { setPage(1); }, [filterStatus, filterCompany, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax, search, sortField, sortDir]);
 
   useEffect(() => {
     if (!isAdmin && filterStatus === 'draft') setFilterStatus('all');
@@ -317,6 +377,35 @@ export default function Invoices() {
     });
     return map;
   }, [visibleInvoices]);
+
+  const handleExportCSV = () => {
+    const rows = [
+      ['Invoice #', 'Client', 'Company', 'Status', 'Currency', 'Subtotal', 'Tax Rate %', 'Total', 'Paid Amount', 'Due Date', 'Send Date', 'Paid At', 'Payment Method'],
+      ...processed.map(i => [
+        i.invoice_number,
+        i.client_name ?? '',
+        i.company_name ?? '',
+        i.status,
+        i.currency ?? 'USD',
+        i.subtotal.toFixed(2),
+        i.tax_rate.toFixed(2),
+        i.total.toFixed(2),
+        (i.paid_amount ?? 0).toFixed(2),
+        i.due_date ?? '',
+        i.send_date ?? '',
+        i.paid_at ? i.paid_at.slice(0, 10) : '',
+        i.payment_method ?? '',
+      ]),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoices-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const overdueByCurrency = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
@@ -423,21 +512,15 @@ export default function Invoices() {
       const { error: itemErr } = await supabase.from('invoice_items').insert(items);
       if (itemErr) toast({ title: 'Error adding line items', description: itemErr.message, variant: 'destructive' });
     }
-    // If a credit line item was applied, deduct from the page_content credit balance
+    // If a credit line item was applied, record a negative entry in the client_credits ledger
     const creditItem = lineItems.find(li => li.description === 'Credit applied');
     if (creditItem && form.client_company_id) {
       const creditUsed = Math.abs(creditItem.unit_price);
-      const creditKey = `client_credit_${form.client_company_id}`;
-      const { data: existing } = await supabase.from('page_content').select('content').eq('page_key', creditKey).maybeSingle();
-      const prev = (existing?.content as any) ?? { balance: 0, log: [] };
-      const newBalance = Math.max(0, (prev.balance ?? 0) - creditUsed);
-      await supabase.from('page_content').upsert({
-        page_key: creditKey,
-        content: {
-          balance: newBalance,
-          log: [{ amount: -creditUsed, note: `Applied to ${invoiceNumber}`, date: new Date().toISOString() }, ...(prev.log ?? [])],
-        },
-      }, { onConflict: 'page_key' });
+      await (supabase as any).from('client_credits').insert({
+        client_company_id: form.client_company_id,
+        amount: -creditUsed,
+        note: `Applied to ${invoiceNumber}`,
+      });
     }
     toast({ title: `Invoice ${invoiceNumber} created` });
     setSaving(false); setShowCreate(false); resetForm(); fetchAll();
@@ -570,12 +653,20 @@ export default function Invoices() {
 
   const viewDetail = async (inv: Invoice) => {
     setShowDetail(inv);
+    setShowAuditLog(false);
+    setDetailAuditLogs([]);
     const [itemsRes, emailsRes] = await Promise.all([
       supabase.from('invoice_items').select('*').eq('invoice_id', inv.id),
       supabase.from('invoice_emails').select('*').eq('invoice_id', inv.id).order('created_at', { ascending: false }),
     ]);
     setDetailItems((itemsRes.data ?? []) as InvoiceItem[]);
     setDetailEmails((emailsRes.data ?? []) as unknown as InvoiceEmail[]);
+    // Load audit logs non-blocking
+    (supabase as any).from('audit_logs').select('action, actor_id, old_values, new_values, created_at, profiles!actor_id(display_name, email)')
+      .eq('resource_id', inv.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }: any) => setDetailAuditLogs(data ?? []));
   };
 
   const handleSendEmail = async (invoiceId: string, isResend = false) => {
@@ -863,6 +954,23 @@ export default function Invoices() {
     </TableHead>
   );
 
+  // MRR per currency from active recurring services
+  const mrrByCurrency = useMemo(() => {
+    const map: Record<string, number> = {};
+    recurringServices.filter(s => s.active).forEach((s: any) => {
+      const currency = s.client_companies?.currency ?? 'USD';
+      const product = s.products;
+      const standardPrice = currency === 'ZAR' ? (product?.price_zar || product?.price_usd || 0) :
+                            currency === 'THB' ? (product?.price_thb || product?.price_usd || 0) :
+                            product?.price_usd || 0;
+      const unitPrice = s.unit_price_override ?? standardPrice;
+      const cycleMultiplier = s.billing_cycle === 'weekly' ? 4.33 : s.billing_cycle === 'quarterly' ? 1 / 3 : s.billing_cycle === 'yearly' ? 1 / 12 : 1;
+      if (!map[currency]) map[currency] = 0;
+      map[currency] += unitPrice * (s.quantity ?? 1) * cycleMultiplier;
+    });
+    return map;
+  }, [recurringServices]);
+
   return (
     <div className="space-y-6">
       {/* Summary cards */}
@@ -966,12 +1074,100 @@ export default function Invoices() {
         );
       })()}
 
-      <AdminToolbar title="Invoices">
+      {/* View toggle */}
+      <div className="flex gap-1 rounded-lg border border-border bg-card/50 p-0.5 w-fit">
+        <button
+          onClick={() => setActiveView('invoices')}
+          className={`px-3 py-1.5 rounded-md font-mono text-xs transition-colors ${activeView === 'invoices' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          Invoices
+        </button>
+        <button
+          onClick={() => setActiveView('recurring')}
+          className={`px-3 py-1.5 rounded-md font-mono text-xs transition-colors ${activeView === 'recurring' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          Recurring Services
+        </button>
+      </div>
+
+      {activeView === 'recurring' ? (
+        <div className="space-y-4">
+          {/* MRR summary */}
+          {Object.keys(mrrByCurrency).length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(mrrByCurrency).map(([currency, mrr]) => (
+                <div key={currency} className="glass-card px-4 py-3 flex flex-col gap-0.5 min-w-32">
+                  <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">MRR {currency}</span>
+                  <span className="font-mono text-lg font-bold text-neon-mint">{fmtCurrency(mrr, currency)}</span>
+                </div>
+              ))}
+              <div className="glass-card px-4 py-3 flex flex-col gap-0.5">
+                <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Active Services</span>
+                <span className="font-mono text-lg font-bold">{recurringServices.filter(s => s.active).length}</span>
+              </div>
+            </div>
+          )}
+          {/* Recurring services table */}
+          {recurringLoading ? (
+            <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : recurringServices.length === 0 ? (
+            <div className="glass-card p-8 text-center text-muted-foreground font-mono text-sm">No recurring services found</div>
+          ) : (
+            <div className="glass-card overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border">
+                    <TableHead className="font-mono text-xs">Company</TableHead>
+                    <TableHead className="font-mono text-xs">Product / Service</TableHead>
+                    <TableHead className="font-mono text-xs">Cycle</TableHead>
+                    <TableHead className="font-mono text-xs">Qty</TableHead>
+                    <TableHead className="font-mono text-xs">Price</TableHead>
+                    <TableHead className="font-mono text-xs">Monthly Equiv.</TableHead>
+                    <TableHead className="font-mono text-xs">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recurringServices.map((s: any) => {
+                    const currency = s.client_companies?.currency ?? 'USD';
+                    const product = s.products;
+                    const standardPrice = currency === 'ZAR' ? (product?.price_zar || product?.price_usd || 0) :
+                                          currency === 'THB' ? (product?.price_thb || product?.price_usd || 0) :
+                                          product?.price_usd || 0;
+                    const unitPrice = s.unit_price_override ?? standardPrice;
+                    const cycleMultiplier = s.billing_cycle === 'weekly' ? 4.33 : s.billing_cycle === 'quarterly' ? 1 / 3 : s.billing_cycle === 'yearly' ? 1 / 12 : 1;
+                    const monthlyEquiv = unitPrice * (s.quantity ?? 1) * cycleMultiplier;
+                    return (
+                      <TableRow key={s.id} className="border-border">
+                        <TableCell className="font-mono text-xs">{s.client_companies?.company_name ?? '—'}</TableCell>
+                        <TableCell className="font-mono text-xs">{product?.name ?? '—'}</TableCell>
+                        <TableCell className="font-mono text-xs capitalize">{s.billing_cycle}</TableCell>
+                        <TableCell className="font-mono text-xs">{s.quantity}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {fmtCurrency(unitPrice, currency)}
+                          {s.unit_price_override != null && <span className="ml-1 text-[10px] text-neon-mint">(custom)</span>}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{fmtCurrency(monthlyEquiv, currency)}/mo</TableCell>
+                        <TableCell>
+                          <Badge className={s.active ? 'bg-emerald-500/20 text-emerald-400 font-mono text-[10px]' : 'bg-zinc-500/20 text-zinc-400 font-mono text-[10px]'}>
+                            {s.active ? 'Active' : 'Paused'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {activeView === 'invoices' && <AdminToolbar title="Invoices">
         <Input
           placeholder="Search invoices..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-48 bg-card border-border h-9 text-sm"
+          className="w-44 bg-card border-border h-9 text-sm"
         />
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-32 bg-card border-border h-9">
@@ -982,12 +1178,67 @@ export default function Invoices() {
             {visibleStatuses.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
           </SelectContent>
         </Select>
+        {/* Date range filter */}
+        <Input
+          type="date"
+          title="Due date from"
+          value={filterDateFrom}
+          onChange={e => setFilterDateFrom(e.target.value)}
+          className="w-36 bg-card border-border h-9 text-xs font-mono"
+        />
+        <Input
+          type="date"
+          title="Due date to"
+          value={filterDateTo}
+          onChange={e => setFilterDateTo(e.target.value)}
+          className="w-36 bg-card border-border h-9 text-xs font-mono"
+        />
+        {/* Amount range */}
+        <Input
+          type="number" placeholder="Min amount" min="0"
+          value={filterAmountMin}
+          onChange={e => setFilterAmountMin(e.target.value)}
+          className="w-28 bg-card border-border h-9 text-xs font-mono"
+        />
+        <Input
+          type="number" placeholder="Max amount" min="0"
+          value={filterAmountMax}
+          onChange={e => setFilterAmountMax(e.target.value)}
+          className="w-28 bg-card border-border h-9 text-xs font-mono"
+        />
+        {(filterDateFrom || filterDateTo || filterAmountMin || filterAmountMax) && (
+          <Button variant="ghost" size="sm" className="h-9 font-mono text-xs text-muted-foreground" onClick={() => { setFilterDateFrom(''); setFilterDateTo(''); setFilterAmountMin(''); setFilterAmountMax(''); }}>
+            Clear filters
+          </Button>
+        )}
+        <Button variant="outline" size="sm" className="h-9 gap-1.5 font-mono text-xs" onClick={handleExportCSV} title="Export filtered invoices as CSV">
+          <Download className="h-3.5 w-3.5" /> CSV
+        </Button>
         {isAdmin && (
           <Button onClick={() => { resetForm(); setShowCreate(true); }} className="gap-1.5 h-9">
             <Plus className="h-4 w-4" /> New Invoice
           </Button>
         )}
-      </AdminToolbar>
+      </AdminToolbar>}
+
+      {activeView === 'invoices' && <>
+      {/* Company filter banner — shown when drilling down from client detail */}
+      {filterCompany && (() => {
+        const co = clientCompanies.find(c => c.id === filterCompany);
+        return (
+          <div className="flex items-center gap-3 rounded-lg border border-neon-mint/30 bg-neon-mint/5 px-4 py-2 text-neon-mint animate-in fade-in duration-200">
+            <span className="font-mono text-xs flex-1">
+              Showing invoices for <strong>{co?.company_name ?? filterCompany}</strong>
+            </span>
+            <button
+              onClick={() => { setFilterCompany(null); setSearchParams({}); }}
+              className="font-mono text-xs underline underline-offset-2 hover:text-foreground transition-colors"
+            >
+              ✕ Clear filter
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Bulk action bar */}
       {isAdmin && selectedIds.size > 0 && (
@@ -1264,6 +1515,7 @@ export default function Invoices() {
           <AdminPagination page={page} totalPages={totalPages} totalItems={processed.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
         </>
       )}
+      </>}
 
       {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
@@ -1277,7 +1529,11 @@ export default function Invoices() {
                 <Label className="font-mono text-xs">Client Company</Label>
                 <Select value={form.client_company_id} onValueChange={v => {
                   const cc = clientCompanies.find(c => c.id === v);
-                  setForm(f => ({ ...f, client_company_id: v, client_id: cc?.user_id ?? '' }));
+                  const terms = (cc as any)?.payment_terms_days ?? 30;
+                  const dueDate = terms === 0
+                    ? format(new Date(), 'yyyy-MM-dd')
+                    : format(new Date(Date.now() + terms * 86400000), 'yyyy-MM-dd');
+                  setForm(f => ({ ...f, client_company_id: v, client_id: cc?.user_id ?? '', due_date: dueDate }));
                 }}>
                   <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select company" /></SelectTrigger>
                   <SelectContent>
@@ -1468,7 +1724,11 @@ export default function Invoices() {
                 <Label className="font-mono text-xs">Client Company</Label>
                 <Select value={form.client_company_id} onValueChange={v => {
                   const cc = clientCompanies.find(c => c.id === v);
-                  setForm(f => ({ ...f, client_company_id: v, client_id: cc?.user_id ?? '' }));
+                  const terms = (cc as any)?.payment_terms_days ?? 30;
+                  const dueDate = terms === 0
+                    ? format(new Date(), 'yyyy-MM-dd')
+                    : format(new Date(Date.now() + terms * 86400000), 'yyyy-MM-dd');
+                  setForm(f => ({ ...f, client_company_id: v, client_id: cc?.user_id ?? '', due_date: dueDate }));
                 }}>
                   <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select company" /></SelectTrigger>
                   <SelectContent>
@@ -1698,6 +1958,44 @@ export default function Invoices() {
               {showDetail.notes && <p className="text-sm text-muted-foreground italic">{showDetail.notes}</p>}
 
               {/* Email History */}
+              {/* Audit Log */}
+              {isAdmin && detailAuditLogs.length > 0 && (
+                <div className="border-t border-border/50 pt-3">
+                  <button
+                    className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5 hover:text-foreground transition-colors w-full text-left"
+                    onClick={() => setShowAuditLog(v => !v)}
+                  >
+                    <Clock className="h-3.5 w-3.5" /> Activity Log ({detailAuditLogs.length})
+                    <span className="ml-auto text-[10px]">{showAuditLog ? '▲ Hide' : '▼ Show'}</span>
+                  </button>
+                  {showAuditLog && (
+                    <div className="space-y-1.5">
+                      {detailAuditLogs.map((log: any, i: number) => {
+                        const actor = (log.profiles as any)?.display_name ?? (log.profiles as any)?.email ?? (log.actor_id ? 'Admin' : 'System');
+                        const actionLabel = log.action?.replace(/_/g, ' ') ?? 'unknown';
+                        const summary = log.new_values
+                          ? Object.entries(log.new_values as Record<string, unknown>)
+                              .filter(([k]) => k !== 'updated_at')
+                              .map(([k, v]) => `${k}: ${v}`)
+                              .join(' · ')
+                          : '';
+                        return (
+                          <div key={i} className="flex items-start gap-2 rounded-md border border-border/30 bg-background/30 px-2.5 py-1.5">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-mono text-[11px]">
+                                <span className="text-foreground capitalize">{actionLabel}</span>
+                                {summary && <span className="text-muted-foreground"> — {summary}</span>}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">{actor} · {format(new Date(log.created_at), 'MMM d, HH:mm')}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {detailEmails.length > 0 && (
                 <div className="border-t border-border/50 pt-3">
                   <h4 className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">

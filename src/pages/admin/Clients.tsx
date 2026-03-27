@@ -52,6 +52,21 @@ type ClientCompany = {
   outstanding?: number;
   recurring_count?: number;
   credit_balance?: number;
+  default_tax_rate?: number;
+  client_status?: string;
+  tags?: string[];
+  payment_terms_days?: number;
+};
+
+type ClientContact = {
+  id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: 'billing' | 'technical' | 'primary' | 'other';
+  is_primary: boolean;
+  isNew?: boolean;
+  isDeleted?: boolean;
 };
 
 type ProfileMatch = {
@@ -77,6 +92,8 @@ export default function Clients() {
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>('company');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterTag, setFilterTag] = useState<string>('');
 
   // Dialog state
   const [editClient, setEditClient] = useState<ClientCompany | null>(null);
@@ -91,10 +108,16 @@ export default function Clients() {
 
   // Form
   const [form, setForm] = useState({
-    email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' as 'global' | 'south_africa' | 'thailand',
+    email: '', display_name: '', phone: '', company: '', address: '', notes: '',
+    country: 'global' as 'global' | 'south_africa' | 'thailand',
+    defaultTaxRate: '0',
+    clientStatus: 'active',
+    paymentTermsDays: '30',
   });
   const [ccEmails, setCcEmails] = useState<string[]>([]);
   const [newCcEmail, setNewCcEmail] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
@@ -102,6 +125,7 @@ export default function Clients() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [contacts, setContacts] = useState<ClientContact[]>([]);
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [startDate, setStartDate] = useState<string | null>(null);
@@ -145,14 +169,13 @@ export default function Clients() {
         supabase.from('profiles').select('user_id, email, display_name, avatar_url').in('user_id', userIds),
         supabase.from('invoices').select('client_id, client_company_id, status, total'),
         supabase.from('client_recurring_services').select('client_company_id').eq('active', true),
-        supabase.from('page_content').select('page_key, content').like('page_key', 'client_credit_%'),
+        (supabase as any).from('client_credit_balances').select('client_company_id, balance'),
       ]);
 
-      // Build credit balance map from page_content JSON
+      // Build credit balance map from the ledger view
       const creditMap = new Map<string, number>();
       ((creditsRes.data ?? []) as any[]).forEach((r: any) => {
-        const companyId = r.page_key?.replace('client_credit_', '');
-        if (companyId) creditMap.set(companyId, (r.content as any)?.balance ?? 0);
+        creditMap.set(r.client_company_id, Number(r.balance ?? 0));
       });
 
       const profileMap = new Map((profileRes.data ?? []).map(p => [p.user_id, p]));
@@ -212,6 +235,13 @@ export default function Clients() {
         (c.phone ?? '').toLowerCase().includes(q)
       );
     }
+    if (filterStatus && filterStatus !== 'all') {
+      list = list.filter(c => ((c as any).client_status ?? 'active') === filterStatus);
+    }
+    if (filterTag.trim()) {
+      const t = filterTag.toLowerCase();
+      list = list.filter(c => ((c as any).tags ?? []).some((tag: string) => tag.toLowerCase().includes(t)));
+    }
     list.sort((a, b) => {
       let cmp = 0;
       switch (sortField) {
@@ -242,7 +272,7 @@ export default function Clients() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  useEffect(() => { setPage(1); }, [search, sortField, sortDir]);
+  useEffect(() => { setPage(1); }, [search, sortField, sortDir, filterStatus, filterTag]);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -361,12 +391,24 @@ export default function Clients() {
       address: client.address ?? '',
       notes: client.notes ?? '',
       country: client.currency === 'ZAR' ? 'south_africa' : client.currency === 'THB' ? 'thailand' : 'global',
+      defaultTaxRate: String(client.default_tax_rate ?? 0),
+      clientStatus: (client as any).client_status ?? 'active',
+      paymentTermsDays: String((client as any).payment_terms_days ?? 30),
     });
+    setTags((client as any).tags ?? []);
+    setTagInput('');
     setCcEmails((client as any).cc_emails ?? []);
     setNewCcEmail('');
     setLogoFile(null);
     setLogoPreview(null);
     setExistingLogoUrl(client.logo_url ?? null);
+    // Load existing contacts
+    const { data: contactRows } = await (supabase as any)
+      .from('client_contacts')
+      .select('id, name, email, phone, role, is_primary')
+      .eq('client_company_id', client.id)
+      .order('is_primary', { ascending: false });
+    setContacts((contactRows ?? []).map((c: any) => ({ ...c, phone: c.phone ?? '', isNew: false, isDeleted: false })));
     // Load existing recurring services for this company
     const { data } = await supabase
       .from('client_recurring_services')
@@ -411,7 +453,10 @@ export default function Clients() {
 
   const openCreate = () => {
     setShowCreate(true);
-    setForm({ email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global' });
+    setForm({ email: '', display_name: '', phone: '', company: '', address: '', notes: '', country: 'global', defaultTaxRate: '0', clientStatus: 'active', paymentTermsDays: '30' });
+    setTags([]);
+    setTagInput('');
+    setContacts([]);
     setRecurringServices([]);
     setBillingCycle('monthly');
     setStartDate(null);
@@ -451,10 +496,6 @@ export default function Clients() {
 
   const countryToCurrency = (c: string) => c === 'south_africa' ? 'ZAR' : c === 'thailand' ? 'THB' : 'USD';
 
-  // Credits are stored in page_content as JSON keyed by 'client_credit_<company_id>'
-  // so no new table/column migration is needed.
-  const creditPageKey = (id: string) => `client_credit_${id}`;
-
   const handleAddCredit = async () => {
     if (!creditClient) return;
     const amount = parseFloat(creditAmount);
@@ -462,14 +503,11 @@ export default function Clients() {
       toast({ title: 'Enter a valid credit amount', variant: 'destructive' }); return;
     }
     setCreditSaving(true);
-    const key = creditPageKey(creditClient.id);
-    const { data: existing } = await supabase.from('page_content').select('content').eq('page_key', key).maybeSingle();
-    const prev = (existing?.content as any) ?? { balance: 0, log: [] };
-    const newContent = {
-      balance: (prev.balance ?? 0) + amount,
-      log: [{ amount, note: creditNote || null, date: new Date().toISOString() }, ...(prev.log ?? [])],
-    };
-    const { error } = await supabase.from('page_content').upsert({ page_key: key, content: newContent }, { onConflict: 'page_key' });
+    const { error } = await (supabase as any).from('client_credits').insert({
+      client_company_id: creditClient.id,
+      amount,
+      note: creditNote || null,
+    });
     if (error) {
       toast({ title: 'Error adding credit', description: error.message, variant: 'destructive' });
     } else {
@@ -508,6 +546,10 @@ export default function Clients() {
         notes: form.notes || null,
         logo_url: logoUrl,
         cc_emails: ccEmails.filter(e => e.trim() && isValidEmail(e)),
+        default_tax_rate: parseFloat(form.defaultTaxRate) || 0,
+        client_status: form.clientStatus || 'active',
+        tags: tags,
+        payment_terms_days: parseInt(form.paymentTermsDays) || 30,
       } as any)
       .eq('id', editClient.id);
 
@@ -520,6 +562,24 @@ export default function Clients() {
         .update({ display_name: form.display_name || null })
         .eq('user_id', editClient.user_id);
 
+      // Save contacts: delete removed ones, upsert new/existing
+      const toDelete = contacts.filter(c => c.isDeleted && c.id);
+      for (const c of toDelete) {
+        await (supabase as any).from('client_contacts').delete().eq('id', c.id);
+      }
+      const toSave = contacts.filter(c => !c.isDeleted);
+      for (const c of toSave) {
+        if (c.isNew) {
+          await (supabase as any).from('client_contacts').insert({
+            client_company_id: editClient.id, name: c.name, email: c.email,
+            phone: c.phone || null, role: c.role, is_primary: c.is_primary,
+          });
+        } else if (c.id) {
+          await (supabase as any).from('client_contacts').update({
+            name: c.name, email: c.email, phone: c.phone || null, role: c.role, is_primary: c.is_primary,
+          }).eq('id', c.id);
+        }
+      }
       await saveRecurringServices(editClient.user_id, editClient.id);
       toast({ title: 'Client updated' });
       setEditClient(null);
@@ -641,6 +701,10 @@ export default function Clients() {
           currency,
           phone: form.phone || null,
           cc_emails: ccEmails.filter(e => e.trim()),
+          default_tax_rate: parseFloat(form.defaultTaxRate) || 0,
+          client_status: form.clientStatus || 'active',
+          tags: tags,
+          payment_terms_days: parseInt(form.paymentTermsDays) || 30,
         })
         .select('id')
         .single();
@@ -658,6 +722,17 @@ export default function Clients() {
         if (logoUrl) {
           await supabase.from('client_companies').update({ logo_url: logoUrl }).eq('id', clientCompanyId);
         }
+      }
+
+      // Save contacts
+      const activeContacts = contacts.filter(c => !c.isDeleted && c.name && c.email);
+      if (activeContacts.length > 0) {
+        await (supabase as any).from('client_contacts').insert(
+          activeContacts.map(c => ({
+            client_company_id: clientCompanyId, name: c.name, email: c.email,
+            phone: c.phone || null, role: c.role, is_primary: c.is_primary,
+          }))
+        );
       }
 
       // Save recurring services
@@ -736,6 +811,18 @@ export default function Clients() {
     setDeleteId(null);
   };
 
+  const addContact = () => {
+    setContacts(prev => [...prev, { name: '', email: '', phone: '', role: 'other', is_primary: false, isNew: true, isDeleted: false }]);
+  };
+
+  const updateContact = (idx: number, field: keyof ClientContact, value: any) => {
+    setContacts(prev => prev.map((c, i) => i === idx ? { ...c, [field]: value } : c));
+  };
+
+  const removeContact = (idx: number) => {
+    setContacts(prev => prev.map((c, i) => i === idx ? { ...c, isDeleted: true } : c));
+  };
+
   const fmtCurrency = (n: number, currency: string = 'USD') => {
     const symbol = currency === 'ZAR' ? 'R' : currency === 'THB' ? '฿' : '$';
     return `${symbol}${n.toFixed(2)}`;
@@ -772,6 +859,32 @@ export default function Clients() {
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 bg-card border-border h-9 text-sm"
           />
+        </div>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-full sm:w-36 h-9 border-border bg-card font-mono text-xs">
+            <SelectValue placeholder="Status filter" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="font-mono text-xs">All statuses</SelectItem>
+            <SelectItem value="prospect" className="font-mono text-xs">Prospect</SelectItem>
+            <SelectItem value="active" className="font-mono text-xs">Active</SelectItem>
+            <SelectItem value="vip" className="font-mono text-xs">VIP</SelectItem>
+            <SelectItem value="on_hold" className="font-mono text-xs">On Hold</SelectItem>
+            <SelectItem value="churned" className="font-mono text-xs">Churned</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="relative w-full sm:w-40">
+          <Input
+            placeholder="Filter by tag..."
+            value={filterTag}
+            onChange={e => setFilterTag(e.target.value)}
+            className="w-full bg-card border-border h-9 text-sm"
+          />
+          {filterTag && (
+            <button onClick={() => setFilterTag('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         <Button onClick={openCreate} className="w-full sm:w-auto gap-1.5 h-9">
           <Plus className="h-4 w-4" /> Add Client
@@ -1049,6 +1162,137 @@ export default function Clients() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5">% Default Tax Rate</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number" min="0" max="100" step="0.5"
+                  value={form.defaultTaxRate}
+                  onChange={e => setForm(f => ({ ...f, defaultTaxRate: e.target.value }))}
+                  className="bg-background border-border w-28"
+                  placeholder="0"
+                />
+                <span className="text-xs text-muted-foreground font-mono">% applied to recurring invoices</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="font-mono text-xs mb-1.5 block">Client Status</Label>
+                <Select value={form.clientStatus} onValueChange={v => setForm(f => ({ ...f, clientStatus: v }))}>
+                  <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="prospect">Prospect</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="vip">VIP</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="churned">Churned</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="font-mono text-xs mb-1.5 block">Payment Terms</Label>
+                <Select value={form.paymentTermsDays} onValueChange={v => setForm(f => ({ ...f, paymentTermsDays: v }))}>
+                  <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Due on receipt</SelectItem>
+                    <SelectItem value="14">Net 14</SelectItem>
+                    <SelectItem value="30">Net 30</SelectItem>
+                    <SelectItem value="60">Net 60</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label className="font-mono text-xs mb-1.5 block">Tags</Label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {tags.map((tag, idx) => (
+                  <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-mono">
+                    {tag}
+                    <button type="button" onClick={() => setTags(prev => prev.filter((_, i) => i !== idx))} className="hover:text-destructive">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => {
+                    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+                      e.preventDefault();
+                      const newTag = tagInput.trim().replace(/,$/, '');
+                      if (newTag && !tags.includes(newTag)) setTags(prev => [...prev, newTag]);
+                      setTagInput('');
+                    }
+                  }}
+                  className="bg-background border-border flex-1 text-xs"
+                  placeholder="Type tag and press Enter"
+                />
+                <Button type="button" variant="outline" size="sm" className="text-xs shrink-0"
+                  disabled={!tagInput.trim()}
+                  onClick={() => {
+                    const newTag = tagInput.trim();
+                    if (newTag && !tags.includes(newTag)) setTags(prev => [...prev, newTag]);
+                    setTagInput('');
+                  }}>
+                  Add
+                </Button>
+              </div>
+            </div>
+            {/* Additional Contacts */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="font-mono text-xs">Additional Contacts</Label>
+                <Button type="button" variant="outline" size="sm" className="text-xs h-7" onClick={addContact}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Contact
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {contacts.filter(c => !c.isDeleted).map((contact, idx) => {
+                  const realIdx = contacts.indexOf(contact);
+                  return (
+                    <div key={realIdx} className="border border-border/50 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex gap-2 flex-1">
+                          <Input
+                            value={contact.name}
+                            onChange={e => updateContact(realIdx, 'name', e.target.value)}
+                            placeholder="Name"
+                            className="bg-background border-border text-xs flex-1"
+                          />
+                          <Select value={contact.role} onValueChange={v => updateContact(realIdx, 'role', v)}>
+                            <SelectTrigger className="bg-background border-border text-xs w-28"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="primary" className="text-xs">Primary</SelectItem>
+                              <SelectItem value="billing" className="text-xs">Billing</SelectItem>
+                              <SelectItem value="technical" className="text-xs">Technical</SelectItem>
+                              <SelectItem value="other" className="text-xs">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:text-destructive" onClick={() => removeContact(realIdx)}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <Input
+                        type="email"
+                        value={contact.email}
+                        onChange={e => updateContact(realIdx, 'email', e.target.value)}
+                        placeholder="Email"
+                        className="bg-background border-border text-xs"
+                      />
+                      <Input
+                        value={contact.phone}
+                        onChange={e => updateContact(realIdx, 'phone', e.target.value)}
+                        placeholder="Phone (optional)"
+                        className="bg-background border-border text-xs"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} currency={countryToCurrency(form.country)} billingCycle={billingCycle} onBillingCycleChange={setBillingCycle} startDate={startDate} onStartDateChange={setStartDate} />
           </div>
           <DialogFooter>
@@ -1226,6 +1470,137 @@ export default function Clients() {
                   <SelectItem value="thailand">Thailand (THB)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label className="font-mono text-xs flex items-center gap-1.5">% Default Tax Rate</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number" min="0" max="100" step="0.5"
+                  value={form.defaultTaxRate}
+                  onChange={e => setForm(f => ({ ...f, defaultTaxRate: e.target.value }))}
+                  className="bg-background border-border w-28"
+                  placeholder="0"
+                />
+                <span className="text-xs text-muted-foreground font-mono">% applied to recurring invoices</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="font-mono text-xs mb-1.5 block">Client Status</Label>
+                <Select value={form.clientStatus} onValueChange={v => setForm(f => ({ ...f, clientStatus: v }))}>
+                  <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="prospect">Prospect</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="vip">VIP</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="churned">Churned</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="font-mono text-xs mb-1.5 block">Payment Terms</Label>
+                <Select value={form.paymentTermsDays} onValueChange={v => setForm(f => ({ ...f, paymentTermsDays: v }))}>
+                  <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Due on receipt</SelectItem>
+                    <SelectItem value="14">Net 14</SelectItem>
+                    <SelectItem value="30">Net 30</SelectItem>
+                    <SelectItem value="60">Net 60</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label className="font-mono text-xs mb-1.5 block">Tags</Label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {tags.map((tag, idx) => (
+                  <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-mono">
+                    {tag}
+                    <button type="button" onClick={() => setTags(prev => prev.filter((_, i) => i !== idx))} className="hover:text-destructive">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => {
+                    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+                      e.preventDefault();
+                      const newTag = tagInput.trim().replace(/,$/, '');
+                      if (newTag && !tags.includes(newTag)) setTags(prev => [...prev, newTag]);
+                      setTagInput('');
+                    }
+                  }}
+                  className="bg-background border-border flex-1 text-xs"
+                  placeholder="Type tag and press Enter"
+                />
+                <Button type="button" variant="outline" size="sm" className="text-xs shrink-0"
+                  disabled={!tagInput.trim()}
+                  onClick={() => {
+                    const newTag = tagInput.trim();
+                    if (newTag && !tags.includes(newTag)) setTags(prev => [...prev, newTag]);
+                    setTagInput('');
+                  }}>
+                  Add
+                </Button>
+              </div>
+            </div>
+            {/* Additional Contacts */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="font-mono text-xs">Additional Contacts</Label>
+                <Button type="button" variant="outline" size="sm" className="text-xs h-7" onClick={addContact}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Contact
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {contacts.filter(c => !c.isDeleted).map((contact, idx) => {
+                  const realIdx = contacts.indexOf(contact);
+                  return (
+                    <div key={realIdx} className="border border-border/50 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex gap-2 flex-1">
+                          <Input
+                            value={contact.name}
+                            onChange={e => updateContact(realIdx, 'name', e.target.value)}
+                            placeholder="Name"
+                            className="bg-background border-border text-xs flex-1"
+                          />
+                          <Select value={contact.role} onValueChange={v => updateContact(realIdx, 'role', v)}>
+                            <SelectTrigger className="bg-background border-border text-xs w-28"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="primary" className="text-xs">Primary</SelectItem>
+                              <SelectItem value="billing" className="text-xs">Billing</SelectItem>
+                              <SelectItem value="technical" className="text-xs">Technical</SelectItem>
+                              <SelectItem value="other" className="text-xs">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:text-destructive" onClick={() => removeContact(realIdx)}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <Input
+                        type="email"
+                        value={contact.email}
+                        onChange={e => updateContact(realIdx, 'email', e.target.value)}
+                        placeholder="Email"
+                        className="bg-background border-border text-xs"
+                      />
+                      <Input
+                        value={contact.phone}
+                        onChange={e => updateContact(realIdx, 'phone', e.target.value)}
+                        placeholder="Phone (optional)"
+                        className="bg-background border-border text-xs"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <RecurringServicesSelector services={recurringServices} onChange={setRecurringServices} currency={countryToCurrency(form.country)} billingCycle={billingCycle} onBillingCycleChange={setBillingCycle} startDate={startDate} onStartDateChange={setStartDate} />
             {!selectedExistingUser && (
