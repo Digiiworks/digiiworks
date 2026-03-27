@@ -78,7 +78,7 @@ type InvoiceEmail = {
 };
 
 type Profile = { user_id: string; display_name: string | null; email: string | null; company: string | null; currency?: string };
-type ClientCompanyOption = { id: string; user_id: string; company_name: string; currency: string; display_name: string | null; email: string | null };
+type ClientCompanyOption = { id: string; user_id: string; company_name: string; currency: string; display_name: string | null; email: string | null; credit_balance?: number };
 type Product = { id: string; name: string; price_usd: number; price_zar: number; price_thb: number; description?: string | null; category?: string | null };
 type ExchangeRate = { currency_code: string; rate_vs_usd: number; margin_pct: number };
 
@@ -189,7 +189,7 @@ export default function Invoices() {
         supabase.from('invoices').select('*, client_companies!client_company_id(currency, company_name)').order('created_at', { ascending: false }),
         supabase.from('profiles').select('user_id, display_name, email, company, currency'),
         supabase.from('products').select('id, name, price_usd, price_zar, price_thb, description, category').eq('active', true),
-        supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
+        supabase.from('client_companies').select('id, user_id, company_name, currency, credit_balance').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
         supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
       ]);
@@ -209,6 +209,7 @@ export default function Invoices() {
           currency: c.currency,
           display_name: profile?.display_name ?? null,
           email: profile?.email ?? null,
+          credit_balance: c.credit_balance ?? 0,
         };
       });
 
@@ -414,6 +415,14 @@ export default function Invoices() {
     if (items.length) {
       const { error: itemErr } = await supabase.from('invoice_items').insert(items);
       if (itemErr) toast({ title: 'Error adding line items', description: itemErr.message, variant: 'destructive' });
+    }
+    // If a credit line item was applied, deduct it from the client's credit balance
+    const creditItem = lineItems.find(li => li.description === 'Credit applied');
+    if (creditItem && form.client_company_id) {
+      const creditUsed = Math.abs(creditItem.unit_price);
+      const company = clientCompanies.find(c => c.id === form.client_company_id);
+      const newBalance = Math.max(0, (company?.credit_balance ?? 0) - creditUsed);
+      await supabase.from('client_companies').update({ credit_balance: newBalance }).eq('id', form.client_company_id);
     }
     toast({ title: `Invoice ${invoiceNumber} created` });
     setSaving(false); setShowCreate(false); resetForm(); fetchAll();
@@ -1264,6 +1273,39 @@ export default function Invoices() {
                     ))}
                   </SelectContent>
                 </Select>
+                {/* Credit balance banner */}
+                {(() => {
+                  const sel = clientCompanies.find(c => c.id === form.client_company_id);
+                  if (!sel || (sel.credit_balance ?? 0) <= 0) return null;
+                  const sym = sel.currency === 'ZAR' ? 'R' : sel.currency === 'THB' ? '฿' : '$';
+                  const alreadyApplied = lineItems.some(li => li.description === 'Credit applied');
+                  return (
+                    <div className="mt-1.5 flex items-center justify-between rounded-md border border-neon-mint/30 bg-neon-mint/5 px-3 py-2">
+                      <span className="font-mono text-xs text-neon-mint">
+                        {sym}{sel.credit_balance!.toFixed(2)} credit available
+                      </span>
+                      {alreadyApplied ? (
+                        <span className="font-mono text-xs text-muted-foreground">Applied ✓</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="font-mono text-xs text-neon-mint underline hover:no-underline"
+                          onClick={() => {
+                            setLineItems(prev => [...prev, {
+                              description: 'Credit applied',
+                              quantity: 1,
+                              unit_price: -(sel.credit_balance ?? 0),
+                              total: -(sel.credit_balance ?? 0),
+                              product_id: null,
+                            }]);
+                          }}
+                        >
+                          Apply to invoice
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <Label className="font-mono text-xs">Due Date</Label>

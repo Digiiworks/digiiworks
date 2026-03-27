@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import {
   Plus, Trash2, Pencil, Loader2, Search,
-  User, Mail, Phone, Building2, MapPin, FileText, Check, ArrowUpDown, Upload, X,
+  User, Mail, Phone, Building2, MapPin, FileText, Check, ArrowUpDown, Upload, X, CreditCard,
 } from 'lucide-react';
 import StatCard from '@/components/admin/StatCard';
 import AdminToolbar from '@/components/admin/AdminToolbar';
@@ -51,6 +51,7 @@ type ClientCompany = {
   invoice_count?: number;
   outstanding?: number;
   recurring_count?: number;
+  credit_balance?: number;
 };
 
 type ProfileMatch = {
@@ -83,6 +84,10 @@ export default function Clients() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [detailCompanyId, setDetailCompanyId] = useState<string | null>(null);
+  const [creditClient, setCreditClient] = useState<ClientCompany | null>(null);
+  const [creditAmount, setCreditAmount] = useState('');
+  const [creditNote, setCreditNote] = useState('');
+  const [creditSaving, setCreditSaving] = useState(false);
 
   // Form
   const [form, setForm] = useState({
@@ -124,7 +129,7 @@ export default function Clients() {
       // Get all client companies joined with profiles
       const { data: companies } = await supabase
         .from('client_companies')
-        .select('*')
+        .select('*, credit_balance')
         .eq('active', true)
         .order('created_at', { ascending: false });
 
@@ -436,6 +441,30 @@ export default function Clients() {
   };
 
   const countryToCurrency = (c: string) => c === 'south_africa' ? 'ZAR' : c === 'thailand' ? 'THB' : 'USD';
+
+  const handleAddCredit = async () => {
+    if (!creditClient) return;
+    const amount = parseFloat(creditAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: 'Enter a valid credit amount', variant: 'destructive' }); return;
+    }
+    setCreditSaving(true);
+    const newBalance = (creditClient.credit_balance ?? 0) + amount;
+    const { error } = await supabase
+      .from('client_companies')
+      .update({ credit_balance: newBalance })
+      .eq('id', creditClient.id);
+    if (error) {
+      toast({ title: 'Error adding credit', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Credit added', description: `${fmtCurrency(amount, creditClient.currency)} credit added to ${creditClient.company_name}` });
+      setCreditClient(null);
+      setCreditAmount('');
+      setCreditNote('');
+      fetchClients();
+    }
+    setCreditSaving(false);
+  };
 
   // Basic RFC 5322-compatible email validation
   const isValidEmail = (email: string) =>
@@ -761,6 +790,9 @@ export default function Clients() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-neon-mint" title="Add credit" onClick={() => { setCreditClient(client); setCreditAmount(''); setCreditNote(''); }}>
+                      <CreditCard className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(client)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -867,7 +899,15 @@ export default function Clients() {
                       {format(new Date(client.created_at), 'MMM d, yyyy')}
                     </TableCell>
                     <TableCell className="text-right" onClick={e => e.stopPropagation()}>
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-1 items-center">
+                        {(client.credit_balance ?? 0) > 0 && (
+                          <span className="font-mono text-xs text-neon-mint mr-1" title="Available credit">
+                            +{fmtCurrency(client.credit_balance!, client.currency)}
+                          </span>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-neon-mint" title="Add credit" onClick={() => { setCreditClient(client); setCreditAmount(''); setCreditNote(''); }}>
+                          <CreditCard className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(client)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -1293,6 +1333,50 @@ export default function Clients() {
           title="Crop Company Logo"
         />
       )}
+
+      {/* Add Credit Dialog */}
+      <Dialog open={!!creditClient} onOpenChange={(open) => { if (!open) setCreditClient(null); }}>
+        <DialogContent className="w-[95vw] max-w-sm bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-mono">Add Credit — {creditClient?.company_name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {(creditClient?.credit_balance ?? 0) > 0 && (
+              <p className="font-mono text-xs text-neon-mint">
+                Current balance: {fmtCurrency(creditClient!.credit_balance!, creditClient!.currency)}
+              </p>
+            )}
+            <div>
+              <Label className="font-mono text-xs mb-1.5 block">Credit Amount ({creditClient?.currency})</Label>
+              <Input
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                value={creditAmount}
+                onChange={e => setCreditAmount(e.target.value)}
+                className="bg-background border-border font-mono"
+              />
+            </div>
+            <div>
+              <Label className="font-mono text-xs mb-1.5 block">Note (optional)</Label>
+              <Input
+                placeholder="e.g. Overpayment on INV-0012"
+                value={creditNote}
+                onChange={e => setCreditNote(e.target.value)}
+                className="bg-background border-border text-xs"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreditClient(null)}>Cancel</Button>
+            <Button onClick={handleAddCredit} disabled={creditSaving || !creditAmount}>
+              {creditSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add Credit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ClientDetailSheet
         companyId={detailCompanyId}
