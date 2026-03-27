@@ -675,7 +675,13 @@ export default function Invoices() {
       const { data, error } = await supabase.functions.invoke('send-invoice-email', {
         body: { invoice_id: invoiceId, force_resend: isResend },
       });
-      if (error) throw error;
+      if (error) {
+        // FunctionsHttpError has a .context with the actual server response
+        const detail = (error as any)?.context
+          ? await (error as any).context.json().then((j: any) => j?.error ?? j?.message).catch(() => null)
+          : null;
+        throw new Error(detail ?? error.message);
+      }
       toast({ title: isResend ? 'Invoice resent' : 'Invoice emailed', description: `Sent to ${data.sent_to}` });
       fetchAll();
       // Refresh email history if detail is open
@@ -1162,7 +1168,7 @@ export default function Invoices() {
         </div>
       ) : null}
 
-      {activeView === 'invoices' && <AdminToolbar title="Invoices">
+      {activeView === 'invoices' && <AdminToolbar>
         <Input
           placeholder="Search invoices..."
           value={search}
