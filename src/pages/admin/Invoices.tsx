@@ -484,7 +484,7 @@ export default function Invoices() {
     setSaving(true);
 
     // Generate invoice number atomically via DB sequence (race-condition safe)
-    const { data: generatedNumber, error: numErr } = await (supabase as any).rpc('next_invoice_number');
+    const { data: generatedNumber, error: numErr } = await supabase.rpc('next_invoice_number' as any);
     if (numErr || !generatedNumber) {
       toast({ title: 'Error generating invoice number', description: numErr?.message, variant: 'destructive' });
       setSaving(false); return;
@@ -708,7 +708,7 @@ export default function Invoices() {
       const now = new Date().toISOString();
       const { error } = await supabase
         .from('invoices')
-        .update({ status: 'paid', paid_at: now, payment_method: 'manual' })
+        .update({ status: 'paid', paid_at: now, payment_method: 'manual', paid_amount: payDialog.total })
         .eq('id', payDialog.id);
       if (error) throw error;
       // Audit log — record who marked it paid and any reference notes
@@ -721,7 +721,7 @@ export default function Invoices() {
       toast({ title: 'Invoice marked as paid (manual)', description: `${payDialog.invoice_number} has been marked as paid.` });
       fetchAll();
       if (showDetail?.id === payDialog.id) {
-        setShowDetail({ ...payDialog, status: 'paid', paid_at: now, payment_method: 'manual' } as any);
+        setShowDetail({ ...payDialog, status: 'paid', paid_at: now, payment_method: 'manual', paid_amount: payDialog.total } as any);
       }
       setPayDialog(null);
       setManualPayNotes('');
@@ -740,7 +740,7 @@ export default function Invoices() {
     }
     setPayingMethod('partial');
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('invoices')
         .update({ status: 'partial', paid_amount: amount, payment_method: 'manual' })
         .eq('id', payDialog.id);
