@@ -192,12 +192,13 @@ export default function Invoices() {
         supabase.from('client_companies').select('id, user_id, company_name, currency').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
         supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
-        (supabase as any).from('client_credits').select('client_company_id, amount'),
+        supabase.from('page_content').select('page_key, content').like('page_key', 'client_credit_%'),
       ]);
-      // Sum credits per company for the invoice create banner
+      // Build credit balance map from page_content JSON
       const creditBalanceMap = new Map<string, number>();
       ((creditsRes.data ?? []) as any[]).forEach((r: any) => {
-        creditBalanceMap.set(r.client_company_id, (creditBalanceMap.get(r.client_company_id) ?? 0) + Number(r.amount));
+        const companyId = r.page_key?.replace('client_credit_', '');
+        if (companyId) creditBalanceMap.set(companyId, (r.content as any)?.balance ?? 0);
       });
       if (paySettingsRes.data?.content) setPaymentSettings(paySettingsRes.data.content);
       if (fxRes.data?.length) {
@@ -422,15 +423,21 @@ export default function Invoices() {
       const { error: itemErr } = await supabase.from('invoice_items').insert(items);
       if (itemErr) toast({ title: 'Error adding line items', description: itemErr.message, variant: 'destructive' });
     }
-    // If a credit line item was applied, record a negative entry in client_credits
+    // If a credit line item was applied, deduct from the page_content credit balance
     const creditItem = lineItems.find(li => li.description === 'Credit applied');
     if (creditItem && form.client_company_id) {
       const creditUsed = Math.abs(creditItem.unit_price);
-      await (supabase as any).from('client_credits').insert({
-        client_company_id: form.client_company_id,
-        amount: -creditUsed,
-        note: `Applied to ${invoiceNumber}`,
-      });
+      const creditKey = `client_credit_${form.client_company_id}`;
+      const { data: existing } = await supabase.from('page_content').select('content').eq('page_key', creditKey).maybeSingle();
+      const prev = (existing?.content as any) ?? { balance: 0, log: [] };
+      const newBalance = Math.max(0, (prev.balance ?? 0) - creditUsed);
+      await supabase.from('page_content').upsert({
+        page_key: creditKey,
+        content: {
+          balance: newBalance,
+          log: [{ amount: -creditUsed, note: `Applied to ${invoiceNumber}`, date: new Date().toISOString() }, ...(prev.log ?? [])],
+        },
+      }, { onConflict: 'page_key' });
     }
     toast({ title: `Invoice ${invoiceNumber} created` });
     setSaving(false); setShowCreate(false); resetForm(); fetchAll();

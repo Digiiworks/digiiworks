@@ -145,13 +145,14 @@ export default function Clients() {
         supabase.from('profiles').select('user_id, email, display_name, avatar_url').in('user_id', userIds),
         supabase.from('invoices').select('client_id, client_company_id, status, total'),
         supabase.from('client_recurring_services').select('client_company_id').eq('active', true),
-        (supabase as any).from('client_credits').select('client_company_id, amount'),
+        supabase.from('page_content').select('page_key, content').like('page_key', 'client_credit_%'),
       ]);
 
-      // Sum credits per company
+      // Build credit balance map from page_content JSON
       const creditMap = new Map<string, number>();
       ((creditsRes.data ?? []) as any[]).forEach((r: any) => {
-        creditMap.set(r.client_company_id, (creditMap.get(r.client_company_id) ?? 0) + Number(r.amount));
+        const companyId = r.page_key?.replace('client_credit_', '');
+        if (companyId) creditMap.set(companyId, (r.content as any)?.balance ?? 0);
       });
 
       const profileMap = new Map((profileRes.data ?? []).map(p => [p.user_id, p]));
@@ -450,6 +451,10 @@ export default function Clients() {
 
   const countryToCurrency = (c: string) => c === 'south_africa' ? 'ZAR' : c === 'thailand' ? 'THB' : 'USD';
 
+  // Credits are stored in page_content as JSON keyed by 'client_credit_<company_id>'
+  // so no new table/column migration is needed.
+  const creditPageKey = (id: string) => `client_credit_${id}`;
+
   const handleAddCredit = async () => {
     if (!creditClient) return;
     const amount = parseFloat(creditAmount);
@@ -457,15 +462,14 @@ export default function Clients() {
       toast({ title: 'Enter a valid credit amount', variant: 'destructive' }); return;
     }
     setCreditSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await (supabase as any)
-      .from('client_credits')
-      .insert({
-        client_company_id: creditClient.id,
-        amount,
-        note: creditNote || null,
-        created_by: user?.id ?? null,
-      });
+    const key = creditPageKey(creditClient.id);
+    const { data: existing } = await supabase.from('page_content').select('content').eq('page_key', key).maybeSingle();
+    const prev = (existing?.content as any) ?? { balance: 0, log: [] };
+    const newContent = {
+      balance: (prev.balance ?? 0) + amount,
+      log: [{ amount, note: creditNote || null, date: new Date().toISOString() }, ...(prev.log ?? [])],
+    };
+    const { error } = await supabase.from('page_content').upsert({ page_key: key, content: newContent }, { onConflict: 'page_key' });
     if (error) {
       toast({ title: 'Error adding credit', description: error.message, variant: 'destructive' });
     } else {
