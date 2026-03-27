@@ -676,9 +676,10 @@ export default function Invoices() {
         body: { invoice_id: invoiceId, force_resend: isResend },
       });
       if (error) {
-        // FunctionsHttpError has a .context with the actual server response
-        const detail = (error as any)?.context
-          ? await (error as any).context.json().then((j: any) => j?.error ?? j?.message).catch(() => null)
+        // In supabase-js 2.x, FunctionsHttpError.context is already the parsed response body
+        const ctx = (error as any)?.context;
+        const detail = typeof ctx === 'object' && ctx !== null
+          ? (ctx?.error ?? ctx?.message ?? null)
           : null;
         throw new Error(detail ?? error.message);
       }
