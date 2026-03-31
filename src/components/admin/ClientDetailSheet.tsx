@@ -77,7 +77,7 @@ export default function ClientDetailSheet({ companyId, onClose, onEdit, onNewInv
     queryKey: ['client-contacts', companyId],
     enabled: !!companyId,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('client_contacts')
         .select('id, name, email, phone, role, is_primary')
         .eq('client_company_id', companyId!)

@@ -169,7 +169,7 @@ export default function Clients() {
         supabase.from('profiles').select('user_id, email, display_name, avatar_url').in('user_id', userIds),
         supabase.from('invoices').select('client_id, client_company_id, status, total'),
         supabase.from('client_recurring_services').select('client_company_id').eq('active', true),
-        supabase.from('client_credits').select('client_company_id, amount'),
+        (supabase as any).from('client_credits').select('client_company_id, amount'),
       ]);
 
       // Build credit balance map by summing the credits ledger
@@ -504,7 +504,7 @@ export default function Clients() {
       toast({ title: 'Enter a valid credit amount', variant: 'destructive' }); return;
     }
     setCreditSaving(true);
-    const { error } = await supabase.from('client_credits').insert({
+    const { error } = await (supabase as any).from('client_credits').insert({
       client_company_id: creditClient.id,
       amount,
       note: creditNote || null,
@@ -572,17 +572,17 @@ export default function Clients() {
       // Save contacts: delete removed ones, upsert new/existing
       const toDelete = contacts.filter(c => c.isDeleted && c.id);
       for (const c of toDelete) {
-        await supabase.from('client_contacts').delete().eq('id', c.id);
+        await (supabase as any).from('client_contacts').delete().eq('id', c.id);
       }
       const toSave = contacts.filter(c => !c.isDeleted);
       for (const c of toSave) {
         if (c.isNew) {
-          await supabase.from('client_contacts').insert({
+          await (supabase as any).from('client_contacts').insert({
             client_company_id: editClient.id, name: c.name, email: c.email,
             phone: c.phone || null, role: c.role, is_primary: c.is_primary,
           });
         } else if (c.id) {
-          await supabase.from('client_contacts').update({
+          await (supabase as any).from('client_contacts').update({
             name: c.name, email: c.email, phone: c.phone || null, role: c.role, is_primary: c.is_primary,
           }).eq('id', c.id);
         }
@@ -740,7 +740,7 @@ export default function Clients() {
       // Save contacts
       const activeContacts = contacts.filter(c => !c.isDeleted && c.name && c.email);
       if (activeContacts.length > 0) {
-        await supabase.from('client_contacts').insert(
+        await (supabase as any).from('client_contacts').insert(
           activeContacts.map(c => ({
             client_company_id: clientCompanyId, name: c.name, email: c.email,
             phone: c.phone || null, role: c.role, is_primary: c.is_primary,
