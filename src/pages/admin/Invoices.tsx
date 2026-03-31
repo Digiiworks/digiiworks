@@ -23,7 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import {
-  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle, Pencil, ExternalLink, CircleDollarSign, CheckSquare, Download,
+  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle, Pencil, ExternalLink, CircleDollarSign, CheckSquare, Download, X,
 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -1766,17 +1766,25 @@ export default function Invoices() {
 
             <div>
               <Label className="font-mono text-xs">Email Send Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal bg-background border-border", !sendDate && "text-muted-foreground")}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {sendDate ? format(sendDate, 'PPP') : <span>Pick a send date</span>}
+              <div className="flex gap-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal bg-background border-border", !sendDate && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {sendDate ? format(sendDate, 'PPP') : <span>No auto-send (manual)</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={sendDate} onSelect={setSendDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+                {sendDate && (
+                  <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => setSendDate(undefined)} title="Clear send date">
+                    <X className="h-4 w-4" />
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={sendDate} onSelect={setSendDate} initialFocus className={cn("p-3 pointer-events-auto")} />
-                </PopoverContent>
-              </Popover>
+                )}
+              </div>
+              {!sendDate && <p className="text-[10px] text-muted-foreground mt-1">No send date — invoice won't auto-send. Use manual send.</p>}
             </div>
 
             <div>
