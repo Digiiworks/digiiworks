@@ -275,7 +275,7 @@ export default function Invoices() {
 
     // Enrich with last invoiced date from recurring_invoice_runs
     const { data: runs } = await supabase
-      .from('recurring_invoice_runs')
+      .from('recurring_invoice_runs' as any)
       .select('client_id, billing_month')
       .order('billing_month', { ascending: false });
 
