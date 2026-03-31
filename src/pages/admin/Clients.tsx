@@ -577,7 +577,7 @@ export default function Clients() {
       const toSave = contacts.filter(c => !c.isDeleted);
       for (const c of toSave) {
         if (c.isNew) {
-          await supabase.from('client_contacts').insert({
+          await (supabase as any).from('client_contacts').insert({
             client_company_id: editClient.id, name: c.name, email: c.email,
             phone: c.phone || null, role: c.role, is_primary: c.is_primary,
           });
