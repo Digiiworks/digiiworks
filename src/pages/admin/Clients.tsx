@@ -740,7 +740,7 @@ export default function Clients() {
       // Save contacts
       const activeContacts = contacts.filter(c => !c.isDeleted && c.name && c.email);
       if (activeContacts.length > 0) {
-        await supabase.from('client_contacts').insert(
+        await (supabase as any).from('client_contacts').insert(
           activeContacts.map(c => ({
             client_company_id: clientCompanyId, name: c.name, email: c.email,
             phone: c.phone || null, role: c.role, is_primary: c.is_primary,

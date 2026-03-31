@@ -517,7 +517,7 @@ export default function Invoices() {
     const creditItem = lineItems.find(li => li.description === 'Credit applied');
     if (creditItem && form.client_company_id) {
       const creditUsed = Math.abs(creditItem.unit_price);
-      await supabase.from('client_credits').insert({
+      await (supabase as any).from('client_credits').insert({
         client_company_id: form.client_company_id,
         amount: -creditUsed,
         note: `Applied to ${invoiceNumber}`,
