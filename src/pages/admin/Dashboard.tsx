@@ -72,16 +72,30 @@ const AdminDashboardContent = () => {
   const { data: recurringServices } = useQuery({
     queryKey: ['recurring-services-forecast'],
     queryFn: async () => {
-      // Avoid the profiles!client_id join — it can cause PostgREST disambiguation
-      // errors that silently null out the entire row. Currency falls back to USD.
-      const { data, error } = await supabase
+      // Use three separate queries instead of FK joins — joins were silently
+      // returning null and causing the whole recurring bucket to be $0.
+      const { data: services, error } = await supabase
         .from('client_recurring_services')
-        .select('id, quantity, unit_price_override, billing_cycle, product_id, client_company_id, products!client_recurring_services_product_id_fkey(price_usd, price_zar, price_thb), client_companies!client_company_id(currency)')
+        .select('id, quantity, unit_price_override, billing_cycle, product_id, client_company_id')
         .eq('active', true);
-      if (error) console.error('[recurring-services]', error);
-      return (data ?? []).map((svc: any) => ({
+      if (error) { console.error('[recurring-services]', error); return []; }
+      if (!services?.length) return [];
+
+      const productIds = [...new Set(services.map((s: any) => s.product_id).filter(Boolean))];
+      const companyIds = [...new Set(services.map((s: any) => s.client_company_id).filter(Boolean))];
+
+      const [{ data: products }, { data: companies }] = await Promise.all([
+        supabase.from('products').select('id, price_usd, price_zar, price_thb').in('id', productIds),
+        supabase.from('client_companies').select('id, currency').in('id', companyIds),
+      ]);
+
+      const productMap = new Map((products ?? []).map((p: any) => [p.id, p]));
+      const companyMap = new Map((companies ?? []).map((c: any) => [c.id, c]));
+
+      return services.map((svc: any) => ({
         ...svc,
-        resolvedClientCurrency: svc.client_companies?.currency ?? 'USD',
+        product: productMap.get(svc.product_id) ?? null,
+        resolvedClientCurrency: (companyMap.get(svc.client_company_id) as any)?.currency ?? 'USD',
       }));
     },
   });
@@ -203,11 +217,10 @@ const AdminDashboardContent = () => {
       let priceCurrency: string;
 
       if (svc.unit_price_override != null) {
-        // unit_price_override is stored in the client's currency
         priceAmount = svc.unit_price_override;
         priceCurrency = clientCurrency;
       } else {
-        const p = svc.products as any;
+        const p = svc.product as any;
         if (!p) continue;
         if (clientCurrency === 'ZAR' && p.price_zar) { priceAmount = p.price_zar; priceCurrency = 'ZAR'; }
         else if (clientCurrency === 'THB' && p.price_thb) { priceAmount = p.price_thb; priceCurrency = 'THB'; }
