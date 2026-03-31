@@ -504,7 +504,7 @@ export default function Clients() {
       toast({ title: 'Enter a valid credit amount', variant: 'destructive' }); return;
     }
     setCreditSaving(true);
-    const { error } = await supabase.from('client_credits').insert({
+    const { error } = await (supabase as any).from('client_credits').insert({
       client_company_id: creditClient.id,
       amount,
       note: creditNote || null,
