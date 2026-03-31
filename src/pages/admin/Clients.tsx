@@ -582,7 +582,7 @@ export default function Clients() {
             phone: c.phone || null, role: c.role, is_primary: c.is_primary,
           });
         } else if (c.id) {
-          await supabase.from('client_contacts').update({
+          await (supabase as any).from('client_contacts').update({
             name: c.name, email: c.email, phone: c.phone || null, role: c.role, is_primary: c.is_primary,
           }).eq('id', c.id);
         }
