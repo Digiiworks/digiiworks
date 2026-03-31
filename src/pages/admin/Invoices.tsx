@@ -206,7 +206,7 @@ export default function Invoices() {
         supabase.from('client_companies').select('id, user_id, company_name, currency, payment_terms_days').eq('active', true),
         supabase.from('page_content').select('content').eq('page_key', 'payment_settings').maybeSingle(),
         supabase.from('exchange_rates').select('currency_code, rate_vs_usd, margin_pct'),
-        supabase.from('client_credits').select('client_company_id, amount'),
+        (supabase as any).from('client_credits').select('client_company_id, amount'),
       ]);
       // Build credit balance map by summing the credits ledger
       const creditBalanceMap = new Map<string, number>();
