@@ -169,7 +169,7 @@ export default function Clients() {
         supabase.from('profiles').select('user_id, email, display_name, avatar_url').in('user_id', userIds),
         supabase.from('invoices').select('client_id, client_company_id, status, total'),
         supabase.from('client_recurring_services').select('client_company_id').eq('active', true),
-        supabase.from('client_credits').select('client_company_id, amount'),
+        (supabase as any).from('client_credits').select('client_company_id, amount'),
       ]);
 
       // Build credit balance map by summing the credits ledger
