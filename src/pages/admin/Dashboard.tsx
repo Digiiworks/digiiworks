@@ -49,17 +49,15 @@ const AdminDashboardContent = () => {
   });
 
   const { data: forecastInvoices } = useQuery({
-    queryKey: ['income-forecast', forecastMonths],
+    queryKey: ['income-forecast'],
     queryFn: async () => {
-      const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
-      // Fetch all non-cancelled invoices within the forecast window.
-      // Join client_companies for real currency (inv.currency defaults to USD in DB
-      // until the trigger migration 20260325130000 is applied by Lovable).
+      // Fetch all outstanding invoices (not yet fully paid, not cancelled).
+      // Date-range filtering is done in the useMemo so switching periods works
+      // correctly without re-fetching (overdue invoices are always in scope).
       const { data } = await (supabase as any)
         .from('invoices')
         .select('id, total, paid_amount, currency, status, due_date, client_companies!client_company_id(currency)')
-        .not('status', 'eq', 'cancelled')
-        .or(`due_date.is.null,due_date.lte.${cutoff}`);
+        .in('status', ['draft', 'sent', 'overdue', 'partial']);
       return (data ?? []).map((inv: any) => ({
         ...inv,
         currency: inv.client_companies?.currency ?? inv.currency ?? 'USD',
@@ -177,8 +175,19 @@ const AdminDashboardContent = () => {
     };
 
     // --- Invoice bucket ---
+    // Overdue invoices are always counted (owed money regardless of period).
+    // Draft/sent/partial are counted only if due_date is null or within the forecast window.
+    const today = new Date().toISOString().slice(0, 10);
+    const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
+
     const invByCurrency: Record<string, number> = {};
     for (const inv of (forecastInvoices ?? [])) {
+      // Decide whether this invoice falls within the selected period
+      const inWindow = inv.status === 'overdue'
+        || inv.due_date == null
+        || (inv.due_date >= today && inv.due_date <= cutoff);
+      if (!inWindow) continue;
+
       const currency = inv.currency ?? 'USD';
       const remaining = inv.status === 'partial'
         ? ((inv.total ?? 0) - (inv.paid_amount ?? 0))
