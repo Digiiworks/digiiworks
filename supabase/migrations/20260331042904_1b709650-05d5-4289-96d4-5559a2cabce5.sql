@@ -1,0 +1,1 @@
+ALTER TABLE public.client_companies ADD COLUMN default_tax_rate numeric NOT NULL DEFAULT 0;
