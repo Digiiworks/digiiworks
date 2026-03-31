@@ -49,17 +49,19 @@ const AdminDashboardContent = () => {
   });
 
   const { data: forecastInvoices } = useQuery({
-    queryKey: ['income-forecast'],
+    queryKey: ['income-forecast', forecastMonths],
     queryFn: async () => {
-      // Fetch non-cancelled, non-paid, non-overdue invoices.
-      // Overdue invoices are excluded here — they are shown in the Overdue panel
-      // below, so including them in the forecast would double-count and make the
-      // period selector appear to do nothing.
-      // Client-side date filtering in useMemo makes switching periods instant.
+      const today = new Date().toISOString().slice(0, 10);
+      const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
+      // Only invoices with an explicit due_date in [today, cutoff].
+      // Null-due-date invoices are excluded — timing unknown, not a real forecast.
+      // Overdue excluded — shown separately in the panel below.
       const { data } = await (supabase as any)
         .from('invoices')
         .select('id, total, paid_amount, currency, status, due_date, client_companies!client_company_id(currency)')
-        .in('status', ['draft', 'sent', 'partial']);
+        .in('status', ['draft', 'sent', 'partial'])
+        .gte('due_date', today)
+        .lte('due_date', cutoff);
       return (data ?? []).map((inv: any) => ({
         ...inv,
         currency: inv.client_companies?.currency ?? inv.currency ?? 'USD',
@@ -177,26 +179,9 @@ const AdminDashboardContent = () => {
     };
 
     // --- Invoice bucket ---
-    // Overdue invoices are excluded from the forecast (shown in the Overdue panel
-    // below). The forecast is purely forward-looking so the period selector is
-    // meaningful: choosing 1 month vs 12 months changes the numbers.
-    //
-    // Inclusion rules:
-    //   sent/partial with no due_date  → include (treat as due "now" — collect any time)
-    //   sent/partial with future due_date in [today, cutoff] → include
-    //   draft with no due_date         → exclude (speculative, not sent yet)
-    //   draft with due_date in window  → include
-    const today = new Date().toISOString().slice(0, 10);
-    const cutoff = addMonths(new Date(), forecastMonths).toISOString().slice(0, 10);
-
+    // DB query already filtered to [today, cutoff] — just aggregate here.
     const invByCurrency: Record<string, number> = {};
     for (const inv of (forecastInvoices ?? [])) {
-      const isDraft = inv.status === 'draft';
-      const inWindow =
-        (!isDraft && inv.due_date == null) ||                       // sent/partial, no due date
-        (inv.due_date != null && inv.due_date >= today && inv.due_date <= cutoff); // due in window
-      if (!inWindow) continue;
-
       const currency = inv.currency ?? 'USD';
       const remaining = inv.status === 'partial'
         ? ((inv.total ?? 0) - (inv.paid_amount ?? 0))
