@@ -72,14 +72,16 @@ const AdminDashboardContent = () => {
   const { data: recurringServices } = useQuery({
     queryKey: ['recurring-services-forecast'],
     queryFn: async () => {
-      const { data } = await supabase
+      // Avoid the profiles!client_id join — it can cause PostgREST disambiguation
+      // errors that silently null out the entire row. Currency falls back to USD.
+      const { data, error } = await supabase
         .from('client_recurring_services')
-        .select('id, quantity, unit_price_override, billing_cycle, products!product_id(price_usd, price_zar, price_thb), client_companies!client_company_id(currency), profiles!client_id(currency)')
+        .select('id, quantity, unit_price_override, billing_cycle, product_id, client_company_id, products!client_recurring_services_product_id_fkey(price_usd, price_zar, price_thb), client_companies!client_company_id(currency)')
         .eq('active', true);
-      // Resolve currency: company first, then profile, then USD
+      if (error) console.error('[recurring-services]', error);
       return (data ?? []).map((svc: any) => ({
         ...svc,
-        resolvedClientCurrency: svc.client_companies?.currency ?? svc.profiles?.currency ?? 'USD',
+        resolvedClientCurrency: svc.client_companies?.currency ?? 'USD',
       }));
     },
   });
@@ -375,21 +377,25 @@ const AdminDashboardContent = () => {
               })}
             </div>
           )}
-          {/* Recurring services breakdown */}
-          {forecast.recurringBreakdown.length > 0 && (
-            <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-              <span className="font-mono text-[11px] text-muted-foreground/60 w-full">Recurring ({recurringServices?.length ?? 0} × {forecastMonths}mo):</span>
-              {forecast.recurringBreakdown.map(({ currency, native }) => {
-                const sym = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
-                return (
-                  <span key={currency} className="font-mono text-[11px] text-muted-foreground">
-                    {sym}{native.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    {currency !== forecastCurrency && <span className="text-primary/60"> →{forecastCurrency}</span>}
-                  </span>
-                );
-              })}
-            </div>
-          )}
+          {/* Recurring services breakdown — always visible so count is clear */}
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+            <span className="font-mono text-[11px] text-muted-foreground/60 w-full">
+              Recurring ({recurringServices?.length ?? 0} active × {forecastMonths}mo):
+            </span>
+            {forecast.recurringBreakdown.length > 0 ? forecast.recurringBreakdown.map(({ currency, native }) => {
+              const sym = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
+              return (
+                <span key={currency} className="font-mono text-[11px] text-muted-foreground">
+                  {sym}{native.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {currency !== forecastCurrency && <span className="text-primary/60"> →{forecastCurrency}</span>}
+                </span>
+              );
+            }) : (
+              <span className="font-mono text-[11px] text-muted-foreground/40">
+                {recurringServices?.length ? 'No product prices set' : 'No active recurring services'}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
