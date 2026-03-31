@@ -572,7 +572,7 @@ export default function Clients() {
       // Save contacts: delete removed ones, upsert new/existing
       const toDelete = contacts.filter(c => c.isDeleted && c.id);
       for (const c of toDelete) {
-        await supabase.from('client_contacts').delete().eq('id', c.id);
+        await (supabase as any).from('client_contacts').delete().eq('id', c.id);
       }
       const toSave = contacts.filter(c => !c.isDeleted);
       for (const c of toSave) {
