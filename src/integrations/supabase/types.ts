@@ -115,18 +115,14 @@ export type Database = {
           active: boolean
           address: string | null
           cc_emails: string[] | null
-          client_status: string | null
           company_name: string
           country: string | null
           created_at: string
           currency: string
-          default_tax_rate: number | null
           id: string
           logo_url: string | null
           notes: string | null
-          payment_terms_days: number | null
           phone: string | null
-          tags: string[] | null
           updated_at: string
           user_id: string
         }
@@ -134,18 +130,14 @@ export type Database = {
           active?: boolean
           address?: string | null
           cc_emails?: string[] | null
-          client_status?: string | null
           company_name: string
           country?: string | null
           created_at?: string
           currency?: string
-          default_tax_rate?: number | null
           id?: string
           logo_url?: string | null
           notes?: string | null
-          payment_terms_days?: number | null
           phone?: string | null
-          tags?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -153,98 +145,18 @@ export type Database = {
           active?: boolean
           address?: string | null
           cc_emails?: string[] | null
-          client_status?: string | null
           company_name?: string
           country?: string | null
           created_at?: string
           currency?: string
-          default_tax_rate?: number | null
           id?: string
           logo_url?: string | null
           notes?: string | null
-          payment_terms_days?: number | null
           phone?: string | null
-          tags?: string[] | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
-      }
-      client_contacts: {
-        Row: {
-          client_company_id: string
-          created_at: string
-          email: string
-          id: string
-          is_primary: boolean
-          name: string
-          phone: string | null
-          role: string
-        }
-        Insert: {
-          client_company_id: string
-          created_at?: string
-          email: string
-          id?: string
-          is_primary?: boolean
-          name: string
-          phone?: string | null
-          role?: string
-        }
-        Update: {
-          client_company_id?: string
-          created_at?: string
-          email?: string
-          id?: string
-          is_primary?: boolean
-          name?: string
-          phone?: string | null
-          role?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_contacts_client_company_id_fkey"
-            columns: ["client_company_id"]
-            isOneToOne: false
-            referencedRelation: "client_companies"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      client_credits: {
-        Row: {
-          amount: number
-          client_company_id: string
-          created_at: string
-          created_by: string | null
-          id: string
-          note: string | null
-        }
-        Insert: {
-          amount: number
-          client_company_id: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          note?: string | null
-        }
-        Update: {
-          amount?: number
-          client_company_id?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          note?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_credits_client_company_id_fkey"
-            columns: ["client_company_id"]
-            isOneToOne: false
-            referencedRelation: "client_companies"
-            referencedColumns: ["id"]
-          }
-        ]
       }
       client_recurring_services: {
         Row: {
