@@ -23,7 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import {
-  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle, Pencil, ExternalLink, CircleDollarSign, CheckSquare, Download,
+  Plus, Trash2, Eye, Loader2, CreditCard, ArrowUpDown, Mail, Send, RefreshCw, CalendarIcon, Clock, CheckCircle, XCircle, Pencil, ExternalLink, CircleDollarSign, CheckSquare, Download, X,
 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
