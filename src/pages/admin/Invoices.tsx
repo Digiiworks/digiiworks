@@ -1730,23 +1730,12 @@ export default function Invoices() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label className="font-mono text-xs">Client Company</Label>
-                <Select value={form.client_company_id} onValueChange={v => {
-                  const cc = clientCompanies.find(c => c.id === v);
-                  const terms = (cc as any)?.payment_terms_days ?? 30;
-                  const dueDate = terms === 0
-                    ? format(new Date(), 'yyyy-MM-dd')
-                    : format(new Date(Date.now() + terms * 86400000), 'yyyy-MM-dd');
-                  setForm(f => ({ ...f, client_company_id: v, client_id: cc?.user_id ?? '', due_date: dueDate }));
-                }}>
-                  <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select company" /></SelectTrigger>
-                  <SelectContent>
-                    {clientCompanies.map(cc => (
-                      <SelectItem key={cc.id} value={cc.id}>
-                        {cc.company_name} — {cc.display_name ?? cc.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex h-10 w-full items-center rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground cursor-not-allowed">
+                  {(() => {
+                    const cc = clientCompanies.find(c => c.id === form.client_company_id);
+                    return cc ? `${cc.company_name} — ${cc.display_name ?? cc.email}` : (editingInvoice as any)?.company_name ?? 'Unknown';
+                  })()}
+                </div>
               </div>
               <div>
                 <Label className="font-mono text-xs">Due Date</Label>
