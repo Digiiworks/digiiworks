@@ -2190,7 +2190,7 @@ export default function Invoices() {
         description="This invoice has already been emailed to the client. Are you sure you want to resend it?"
         confirmLabel="Resend"
         variant="default"
-        onConfirm={() => { handleSendEmail(resendConfirmId!, true); setResendConfirmId(null); }}
+        onConfirm={() => { const id = resendConfirmId; setResendConfirmId(null); if (id) handleSendEmail(id, true); }}
       />
 
       <ConfirmDialog
@@ -2200,7 +2200,7 @@ export default function Invoices() {
         description="This invoice has already been sent to the client. Changes won't be reflected in emails already delivered. Continue?"
         confirmLabel="Edit Anyway"
         variant="default"
-        onConfirm={() => { openEdit(editSentInvoice!); setEditSentInvoice(null); }}
+        onConfirm={() => { const inv = editSentInvoice; setEditSentInvoice(null); if (inv) openEdit(inv); }}
       />
 
       <ConfirmDialog
@@ -2211,7 +2211,7 @@ export default function Invoices() {
         confirmLabel="Yes, resend"
         cancelLabel="No, save only"
         variant="default"
-        onConfirm={() => { handleSendEmail(resendAfterEditId!, true); setResendAfterEditId(null); }}
+        onConfirm={() => { const id = resendAfterEditId; setResendAfterEditId(null); if (id) handleSendEmail(id, true); }}
       />
     </div>
   );
