@@ -30,6 +30,11 @@ const ConfirmDialog = ({
   variant = 'destructive',
   onConfirm,
 }: ConfirmDialogProps) => {
+  const handleConfirm = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onConfirm();
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="border-border bg-card">
@@ -40,7 +45,7 @@ const ConfirmDialog = ({
         <AlertDialogFooter>
           <AlertDialogCancel className="font-mono text-xs">{cancelLabel}</AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={handleConfirm}
             className={`font-mono text-xs ${
               variant === 'destructive'
                 ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
