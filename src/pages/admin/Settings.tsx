@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -451,417 +451,422 @@ const SettingsPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* ─── SECTION 1: Payments & Banking ─── */}
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-base">
-            <Landmark className="h-4 w-4 text-primary" /> Payments & Banking
-          </CardTitle>
-          <CardDescription>Bank accounts, payment links and gateway toggles</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Regional Bank Accounts — inner tabs */}
-          <div>
-            <h3 className="font-mono text-sm font-medium text-foreground mb-3">Regional Bank Accounts</h3>
-            <Tabs defaultValue="global">
-              <TabsList className="bg-muted/50 w-full justify-start flex-wrap h-auto gap-1 p-1">
-                <TabsTrigger value="global" className="gap-1.5 font-mono text-xs"><Globe className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Global</span> USD</TabsTrigger>
-                <TabsTrigger value="thai" className="gap-1.5 font-mono text-xs">🇹🇭 <span className="hidden sm:inline">Thailand</span> THB</TabsTrigger>
-                <TabsTrigger value="south_africa" className="gap-1.5 font-mono text-xs">🇿🇦 <span className="hidden sm:inline">South Africa</span> ZAR</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="global" className="mt-4">
+      <Accordion type="single" collapsible defaultValue="payments-banking" className="space-y-3">
+        {/* ─── Payments & Banking ─── */}
+        <AccordionItem value="payments-banking" className="border border-border rounded-lg bg-card px-6">
+          <AccordionTrigger className="hover:no-underline">
+            <span className="flex items-center gap-2 font-mono text-base font-semibold">
+              <Landmark className="h-4 w-4 text-primary" /> Payments & Banking
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <p className="text-sm text-muted-foreground mb-4">Bank accounts, payment links and gateway toggles</p>
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-mono text-sm font-medium text-foreground mb-3">Regional Bank Accounts</h3>
+                <Tabs defaultValue="global">
+                  <TabsList className="bg-muted/50 w-full justify-start flex-wrap h-auto gap-1 p-1">
+                    <TabsTrigger value="global" className="gap-1.5 font-mono text-xs"><Globe className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Global</span> USD</TabsTrigger>
+                    <TabsTrigger value="thai" className="gap-1.5 font-mono text-xs">🇹🇭 <span className="hidden sm:inline">Thailand</span> THB</TabsTrigger>
+                    <TabsTrigger value="south_africa" className="gap-1.5 font-mono text-xs">🇿🇦 <span className="hidden sm:inline">South Africa</span> ZAR</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="global" className="mt-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Bank Name" path={['global', 'bank_name']} placeholder="e.g. Wise, Mercury" />
+                      <Field label="Account Name" path={['global', 'account_name']} placeholder="DigiiWorks LLC" />
+                      <Field label="Account Number / IBAN" path={['global', 'account_number']} placeholder="GB12 XXXX …" />
+                      <Field label="SWIFT / BIC Code" path={['global', 'swift_code']} placeholder="TRWIGB2L" />
+                      <Field label="Routing Number" path={['global', 'routing_number']} placeholder="021000021" />
+                      <Field label="Currency" path={['global', 'currency']} placeholder="USD" />
+                      <Field label="Reference Note" path={['global', 'reference_note']} placeholder="Use invoice number as reference" />
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="thai" className="mt-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Bank Name" path={['thai', 'bank_name']} placeholder="e.g. Bangkok Bank, Kasikorn" />
+                      <Field label="Account Name" path={['thai', 'account_name']} placeholder="DigiiWorks Co., Ltd." />
+                      <Field label="Account Number" path={['thai', 'account_number']} placeholder="xxx-x-xxxxx-x" />
+                      <Field label="Branch" path={['thai', 'branch']} placeholder="e.g. Sukhumvit" />
+                      <Field label="Currency" path={['thai', 'currency']} placeholder="THB" />
+                      <Field label="Reference Note" path={['thai', 'reference_note']} placeholder="Use invoice number as reference" />
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="south_africa" className="mt-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Bank Name" path={['south_africa', 'bank_name']} placeholder="e.g. FNB, Capitec, Standard Bank" />
+                      <Field label="Account Name" path={['south_africa', 'account_name']} placeholder="DigiiWorks (Pty) Ltd" />
+                      <Field label="Account Number" path={['south_africa', 'account_number']} placeholder="62xxxxxxx" />
+                      <Field label="Branch Code" path={['south_africa', 'branch_code']} placeholder="250655" />
+                      <Field label="Account Type" path={['south_africa', 'account_type']} placeholder="Cheque / Savings" />
+                      <Field label="Currency" path={['south_africa', 'currency']} placeholder="ZAR" />
+                      <Field label="Reference Note" path={['south_africa', 'reference_note']} placeholder="Use invoice number as reference" />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+              <Separator />
+              <div>
+                <h3 className="font-mono text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                  <LinkIcon className="h-3.5 w-3.5 text-primary" /> Payment Links
+                </h3>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Bank Name" path={['global', 'bank_name']} placeholder="e.g. Wise, Mercury" />
-                  <Field label="Account Name" path={['global', 'account_name']} placeholder="DigiiWorks LLC" />
-                  <Field label="Account Number / IBAN" path={['global', 'account_number']} placeholder="GB12 XXXX …" />
-                  <Field label="SWIFT / BIC Code" path={['global', 'swift_code']} placeholder="TRWIGB2L" />
-                  <Field label="Routing Number" path={['global', 'routing_number']} placeholder="021000021" />
-                  <Field label="Currency" path={['global', 'currency']} placeholder="USD" />
-                  <Field label="Reference Note" path={['global', 'reference_note']} placeholder="Use invoice number as reference" />
+                  <Field label="Yoco Payment Link" path={['payment_links', 'yoco_payment_link']} placeholder="https://pay.yoco.com/your-link" />
+                  <Field label="Wise Payment Link" path={['payment_links', 'wise_payment_link']} placeholder="https://wise.com/pay/your-link" />
                 </div>
-              </TabsContent>
-
-              <TabsContent value="thai" className="mt-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Bank Name" path={['thai', 'bank_name']} placeholder="e.g. Bangkok Bank, Kasikorn" />
-                  <Field label="Account Name" path={['thai', 'account_name']} placeholder="DigiiWorks Co., Ltd." />
-                  <Field label="Account Number" path={['thai', 'account_number']} placeholder="xxx-x-xxxxx-x" />
-                  <Field label="Branch" path={['thai', 'branch']} placeholder="e.g. Sukhumvit" />
-                  <Field label="Currency" path={['thai', 'currency']} placeholder="THB" />
-                  <Field label="Reference Note" path={['thai', 'reference_note']} placeholder="Use invoice number as reference" />
+              </div>
+              <Separator />
+              <div>
+                <h3 className="font-mono text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                  <CreditCard className="h-3.5 w-3.5 text-primary" /> Payment Methods
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-medium text-foreground">Stripe</Label>
+                      <p className="text-xs text-muted-foreground">Card payments — all currencies</p>
+                    </div>
+                    <Switch
+                      checked={data.payment_methods?.stripe_enabled === true || data.payment_methods?.stripe_enabled === 'true' as any}
+                      onCheckedChange={(checked) => update(['payment_methods', 'stripe_enabled'], checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-medium text-foreground">Yoco</Label>
+                      <p className="text-xs text-muted-foreground">ZAR card payments — South Africa</p>
+                    </div>
+                    <Switch
+                      checked={data.payment_methods?.yoco_enabled === true || data.payment_methods?.yoco_enabled === 'true' as any || (data.payment_methods?.yoco_enabled === undefined)}
+                      onCheckedChange={(checked) => update(['payment_methods', 'yoco_enabled'], checked)}
+                    />
+                  </div>
                 </div>
-              </TabsContent>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-              <TabsContent value="south_africa" className="mt-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Bank Name" path={['south_africa', 'bank_name']} placeholder="e.g. FNB, Capitec, Standard Bank" />
-                  <Field label="Account Name" path={['south_africa', 'account_name']} placeholder="DigiiWorks (Pty) Ltd" />
-                  <Field label="Account Number" path={['south_africa', 'account_number']} placeholder="62xxxxxxx" />
-                  <Field label="Branch Code" path={['south_africa', 'branch_code']} placeholder="250655" />
-                  <Field label="Account Type" path={['south_africa', 'account_type']} placeholder="Cheque / Savings" />
-                  <Field label="Currency" path={['south_africa', 'currency']} placeholder="ZAR" />
-                  <Field label="Reference Note" path={['south_africa', 'reference_note']} placeholder="Use invoice number as reference" />
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          <Separator />
-
-          {/* Payment Links */}
-          <div>
-            <h3 className="font-mono text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-              <LinkIcon className="h-3.5 w-3.5 text-primary" /> Payment Links
-            </h3>
+        {/* ─── Social Media ─── */}
+        <AccordionItem value="social-media" className="border border-border rounded-lg bg-card px-6">
+          <AccordionTrigger className="hover:no-underline">
+            <span className="flex items-center gap-2 font-mono text-base font-semibold">
+              <Share2 className="h-4 w-4 text-primary" /> Social Media
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <p className="text-sm text-muted-foreground mb-4">Add URLs to display social links in the site footer</p>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Yoco Payment Link" path={['payment_links', 'yoco_payment_link']} placeholder="https://pay.yoco.com/your-link" />
-              <Field label="Wise Payment Link" path={['payment_links', 'wise_payment_link']} placeholder="https://wise.com/pay/your-link" />
+              <Field label="Instagram" path={['socials', 'instagram']} placeholder="https://instagram.com/digiiworks" />
+              <Field label="Facebook" path={['socials', 'facebook']} placeholder="https://facebook.com/digiiworks" />
+              <Field label="LinkedIn" path={['socials', 'linkedin']} placeholder="https://linkedin.com/company/digiiworks" />
+              <Field label="GitHub" path={['socials', 'github']} placeholder="https://github.com/digiiworks" />
             </div>
-          </div>
+          </AccordionContent>
+        </AccordionItem>
 
-          <Separator />
-
-          {/* Payment Methods */}
-          <div>
-            <h3 className="font-mono text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-              <CreditCard className="h-3.5 w-3.5 text-primary" /> Payment Methods
-            </h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-medium text-foreground">Stripe</Label>
-                  <p className="text-xs text-muted-foreground">Card payments — all currencies</p>
-                </div>
-                <Switch
-                  checked={data.payment_methods?.stripe_enabled === true || data.payment_methods?.stripe_enabled === 'true' as any}
-                  onCheckedChange={(checked) => update(['payment_methods', 'stripe_enabled'], checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-medium text-foreground">Yoco</Label>
-                  <p className="text-xs text-muted-foreground">ZAR card payments — South Africa</p>
-                </div>
-                <Switch
-                  checked={data.payment_methods?.yoco_enabled === true || data.payment_methods?.yoco_enabled === 'true' as any || (data.payment_methods?.yoco_enabled === undefined)}
-                  onCheckedChange={(checked) => update(['payment_methods', 'yoco_enabled'], checked)}
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ─── SECTION 2: Social Media ─── */}
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-base">
-            <Share2 className="h-4 w-4 text-primary" /> Social Media
-          </CardTitle>
-          <CardDescription>Add URLs to display social links in the site footer</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <Field label="Instagram" path={['socials', 'instagram']} placeholder="https://instagram.com/digiiworks" />
-          <Field label="Facebook" path={['socials', 'facebook']} placeholder="https://facebook.com/digiiworks" />
-          <Field label="LinkedIn" path={['socials', 'linkedin']} placeholder="https://linkedin.com/company/digiiworks" />
-          <Field label="GitHub" path={['socials', 'github']} placeholder="https://github.com/digiiworks" />
-        </CardContent>
-      </Card>
-
-      {/* ─── SECTION: FX Rates ─── */}
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2 font-mono text-base">
-                <TrendingUp className="h-4 w-4 text-primary" /> Exchange Rates
-              </CardTitle>
-              <CardDescription className="mt-1.5">
+        {/* ─── Exchange Rates ─── */}
+        <AccordionItem value="exchange-rates" className="border border-border rounded-lg bg-card px-6">
+          <AccordionTrigger className="hover:no-underline">
+            <span className="flex items-center gap-2 font-mono text-base font-semibold">
+              <TrendingUp className="h-4 w-4 text-primary" /> Exchange Rates
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <p className="text-sm text-muted-foreground">
                 Used to auto-price products in ZAR/THB when no direct price column is set. Products with a specific price always take priority.
-              </CardDescription>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="font-mono text-xs gap-1.5 whitespace-nowrap"
-              onClick={handleRefreshRates}
-              disabled={fxRefreshing}
-            >
-              {fxRefreshing ? <Loader2 className="h-3 w-3 animate-spin" /> : <TrendingUp className="h-3 w-3" />}
-              {fxRefreshing ? 'Fetching...' : 'Refresh Live Rates'}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {fxRates.length === 0 && <p className="text-xs text-muted-foreground font-mono">No exchange rates found. Click "Refresh Live Rates" to fetch current rates from the market.</p>}
-          {fxRates.map(r => (
-            <div key={r.currency_code} className="rounded-lg border border-border p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-sm font-semibold text-foreground">{r.currency_code}</span>
-                {r.updated_at && <span className="font-mono text-[10px] text-muted-foreground">Updated {new Date(r.updated_at).toLocaleDateString()}</span>}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Rate vs USD (1 USD = X {r.currency_code})</Label>
-                  <Input
-                    type="number" step="0.0001" min="0.0001"
-                    value={r.rate_vs_usd}
-                    onChange={e => setFxRates(prev => prev.map(x => x.currency_code === r.currency_code ? { ...x, rate_vs_usd: e.target.value } : x))}
-                    className="font-mono text-sm"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Margin % (markup added on top)</Label>
-                  <Input
-                    type="number" step="0.1" min="0"
-                    value={r.margin_pct}
-                    onChange={e => setFxRates(prev => prev.map(x => x.currency_code === r.currency_code ? { ...x, margin_pct: e.target.value } : x))}
-                    className="font-mono text-sm"
-                  />
-                </div>
-              </div>
-              {parseFloat(r.rate_vs_usd) > 0 && (
-                <p className="font-mono text-xs text-muted-foreground">
-                  Preview: $10 USD → {r.currency_code} {(10 * parseFloat(r.rate_vs_usd) * (1 + parseFloat(r.margin_pct || '0') / 100)).toFixed(2)}
-                  {parseFloat(r.margin_pct) > 0 && ` (incl. ${r.margin_pct}% margin)`}
-                </p>
-              )}
+              </p>
               <Button
                 size="sm"
-                className="font-mono text-xs gap-1.5"
-                onClick={() => saveFxRate(r.currency_code)}
-                disabled={fxSaving === r.currency_code}
+                variant="outline"
+                className="font-mono text-xs gap-1.5 whitespace-nowrap"
+                onClick={handleRefreshRates}
+                disabled={fxRefreshing}
               >
-                {fxSaving === r.currency_code ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                Save {r.currency_code} Rate
+                {fxRefreshing ? <Loader2 className="h-3 w-3 animate-spin" /> : <TrendingUp className="h-3 w-3" />}
+                {fxRefreshing ? 'Fetching...' : 'Refresh Live Rates'}
               </Button>
             </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* ─── SECTION: Dunning Reminders ─── */}
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-base">
-            <Bell className="h-4 w-4 text-primary" /> Payment Dunning
-          </CardTitle>
-          <CardDescription>
-            Automatically sends reminder emails to clients with overdue invoices at 1, 7, and 14 days past due. Each milestone is sent only once per invoice.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-1">
-            <p className="font-mono text-xs text-foreground font-medium">Reminder schedule</p>
-            <ul className="font-mono text-xs text-muted-foreground space-y-1 list-disc list-inside">
-              <li>Day 1 overdue — first gentle reminder</li>
-              <li>Day 7 overdue — follow-up reminder</li>
-              <li>Day 14 overdue — final reminder</li>
-            </ul>
-            <p className="font-mono text-[10px] text-muted-foreground pt-2">
-              Schedule automatically via pg_cron at 8am UTC daily, or trigger manually below.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            className="font-mono text-xs gap-1.5"
-            onClick={runDunning}
-            disabled={dunningRunning}
-          >
-            {dunningRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3" />}
-            Run Dunning Now
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* ─── SECTION: Two-Factor Authentication ─── */}
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-base">
-            <ShieldCheck className="h-4 w-4 text-primary" /> Two-Factor Authentication
-          </CardTitle>
-          <CardDescription>
-            Protect your account with a TOTP authenticator app (Google Authenticator, Authy, etc.).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {mfaFactors.filter(f => f.status === 'verified').length > 0 ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
-                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                <span className="font-mono text-sm text-primary font-medium">2FA Active — your account is protected</span>
-              </div>
-              {mfaFactors.filter(f => f.status === 'verified').map(f => (
-                <div key={f.id} className="flex items-center justify-between rounded-lg border border-border p-3">
-                  <div>
-                    <p className="font-mono text-xs text-foreground">{f.friendly_name || 'Authenticator App'}</p>
-                    <p className="font-mono text-[10px] text-muted-foreground">TOTP · {f.factor_type}</p>
+            <div className="space-y-4">
+              {fxRates.length === 0 && <p className="text-xs text-muted-foreground font-mono">No exchange rates found. Click "Refresh Live Rates" to fetch current rates from the market.</p>}
+              {fxRates.map(r => (
+                <div key={r.currency_code} className="rounded-lg border border-border p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-sm font-semibold text-foreground">{r.currency_code}</span>
+                    {r.updated_at && <span className="font-mono text-[10px] text-muted-foreground">Updated {new Date(r.updated_at).toLocaleDateString()}</span>}
                   </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Rate vs USD (1 USD = X {r.currency_code})</Label>
+                      <Input
+                        type="number" step="0.0001" min="0.0001"
+                        value={r.rate_vs_usd}
+                        onChange={e => setFxRates(prev => prev.map(x => x.currency_code === r.currency_code ? { ...x, rate_vs_usd: e.target.value } : x))}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Margin % (markup added on top)</Label>
+                      <Input
+                        type="number" step="0.1" min="0"
+                        value={r.margin_pct}
+                        onChange={e => setFxRates(prev => prev.map(x => x.currency_code === r.currency_code ? { ...x, margin_pct: e.target.value } : x))}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+                  {parseFloat(r.rate_vs_usd) > 0 && (
+                    <p className="font-mono text-xs text-muted-foreground">
+                      Preview: $10 USD → {r.currency_code} {(10 * parseFloat(r.rate_vs_usd) * (1 + parseFloat(r.margin_pct || '0') / 100)).toFixed(2)}
+                      {parseFloat(r.margin_pct) > 0 && ` (incl. ${r.margin_pct}% margin)`}
+                    </p>
+                  )}
                   <Button
-                    variant="outline"
                     size="sm"
-                    className="font-mono text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                    onClick={() => unenrollMfa(f.id)}
-                    disabled={mfaUnenrolling === f.id}
+                    className="font-mono text-xs gap-1.5"
+                    onClick={() => saveFxRate(r.currency_code)}
+                    disabled={fxSaving === r.currency_code}
                   >
-                    {mfaUnenrolling === f.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Remove 2FA'}
+                    {fxSaving === r.currency_code ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                    Save {r.currency_code} Rate
                   </Button>
                 </div>
               ))}
             </div>
-          ) : mfaEnrolling ? (
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* ─── Payment Dunning ─── */}
+        <AccordionItem value="dunning" className="border border-border rounded-lg bg-card px-6">
+          <AccordionTrigger className="hover:no-underline">
+            <span className="flex items-center gap-2 font-mono text-base font-semibold">
+              <Bell className="h-4 w-4 text-primary" /> Payment Dunning
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Automatically sends reminder emails to clients with overdue invoices at 1, 7, and 14 days past due. Each milestone is sent only once per invoice.
+            </p>
             <div className="space-y-4">
-              <p className="font-mono text-xs text-muted-foreground">Scan this QR code with your authenticator app, then enter the 6-digit code to verify.</p>
-              {mfaTotpUri && (
-                <div className="flex justify-center">
-                  <img
-                    src={`https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=${encodeURIComponent(mfaTotpUri)}`}
-                    alt="Scan with authenticator app"
-                    className="rounded-lg border border-border"
-                    width={200}
-                    height={200}
-                  />
-                </div>
-              )}
-              <div className="space-y-1">
-                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">6-digit code</Label>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="000000"
-                  value={mfaVerifyCode}
-                  onChange={e => setMfaVerifyCode(e.target.value.replace(/\D/g, ''))}
-                  className="font-mono text-center text-lg tracking-widest"
-                />
+              <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-1">
+                <p className="font-mono text-xs text-foreground font-medium">Reminder schedule</p>
+                <ul className="font-mono text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Day 1 overdue — first gentle reminder</li>
+                  <li>Day 7 overdue — follow-up reminder</li>
+                  <li>Day 14 overdue — final reminder</li>
+                </ul>
+                <p className="font-mono text-[10px] text-muted-foreground pt-2">
+                  Schedule automatically via pg_cron at 8am UTC daily, or trigger manually below.
+                </p>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1 font-mono text-xs"
-                  onClick={verifyMfaEnroll}
-                  disabled={mfaVerifying || mfaVerifyCode.length !== 6}
-                >
-                  {mfaVerifying ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                  Verify & Enable 2FA
-                </Button>
-                <Button
-                  variant="outline"
-                  className="font-mono text-xs"
-                  onClick={() => { setMfaEnrolling(false); setMfaTotpUri(''); setMfaFactorId(''); setMfaVerifyCode(''); }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="font-mono text-xs text-muted-foreground">Two-factor authentication is not enabled. Add an extra layer of security to your account.</p>
               <Button
                 variant="outline"
                 className="font-mono text-xs gap-1.5"
-                onClick={startMfaEnroll}
+                onClick={runDunning}
+                disabled={dunningRunning}
               >
-                <ShieldCheck className="h-3 w-3" /> Enable 2FA
+                {dunningRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3" />}
+                Run Dunning Now
               </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </AccordionContent>
+        </AccordionItem>
 
-      {/* ─── SECTION 3: Branding ─── */}
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-base">
-            <Image className="h-4 w-4 text-primary" /> Branding
-          </CardTitle>
-          <CardDescription>Site icons and branding assets</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <h3 className="font-mono text-sm font-medium text-foreground mb-3">Apple Touch Icon</h3>
-            <p className="text-xs text-muted-foreground mb-3">Shown when users add the site to their iOS home screen (180×180 PNG recommended)</p>
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-xl border border-border bg-muted/30 flex items-center justify-center overflow-hidden shrink-0">
-                {data.branding?.apple_touch_icon_url ? (
-                  <img src={data.branding.apple_touch_icon_url} alt="Apple touch icon" className="h-full w-full object-contain" />
-                ) : (
-                  <Image className="h-6 w-6 text-muted-foreground" />
-                )}
+        {/* ─── Two-Factor Authentication ─── */}
+        <AccordionItem value="two-factor" className="border border-border rounded-lg bg-card px-6">
+          <AccordionTrigger className="hover:no-underline">
+            <span className="flex items-center gap-2 font-mono text-base font-semibold">
+              <ShieldCheck className="h-4 w-4 text-primary" /> Two-Factor Authentication
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Protect your account with a TOTP authenticator app (Google Authenticator, Authy, etc.).
+            </p>
+            <div className="space-y-4">
+              {mfaFactors.filter(f => f.status === 'verified').length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+                    <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                    <span className="font-mono text-sm text-primary font-medium">2FA Active — your account is protected</span>
+                  </div>
+                  {mfaFactors.filter(f => f.status === 'verified').map(f => (
+                    <div key={f.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                      <div>
+                        <p className="font-mono text-xs text-foreground">{f.friendly_name || 'Authenticator App'}</p>
+                        <p className="font-mono text-[10px] text-muted-foreground">TOTP · {f.factor_type}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="font-mono text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                        onClick={() => unenrollMfa(f.id)}
+                        disabled={mfaUnenrolling === f.id}
+                      >
+                        {mfaUnenrolling === f.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Remove 2FA'}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : mfaEnrolling ? (
+                <div className="space-y-4">
+                  <p className="font-mono text-xs text-muted-foreground">Scan this QR code with your authenticator app, then enter the 6-digit code to verify.</p>
+                  {mfaTotpUri && (
+                    <div className="flex justify-center">
+                      <img
+                        src={`https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=${encodeURIComponent(mfaTotpUri)}`}
+                        alt="Scan with authenticator app"
+                        className="rounded-lg border border-border"
+                        width={200}
+                        height={200}
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">6-digit code</Label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="000000"
+                      value={mfaVerifyCode}
+                      onChange={e => setMfaVerifyCode(e.target.value.replace(/\D/g, ''))}
+                      className="font-mono text-center text-lg tracking-widest"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1 font-mono text-xs"
+                      onClick={verifyMfaEnroll}
+                      disabled={mfaVerifying || mfaVerifyCode.length !== 6}
+                    >
+                      {mfaVerifying ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                      Verify & Enable 2FA
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="font-mono text-xs"
+                      onClick={() => { setMfaEnrolling(false); setMfaTotpUri(''); setMfaFactorId(''); setMfaVerifyCode(''); }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="font-mono text-xs text-muted-foreground">Two-factor authentication is not enabled. Add an extra layer of security to your account.</p>
+                  <Button
+                    variant="outline"
+                    className="font-mono text-xs gap-1.5"
+                    onClick={startMfaEnroll}
+                  >
+                    <ShieldCheck className="h-3 w-3" /> Enable 2FA
+                  </Button>
+                </div>
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* ─── Branding ─── */}
+        <AccordionItem value="branding" className="border border-border rounded-lg bg-card px-6">
+          <AccordionTrigger className="hover:no-underline">
+            <span className="flex items-center gap-2 font-mono text-base font-semibold">
+              <Image className="h-4 w-4 text-primary" /> Branding
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <p className="text-sm text-muted-foreground mb-4">Site icons and branding assets</p>
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-mono text-sm font-medium text-foreground mb-3">Apple Touch Icon</h3>
+                <p className="text-xs text-muted-foreground mb-3">Shown when users add the site to their iOS home screen (180×180 PNG recommended)</p>
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-xl border border-border bg-muted/30 flex items-center justify-center overflow-hidden shrink-0">
+                    {data.branding?.apple_touch_icon_url ? (
+                      <img src={data.branding.apple_touch_icon_url} alt="Apple touch icon" className="h-full w-full object-contain" />
+                    ) : (
+                      <Image className="h-6 w-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="space-y-2 flex-1">
+                    <Input
+                      defaultValue={data.branding?.apple_touch_icon_url || ''}
+                      key={`branding.apple_touch_icon_url.${data.branding?.apple_touch_icon_url}`}
+                      onChange={(e) => update(['branding', 'apple_touch_icon_url'], e.target.value)}
+                      placeholder="/apple-touch-icon.png or full URL"
+                      className="font-mono text-sm bg-background border-border"
+                    />
+                    <input ref={iconInputRef} type="file" accept="image/*" className="hidden" onChange={handleIconUpload} />
+                    <Button variant="outline" size="sm" className="gap-1.5 font-mono text-xs" onClick={() => iconInputRef.current?.click()} disabled={iconUploading}>
+                      {iconUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                      {iconUploading ? 'Uploading…' : 'Upload Image'}
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2 flex-1">
-                <Input
-                  defaultValue={data.branding?.apple_touch_icon_url || ''}
-                  key={`branding.apple_touch_icon_url.${data.branding?.apple_touch_icon_url}`}
-                  onChange={(e) => update(['branding', 'apple_touch_icon_url'], e.target.value)}
-                  placeholder="/apple-touch-icon.png or full URL"
-                  className="font-mono text-sm bg-background border-border"
-                />
-                <input ref={iconInputRef} type="file" accept="image/*" className="hidden" onChange={handleIconUpload} />
-                <Button variant="outline" size="sm" className="gap-1.5 font-mono text-xs" onClick={() => iconInputRef.current?.click()} disabled={iconUploading}>
-                  {iconUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                  {iconUploading ? 'Uploading…' : 'Upload Image'}
-                </Button>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* ─── Tracking & Analytics ─── */}
+        <AccordionItem value="tracking" className="border border-border rounded-lg bg-card px-6">
+          <AccordionTrigger className="hover:no-underline">
+            <span className="flex items-center gap-2 font-mono text-base font-semibold">
+              <BarChart3 className="h-4 w-4 text-primary" /> Tracking & Analytics
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <p className="text-sm text-muted-foreground mb-4">Pixel IDs injected into the site for analytics & remarketing</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Google Pixel / GA4 Measurement ID" path={['tracking', 'google_pixel_id']} placeholder="G-XXXXXXXXXX or AW-XXXXXXXXX" />
+              <Field label="Meta (Facebook) Pixel ID" path={['tracking', 'meta_pixel_id']} placeholder="123456789012345" />
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* ─── Invoice Numbering ─── */}
+        <AccordionItem value="invoice-numbering" className="border border-border rounded-lg bg-card px-6">
+          <AccordionTrigger className="hover:no-underline">
+            <span className="flex items-center gap-2 font-mono text-base font-semibold">
+              <Hash className="h-4 w-4 text-primary" /> Invoice Numbering
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Configure the prefix and padding for auto-generated invoice numbers. Example: prefix "INV-" with 4 digits → INV-0042
+            </p>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="font-mono text-xs">Prefix</Label>
+                  <Input
+                    value={invoiceConfig.prefix}
+                    onChange={e => setInvoiceConfig(p => ({ ...p, prefix: e.target.value }))}
+                    placeholder="INV-"
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="font-mono text-xs">Digit Padding</Label>
+                  <Input
+                    type="number" min={1} max={8}
+                    value={invoiceConfig.padding}
+                    onChange={e => setInvoiceConfig(p => ({ ...p, padding: parseInt(e.target.value) || 4 }))}
+                    className="font-mono text-sm"
+                  />
+                </div>
               </div>
+              <p className="font-mono text-xs text-muted-foreground">
+                Preview: {invoiceConfig.prefix}{String(42).padStart(invoiceConfig.padding, '0')}
+              </p>
+              <Button onClick={handleSaveInvoiceConfig} disabled={invConfigLoading} className="font-mono text-xs">
+                {invConfigLoading ? 'Saving...' : 'Save'}
+              </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ─── SECTION 4: Tracking & Analytics ─── */}
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-base">
-            <BarChart3 className="h-4 w-4 text-primary" /> Tracking & Analytics
-          </CardTitle>
-          <CardDescription>Pixel IDs injected into the site for analytics & remarketing</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <Field label="Google Pixel / GA4 Measurement ID" path={['tracking', 'google_pixel_id']} placeholder="G-XXXXXXXXXX or AW-XXXXXXXXX" />
-          <Field label="Meta (Facebook) Pixel ID" path={['tracking', 'meta_pixel_id']} placeholder="123456789012345" />
-        </CardContent>
-      </Card>
-
-      {/* Invoice Numbering */}
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-base">
-            <Hash className="h-4 w-4 text-primary" /> Invoice Numbering
-          </CardTitle>
-          <CardDescription>
-            Configure the prefix and padding for auto-generated invoice numbers.
-            Example: prefix "INV-" with 4 digits → INV-0042
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label className="font-mono text-xs">Prefix</Label>
-              <Input
-                value={invoiceConfig.prefix}
-                onChange={e => setInvoiceConfig(p => ({ ...p, prefix: e.target.value }))}
-                placeholder="INV-"
-                className="font-mono text-sm"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="font-mono text-xs">Digit Padding</Label>
-              <Input
-                type="number" min={1} max={8}
-                value={invoiceConfig.padding}
-                onChange={e => setInvoiceConfig(p => ({ ...p, padding: parseInt(e.target.value) || 4 }))}
-                className="font-mono text-sm"
-              />
-            </div>
-          </div>
-          <p className="font-mono text-xs text-muted-foreground">
-            Preview: {invoiceConfig.prefix}{String(42).padStart(invoiceConfig.padding, '0')}
-          </p>
-          <Button onClick={handleSaveInvoiceConfig} disabled={invConfigLoading} className="font-mono text-xs">
-            {invConfigLoading ? 'Saving...' : 'Save'}
-          </Button>
-        </CardContent>
-      </Card>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };
