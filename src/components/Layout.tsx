@@ -5,6 +5,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import ScrollToTop from './ScrollToTop';
 import InteractiveHeroBg from './InteractiveHeroBg';
+import TrackingPixels from './TrackingPixels';
 
 const InlineLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
@@ -29,6 +30,7 @@ const Layout = () => (
     </main>
     <Footer />
     <ScrollToTop />
+    <TrackingPixels />
   </div>
 );
 
